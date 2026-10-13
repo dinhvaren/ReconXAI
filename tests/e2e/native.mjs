@@ -73,6 +73,11 @@ async function stop(){
 const results=[];
 try{
   let page=await launch();
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+  await page.getByRole('button',{name:'Switch to light mode',exact:true}).click();
+  await page.locator('html[data-theme="light"]').waitFor();
+  assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'light');
+  await page.screenshot({path:path.join(artifact,'dashboard-light.png'),fullPage:true});
   await page.getByRole('button',{name:'Projects',exact:true}).click();
   await page.getByLabel('Project name',{exact:true}).fill('Native desktop project');
   await page.getByLabel('Description',{exact:true}).fill('Created in the real Tauri window');
@@ -87,6 +92,14 @@ try{
   await page.getByRole('heading',{name:'CLI-created project',exact:true}).waitFor();
   results.push('CLI project is visible to the native desktop');
   await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await page.getByLabel('Appearance',{exact:true}).selectOption('system');
+  await page.getByRole('button',{name:'Save preferences',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Preferences saved'}).waitFor();
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.locator('html[data-theme="dark"]').waitFor();
+  await page.emulateMedia({colorScheme:'light'});
+  await page.locator('html[data-theme="light"]').waitFor();
+  await page.getByLabel('Appearance',{exact:true}).selectOption('light');
   await page.getByLabel('Security mode').selectOption('lab_research');
   await page.getByRole('button',{name:'Save preferences',exact:true}).click();
   await page.getByRole('status').filter({hasText:'Preferences saved'}).waitFor();
@@ -123,15 +136,21 @@ try{
   results.push('Native streaming cancellation stops the request and records a cancelled audit outcome visible to the CLI');
   await stop();
   page=await launch();
+  await page.locator('html[data-theme="light"]').waitFor();
   await page.getByRole('button',{name:'Projects',exact:true}).click();
   await page.getByRole('heading',{name:'Native desktop project',exact:true}).waitFor();
   await page.getByRole('heading',{name:'CLI-created project',exact:true}).waitFor();
   await page.screenshot({path:path.join(artifact,'projects.png'),fullPage:true});
   await page.getByRole('button',{name:'Settings',exact:true}).click();
+  assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'light');
+  await page.screenshot({path:path.join(artifact,'settings-light.png'),fullPage:true});
   assert.equal(await page.getByLabel('Security mode').inputValue(),'lab_research');
   await page.getByText('Local fixture gateway',{exact:true}).waitFor();
   results.push('Projects, provider configuration and settings survive a complete native application restart');
   await page.getByRole('button',{name:'Dashboard',exact:true}).click();
+  await page.getByRole('button',{name:'Switch to dark mode',exact:true}).click();
+  await page.locator('html[data-theme="dark"]').waitFor();
+  results.push('Dark/Light quick switching persists to CLI and across native restart; System responds to OS color-scheme changes');
   await page.screenshot({path:path.join(artifact,'dashboard.png'),fullPage:true});
   if(process.env.RECONX_E2E_TOOL_INSTALL==='1'){
     await page.getByRole('button',{name:'Tool Manager',exact:true}).click();

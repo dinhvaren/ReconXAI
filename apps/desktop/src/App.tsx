@@ -60,6 +60,8 @@ function Glyph({ name = "grid" }: { name?: string }) {
     settings:
       "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2",
     shield: "M12 2L3 6v6c0 5 9 10 9 10s9-5 9-10V6z M8 12l3 3 5-6",
+    sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M5 19l1.5-1.5 M17.5 6.5L19 5",
+    moon: "M20.7 13.2A9 9 0 0 1 10.8 3.3 9 9 0 1 0 20.7 13.2z",
   };
   return (
     <svg
@@ -90,6 +92,24 @@ export default function App() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
+  useEffect(() => {
+    const preference = data?.settings.theme ?? "dark";
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const theme =
+        preference === "system"
+          ? media.matches
+            ? "dark"
+            : "light"
+          : preference;
+      document.documentElement.dataset.theme = theme;
+      setResolvedTheme(theme);
+    };
+    apply();
+    if (preference === "system") media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [data?.settings.theme]);
   const refresh = useCallback(
     async () => setData(await request<Snapshot>("snapshot")),
     [],
@@ -183,6 +203,26 @@ export default function App() {
             WORKSPACE <span>/</span> <b>{page}</b>
           </div>
           <div className="top-actions">
+            <button
+              className="button ghost small"
+              aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+              title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+              disabled={busy || !data}
+              onClick={() => {
+                if (data)
+                  void perform(() =>
+                    request("save_settings", {
+                      settings: {
+                        ...data.settings,
+                        theme: resolvedTheme === "dark" ? "light" : "dark",
+                      },
+                    }),
+                  );
+              }}
+            >
+              <Glyph name={resolvedTheme === "dark" ? "sun" : "moon"} />
+              {resolvedTheme === "dark" ? "Light" : "Dark"}
+            </button>
             <span className="mode-chip">
               <Glyph name="shield" />
               {data?.settings.security_mode.replaceAll("_", " ") ??
@@ -753,6 +793,27 @@ function SettingsPage({
               );
             }}
           >
+            <label>
+              Appearance
+              <select
+                aria-label="Appearance"
+                value={settings.theme}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    theme: e.target.value as Settings["theme"],
+                  })
+                }
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="system">System</option>
+              </select>
+            </label>
+            <p className="helper">
+              Save preferences to apply. System follows your operating system
+              appearance. You can also switch instantly using the top bar.
+            </p>
             <label>
               Security mode
               <select

@@ -92,6 +92,7 @@ fn settings_and_provider_credential_isolation() {
         security_mode: SecurityMode::LabResearch,
         default_provider_id: Some(config.id.clone()),
         fallback_provider_id: None,
+        theme: ThemePreference::Dark,
     })
     .unwrap();
     config.base_url = "https://another.example/v1".into();
@@ -146,10 +147,42 @@ fn validation_does_not_modify_database() {
             security_mode: SecurityMode::PassiveAuto,
             default_provider_id: Some("missing".into()),
             fallback_provider_id: None,
+            theme: ThemePreference::Dark,
         })
         .is_err()
     );
     assert!(core.snapshot().unwrap().audit.is_empty());
+}
+
+#[test]
+fn appearance_survives_restart_and_legacy_settings_default_to_dark() {
+    let (_dir, core) = setup();
+    let db = reconx_storage::Database::open(core.database_path()).unwrap();
+    db.connect()
+        .unwrap()
+        .execute(
+            "INSERT INTO settings(id,json) VALUES(1,?1)",
+            [r#"{"security_mode":"passive_auto","default_provider_id":null}"#],
+        )
+        .unwrap();
+    assert_eq!(core.settings().unwrap().theme, ThemePreference::Dark);
+    for theme in [
+        ThemePreference::Light,
+        ThemePreference::System,
+        ThemePreference::Dark,
+    ] {
+        core.save_settings(&Settings {
+            theme,
+            ..Default::default()
+        })
+        .unwrap();
+        let reopened = Core::with_secrets(
+            Some(core.database_path().to_path_buf()),
+            Arc::new(MemoryStore::default()),
+        )
+        .unwrap();
+        assert_eq!(reopened.settings().unwrap().theme, theme);
+    }
 }
 #[test]
 fn unavailable_credential_store_has_no_plaintext_fallback() {

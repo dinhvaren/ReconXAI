@@ -53,6 +53,17 @@ pub struct Settings {
     pub default_provider_id: Option<String>,
     #[serde(default)]
     pub fallback_provider_id: Option<String>,
+    #[serde(default)]
+    pub theme: ThemePreference,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ThemePreference {
+    #[default]
+    Dark,
+    Light,
+    System,
 }
 #[derive(Debug, Serialize)]
 pub struct AuditEvent {
