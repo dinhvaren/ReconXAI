@@ -19,6 +19,13 @@ Dependencies are sourced from crates.io and the official npm registry. Cargo.loc
 Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The reference-inspired token system supports Dark/Light/System, bundled Manrope and original SVG assets without runtime font/image downloads. Selected project context is local presentation state; it does not send project data to AI or change CLI operations. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
 
 Verified documentation:
+Appearance is centralized in src/theme.tsx and shared ThemeMenu components. Saved appearance is read before the native window is shown. The core's transaction-scoped set_theme operation updates only that preference; Settings drafts exclude theme and use the central write queue. CSS semantic color/typography roles cover both palettes. Local DM Sans and IBM Plex Mono replace Manrope in the active bundle. See THEME_TYPOGRAPHY_FIX.md.
+
+Additional verified appearance/runtime documentation:
+- https://v2.tauri.app/reference/javascript/api/namespacewindow/
+- https://github.com/microsoft/playwright/blob/main/docs/src/webview2.md
+
+Verified documentation:
 - https://v2.tauri.app/start/prerequisites/
 - https://v2.tauri.app/develop/calling-rust/
 - https://developers.openai.com/api/docs/guides/text?api-mode=responses

@@ -22,6 +22,7 @@ import {
   type Settings,
 } from "../api";
 import { Heading, Icon as Glyph, type Perform } from "../components/ui";
+import { useTheme } from "../theme";
 const date = (text: string) => new Date(text).toLocaleString();
 export function Projects({
   data,
@@ -268,8 +269,27 @@ export function SettingsPage({
   busy: boolean;
   perform: Perform;
 }) {
-  const [settings, setSettings] = useState<Settings>(data.settings);
-  useEffect(() => setSettings(data.settings), [data.settings]);
+  const theme = useTheme();
+  const [settings, setSettings] = useState<Omit<Settings, "theme">>(() => ({
+    security_mode: data.settings.security_mode,
+    default_provider_id: data.settings.default_provider_id,
+    fallback_provider_id: data.settings.fallback_provider_id,
+  }));
+  // Appearance is managed centrally; theme changes must not discard unsaved routing/mode edits.
+  useEffect(
+    () =>
+      setSettings((current) => ({
+        ...current,
+        security_mode: data.settings.security_mode,
+        default_provider_id: data.settings.default_provider_id,
+        fallback_provider_id: data.settings.fallback_provider_id,
+      })),
+    [
+      data.settings.security_mode,
+      data.settings.default_provider_id,
+      data.settings.fallback_provider_id,
+    ],
+  );
   const [editor, setEditor] = useState<Provider | null>(null);
   const [keyId, setKeyId] = useState<string | null>(null);
   const [key, setKey] = useState("");
@@ -304,7 +324,7 @@ export function SettingsPage({
             onSubmit={(e) => {
               e.preventDefault();
               void perform(
-                () => request("save_settings", { settings }),
+                () => theme.savePreferences(settings),
                 "Preferences saved",
               );
             }}
@@ -313,12 +333,11 @@ export function SettingsPage({
               Appearance
               <select
                 aria-label="Appearance"
-                value={settings.theme}
+                value={theme.preference}
                 onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    theme: e.target.value as Settings["theme"],
-                  })
+                  void theme
+                    .setTheme(e.target.value as Settings["theme"])
+                    .catch(() => {})
                 }
               >
                 <option value="dark">Dark</option>
@@ -327,8 +346,8 @@ export function SettingsPage({
               </select>
             </label>
             <p className="helper">
-              Save preferences to apply. System follows your operating system
-              appearance. You can also switch instantly using the top bar.
+              Appearance applies and saves immediately. System follows your
+              operating system; all appearance controls share this selection.
             </p>
             <label>
               Security mode
@@ -1195,6 +1214,11 @@ export function ToolManagerPage({
               </button>
               <button
                 disabled={busy || !tool.integrity_verified}
+                title={
+                  !tool.integrity_verified
+                    ? "Install and verify this tool before checking health"
+                    : "Check the verified executable version"
+                }
                 className="text-button"
                 onClick={() =>
                   void perform(async () => {
@@ -1207,6 +1231,11 @@ export function ToolManagerPage({
               </button>
               <button
                 disabled={busy || tool.status === "not_installed"}
+                title={
+                  tool.status === "not_installed"
+                    ? "This tool has not been installed"
+                    : "Remove only this managed installation"
+                }
                 className="text-button danger"
                 onClick={() =>
                   void perform(async () => {

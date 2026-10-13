@@ -36,7 +36,7 @@ export default function Dashboard({
     <div className="dashboard">
       <div className="dashboard-intro">
         <div>
-          <p className="eyebrow">RECONX / YOUR WORKSPACE</p>
+          <p className="eyebrow">ReconX / Your workspace</p>
           <h1>Workspace overview</h1>
         </div>
         <span className="dashboard-summary">
@@ -45,7 +45,7 @@ export default function Dashboard({
       </div>
       <section className="workspace-feature" aria-label="Featured workspace">
         <div className="feature-content">
-          <span className="feature-kicker">RESEARCH, IN ONE PLACE</span>
+          <span className="feature-kicker">Research, in one place</span>
           <h2>
             Your security
             <br />
@@ -97,7 +97,7 @@ export default function Dashboard({
             }}
           >
             <div className={`feature-card-image cover-${art}`}>
-              <span className="cover-label">RESEARCH PROJECT</span>
+              <span className="cover-label">Research project</span>
             </div>
             <div className="project-card-emblem">
               <Icon name="folder" size={22} />
@@ -127,7 +127,7 @@ export default function Dashboard({
         {cards.length === 0 && (
           <button className="feature-card" onClick={() => navigate("Projects")}>
             <div className="feature-card-image cover-orbital">
-              <span className="cover-label">START A PROJECT</span>
+              <span className="cover-label">Start a project</span>
             </div>
             <div className="project-card-emblem">
               <Icon name="folder" size={22} />
@@ -151,7 +151,7 @@ export default function Dashboard({
             onClick={() => navigate("Settings")}
           >
             <div className="feature-card-image cover-prism">
-              <span className="cover-label">YOUR MODELS, YOUR CHOICE</span>
+              <span className="cover-label">Your models, your choice</span>
             </div>
             <div className="project-card-emblem">
               <Icon name="ai" size={22} />

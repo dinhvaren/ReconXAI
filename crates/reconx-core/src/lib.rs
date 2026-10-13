@@ -274,6 +274,26 @@ impl Core {
         Self::audit(&tx, "settings.updated", "workspace", "completed")?;
         tx.commit().map_err(db_error)
     }
+    /// Update appearance without replaying stale provider or security preferences.
+    pub fn set_theme(&self, theme: ThemePreference) -> Result<Settings> {
+        let mut conn = self.db.connect()?;
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(db_error)?;
+        let text: Option<String> = tx
+            .query_row("SELECT json FROM settings WHERE id=1", [], |r| r.get(0))
+            .optional()
+            .map_err(db_error)?;
+        let mut settings: Settings = text
+            .map(|t| serde_json::from_str(&t).map_err(json_error))
+            .transpose()?
+            .unwrap_or_default();
+        settings.theme = theme;
+        tx.execute("INSERT INTO settings(id,json) VALUES (1,?1) ON CONFLICT(id) DO UPDATE SET json=excluded.json", [serde_json::to_string(&settings).map_err(json_error)?]).map_err(db_error)?;
+        Self::audit(&tx, "settings.updated", "workspace", "completed")?;
+        tx.commit().map_err(db_error)?;
+        Ok(settings)
+    }
     pub fn providers(&self) -> Result<Vec<ProviderConfig>> {
         let conn = self.db.connect()?;
         let mut q = conn

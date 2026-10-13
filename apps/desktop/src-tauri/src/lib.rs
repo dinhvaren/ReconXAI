@@ -1,4 +1,6 @@
-use reconx_core::{AppError, Core, ProjectExport, ProviderConfig, Result, Settings, ToolProgress};
+use reconx_core::{
+    AppError, Core, ProjectExport, ProviderConfig, Result, Settings, ThemePreference, ToolProgress,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashMap, sync::Mutex};
@@ -78,6 +80,10 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
     Snapshot,
+    GetTheme,
+    SetTheme {
+        theme: ThemePreference,
+    },
     ToolsList,
     ToolsPlan {
         id: String,
@@ -141,6 +147,8 @@ fn value(item: impl serde::Serialize) -> Result<Value> {
 fn local(core: Core, request: Request) -> Result<Value> {
     match request {
         Request::Snapshot => value(core.snapshot()?),
+        Request::GetTheme => value(core.settings()?.theme),
+        Request::SetTheme { theme } => value(core.set_theme(theme)?),
         Request::ToolsList => value(core.tool_inventory()?),
         Request::ToolsPlan { id } => value(core.tool_plan(&id)?),
         Request::ToolsUninstall { id } => {
@@ -198,6 +206,33 @@ async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value
             .map_err(|_| AppError::new("WORKER_ERROR", "Background operation failed"))?,
     }
 }
+#[tauri::command]
+fn apply_window_theme(window: tauri::WebviewWindow, theme: ThemePreference) -> Result<()> {
+    let (native_theme, background) = match theme {
+        ThemePreference::Light => (
+            tauri::Theme::Light,
+            tauri::window::Color(247, 244, 247, 255),
+        ),
+        ThemePreference::Dark => (tauri::Theme::Dark, tauri::window::Color(49, 0, 25, 255)),
+        ThemePreference::System => {
+            return Err(AppError::new(
+                "INVALID_INPUT",
+                "Window theme must be resolved to light or dark",
+            ));
+        }
+    };
+    let map_error = |_| {
+        AppError::new(
+            "WINDOW_APPEARANCE_ERROR",
+            "Could not update native window appearance",
+        )
+    };
+    window.set_theme(Some(native_theme)).map_err(map_error)?;
+    window
+        .set_background_color(Some(background))
+        .map_err(map_error)?;
+    window.show().map_err(map_error)
+}
 pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -214,7 +249,8 @@ pub fn run() {
             service,
             stream_chat,
             cancel_stream,
-            install_tool
+            install_tool,
+            apply_window_theme
         ])
         .run(tauri::generate_context!())
         .expect("Desktop runtime failed");

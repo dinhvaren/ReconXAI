@@ -19,3 +19,7 @@
 17. Bundle licensed Manrope and original abstract SVG artwork. The supplied community reference remains an ignored design artifact and is not redistributed as product artwork.
 18. Distinguish configured provider settings from verified connectivity; use only real audit events for activity. Project card progress denotes profile completeness, not research execution.
 19. Retain Dark/Light/System preferences and accessible controls. Check responsive pages in the actual native WebView2; record viewport emulation separately from physical desktop/other-platform verification.
+20. Centralize appearance independently of Settings drafts; serialize writes, roll back failures and reject stale snapshot hydration. Update only theme inside a SQLite transaction so appearance never rewrites stale routing/mode preferences.
+21. Read authoritative appearance before revealing the native window. Keep OS-following behavior in one media listener; match native chrome/background through an additive typed Tauri command.
+22. Replace micro-label typography with locally bundled DM Sans/IBM Plex Mono and explicit 12-26px roles. Preserve licensed sources and notices; eliminate fixed component colors in favor of semantic palette roles.
+23. Isolate native test browser profiles with WEBVIEW2_USER_DATA_FOLDER. Database isolation alone does not avoid WebView2 browser-option conflicts with an already running application.

@@ -27,7 +27,7 @@ export default function ActivitySidebar({
   return (
     <aside className="activity-sidebar" aria-label="Workspace activity">
       <div className="activity-toolbar">
-        <span>WORKSPACE PULSE</span>
+        <span>Workspace activity</span>
         <button
           className="icon-button"
           title="Open settings"

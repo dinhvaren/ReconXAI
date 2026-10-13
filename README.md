@@ -28,7 +28,7 @@ cargo build --locked -p reconx
 
 The custom-protocol build embeds frontend assets and needs no Vite server. Run scripts/build.ps1 for verified optimized Windows portable binaries and SHA-256 digests in artifacts/windows-x64. Both release binaries passed the native integration scenario. Installer configurations exist but installers and Linux remain unverified.
 
-The desktop uses an illustrated burgundy workbench with a lavender navigation column, narrow project rail and raspberry activity panel. Dark/Light/System can be selected in Settings; the toolbar switches light/dark immediately. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/UI_REDESIGN.md for the visual audit.
+The desktop uses an illustrated burgundy workbench with a lavender navigation column, narrow project rail and raspberry activity panel. Dark/Light/System share one immediate, automatically saved preference in Settings and the topbar/sidebar appearance menus. DM Sans and IBM Plex Mono are bundled locally, with 12px minimum metadata and 14px navigation/body. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/UI_REDESIGN.md and docs/THEME_TYPOGRAPHY_FIX.md for the visual audit and repair.
 
 ## Shared workspace
 

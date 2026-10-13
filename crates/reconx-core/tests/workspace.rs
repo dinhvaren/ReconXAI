@@ -212,3 +212,34 @@ fn unavailable_credential_store_has_no_plaintext_fallback() {
             .contains("do-not-save")
     );
 }
+
+#[test]
+fn appearance_only_updates_preserve_other_shared_preferences() {
+    let (_dir, core) = setup();
+    let config = provider();
+    core.save_provider(&config).unwrap();
+    core.save_settings(&Settings {
+        security_mode: SecurityMode::LabResearch,
+        default_provider_id: Some(config.id.clone()),
+        fallback_provider_id: None,
+        theme: ThemePreference::Dark,
+    })
+    .unwrap();
+    let saved = core.set_theme(ThemePreference::Light).unwrap();
+    assert_eq!(saved.security_mode, SecurityMode::LabResearch);
+    assert_eq!(
+        saved.default_provider_id.as_deref(),
+        Some(config.id.as_str())
+    );
+    assert_eq!(core.settings().unwrap().theme, ThemePreference::Light);
+    let reopened = Core::with_secrets(
+        Some(core.database_path().to_path_buf()),
+        Arc::new(MemoryStore::default()),
+    )
+    .unwrap();
+    assert_eq!(
+        reopened.settings().unwrap().default_provider_id,
+        Some(config.id)
+    );
+    assert_eq!(reopened.settings().unwrap().theme, ThemePreference::Light);
+}

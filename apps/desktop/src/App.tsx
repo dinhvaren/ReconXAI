@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { request, errorText, type Snapshot, type ToolInventory } from "./api";
+import {
+  request,
+  errorText,
+  type Snapshot,
+  type ToolInventory,
+  type ThemePreference,
+} from "./api";
+import { ThemeProvider, useTheme } from "./theme";
+import ThemeMenu from "./components/ThemeMenu";
 import { Icon, Modal, type Perform } from "./components/ui";
 import { navigation, routes } from "./components/navigation";
 import ActivitySidebar from "./components/ActivitySidebar";
@@ -19,7 +27,19 @@ const initials = (name: string) =>
     .map((s) => s[0])
     .join("")
     .toUpperCase();
-export default function App() {
+export default function App({
+  initialTheme,
+}: {
+  initialTheme?: ThemePreference;
+}) {
+  return (
+    <ThemeProvider initialTheme={initialTheme}>
+      <Workbench />
+    </ThemeProvider>
+  );
+}
+function Workbench() {
+  const theme = useTheme();
   const [page, setPage] = useState("Dashboard");
   const [data, setData] = useState<Snapshot | null>(null);
   const [tools, setTools] = useState<ToolInventory[]>([]);
@@ -31,43 +51,29 @@ export default function App() {
   const [showActivity, setShowActivity] = useState(
     () => window.innerWidth >= 1340,
   );
-  const [selected, setSelected] = useState(
-    () => localStorage.getItem("reconx.selectedProject") ?? "",
+  const [selected, setSelected] = useState<string | null>(() =>
+    localStorage.getItem("reconx.selectedProject"),
   );
   const [notifications, setNotifications] = useState(false);
-  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchIndex, setSearchIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
   const refresh = useCallback(async () => {
-    setData(await request<Snapshot>("snapshot"));
+    const revision = theme.getRevision();
+    const snapshot = await request<Snapshot>("snapshot");
+    setData(snapshot);
+    theme.syncFromStorage(snapshot.settings.theme, revision);
     try {
       setTools(await request<ToolInventory[]>("tools_list"));
     } catch {
       setTools([]);
     }
-  }, []);
+  }, [theme.getRevision, theme.syncFromStorage]);
   useEffect(() => {
     refresh().catch((e) => setError(errorText(e)));
   }, [refresh]);
-  useEffect(() => {
-    const preference = data?.settings.theme ?? "dark";
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const theme =
-        preference === "system"
-          ? media.matches
-            ? "dark"
-            : "light"
-          : preference;
-      document.documentElement.dataset.theme = theme;
-      setResolvedTheme(theme);
-    };
-    apply();
-    if (preference === "system") media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [data?.settings.theme]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -95,6 +101,7 @@ export default function App() {
     }
   };
   const navigate = (name: string) => {
+    if (workspaceRef.current) workspaceRef.current.scrollTop = 0;
     setPage(name);
     setError("");
     setNotice("");
@@ -109,7 +116,8 @@ export default function App() {
     localStorage.setItem("reconx.selectedProject", id);
   };
   const projects = data?.projects.filter((p) => !p.archived) ?? [];
-  const project = projects.find((p) => p.id === selected) ?? projects[0];
+  const project =
+    selected === null ? projects[0] : projects.find((p) => p.id === selected);
   const provider =
     data?.providers.find((p) => p.id === data.settings.default_provider_id) ??
     data?.providers.find((p) => p.enabled);
@@ -214,6 +222,7 @@ export default function App() {
           <Icon name="plus" size={23} />
         </button>
         <div className="rail-bottom">
+          <ThemeMenu location="Sidebar" rail />
           <button
             className="rail-item"
             title={navCollapsed ? "Expand navigation" : "Collapse navigation"}
@@ -284,11 +293,6 @@ export default function App() {
             </section>
           ))}
         </nav>
-        <div className="navigation-wave" aria-hidden="true">
-          {Array.from({ length: 25 }, (_, i) => (
-            <i key={i} style={{ height: `${7 + ((i * 17) % 31)}px` }} />
-          ))}
-        </div>
         <button
           className="navigation-status"
           aria-label="Configure AI provider"
@@ -428,25 +432,7 @@ export default function App() {
             >
               <Icon name="plus" />
             </button>
-            <button
-              className="icon-button"
-              aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-              title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-              disabled={busy || !data}
-              onClick={() => {
-                if (data)
-                  void perform(() =>
-                    request("save_settings", {
-                      settings: {
-                        ...data.settings,
-                        theme: resolvedTheme === "dark" ? "light" : "dark",
-                      },
-                    }),
-                  );
-              }}
-            >
-              <Icon name={resolvedTheme === "dark" ? "sun" : "moon"} />
-            </button>
+            <ThemeMenu location="Topbar" />
             <button
               className="icon-button notification-button"
               aria-label="Notifications"
@@ -470,12 +456,18 @@ export default function App() {
             </button>
           </div>
         </header>
-        <main className="workspace-content">
-          {error && (
+        <main ref={workspaceRef} className="workspace-content">
+          {(error || theme.error) && (
             <div role="alert" className="banner error">
               <Icon name="flag" size={16} />
-              <span>{error}</span>
-              <button aria-label="Dismiss error" onClick={() => setError("")}>
+              <span>{error || theme.error}</span>
+              <button
+                aria-label="Dismiss error"
+                onClick={() => {
+                  setError("");
+                  theme.clearError();
+                }}
+              >
                 <Icon name="close" size={16} />
               </button>
             </div>
@@ -534,6 +526,7 @@ export default function App() {
           )}
         </main>
         <footer className="workspace-footer">
+          {theme.saving && <span aria-live="polite">Saving appearance…</span>}
           <span>
             <i className={data ? "connection-dot" : "connection-dot waiting"} />
             {data ? "Local workspace connected" : "Connecting to workspace"}

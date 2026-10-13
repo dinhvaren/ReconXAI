@@ -13,6 +13,7 @@ export const iconPaths: Record<string, string> = {
   shield: "M12 2L3 6v6c0 5 9 10 9 10s9-5 9-10V6z M8 12l3 3 5-6",
   sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M5 19l1.5-1.5 M17.5 6.5L19 5",
   moon: "M20.7 13.2A9 9 0 0 1 10.8 3.3 9 9 0 1 0 20.7 13.2z",
+  monitor: "M3 3h18v13H3z M12 16v5 M7 21h10",
   search: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15 M16 16l5 5",
   bell: "M6 9a6 6 0 0 1 12 0v7l2 2H4l2-2z M10 21h4",
   close: "M5 5l14 14 M19 5L5 19",
@@ -78,7 +79,7 @@ export function Heading({
   return (
     <div className="page-heading">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
+        <p className="eyebrow">{eyebrow[0] + eyebrow.slice(1).toLowerCase()}</p>
         <h1>{title}</h1>
         <p className="subtitle">{description}</p>
       </div>
