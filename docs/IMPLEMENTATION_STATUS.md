@@ -6,6 +6,12 @@ Updated 2026-10-13. Verified platform: Windows x64. The full ten-phase platform 
 
 Native Tauri desktop and reconx CLI share a Rust core and SQLite database. Project create/open/rename, archive/restore, search and metadata import/export work. Settings, audit history, dashboard, collapsible navigation, CLI help/version/doctor, JSON errors/exit codes and completions are implemented. Native tests verify sharing in both directions and persistence across restart.
 
+## Desktop UI redesign: verified Windows slice
+
+Replaced the former dashboard presentation with the supplied reference's four-region composition, burgundy/lavender/raspberry palette, bundled Manrope, original illustrated banner/project cards and integrated activity panel. All implemented pages retain their operations in extracted page components. Dark/Light/System remains shared with CLI settings.
+
+Keyboard workspace search, project selector, rail shortcuts, collapsible groups/panels, focus/hover/error/loading/empty states, notifications and resizable AI context work. Dashboard displays persisted projects/audit events. Future pages have task-specific empty states and NOT_STARTED labels. New UI tests and native screenshots verify common desktop dimensions; see UI_REDESIGN.md for the reference comparison and exact limits.
+
 ## Phase 2: working AI slice, phase in progress
 
 Provider CRUD, enable/disable, custom gateway, protocol, model, timeout and output budgets work. Eight provider kinds have local request-protocol tests; five protocol families have stream event fixture coverage. Desktop/CLI support streaming, cancellation, model discovery and single-turn text requests.

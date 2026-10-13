@@ -1,0 +1,47 @@
+export interface NavItem {
+  name: string;
+  icon: string;
+  implemented: boolean;
+}
+export const navigation: { group: string; items: NavItem[] }[] = [
+  {
+    group: "Workspace",
+    items: [
+      { name: "Dashboard", icon: "grid", implemented: true },
+      { name: "Projects", icon: "folder", implemented: true },
+      { name: "Targets & Scope", icon: "shield", implemented: false },
+    ],
+  },
+  {
+    group: "Research",
+    items: [
+      { name: "Reconnaissance", icon: "globe", implemented: false },
+      { name: "Web Security", icon: "code", implemented: false },
+      { name: "API Security", icon: "api", implemented: false },
+      { name: "Network Security", icon: "network", implemented: false },
+      { name: "Reverse Engineering", icon: "binary", implemented: false },
+      { name: "Mobile Security", icon: "phone", implemented: false },
+      { name: "Cloud & Containers", icon: "cloud", implemented: false },
+      { name: "CI/CD Security", icon: "pipeline", implemented: false },
+    ],
+  },
+  {
+    group: "Intelligence",
+    items: [
+      { name: "AI Workspace", icon: "ai", implemented: true },
+      { name: "Agent Workflows", icon: "workflow", implemented: false },
+      { name: "MCP Hub", icon: "plug", implemented: false },
+      { name: "Tool Manager", icon: "terminal", implemented: true },
+    ],
+  },
+  {
+    group: "Records",
+    items: [
+      { name: "Findings", icon: "flag", implemented: false },
+      { name: "Evidence", icon: "layers", implemented: false },
+      { name: "Reports", icon: "file", implemented: false },
+      { name: "Settings", icon: "settings", implemented: true },
+    ],
+  },
+];
+export const routes = navigation.flatMap((g) => g.items);

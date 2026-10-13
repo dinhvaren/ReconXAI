@@ -150,8 +150,59 @@ try{
   await page.getByRole('button',{name:'Dashboard',exact:true}).click();
   await page.getByRole('button',{name:'Switch to dark mode',exact:true}).click();
   await page.locator('html[data-theme="dark"]').waitFor();
+  await page.evaluate(()=>document.fonts.ready);
+  await delay(350);
+  const visualStyles=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,root:getComputedStyle(document.documentElement).getPropertyValue('--rx-surface'),nav:getComputedStyle(document.querySelector('.nav-item')).color,card:getComputedStyle(document.querySelector('.feature-card')).backgroundColor,art:getComputedStyle(document.querySelector('.workspace-feature')).backgroundImage.slice(0,100)}));
+  await writeFile(path.join(artifact,'visual-styles.json'),JSON.stringify(visualStyles,null,2));
   results.push('Dark/Light quick switching persists to CLI and across native restart; System responds to OS color-scheme changes');
   await page.screenshot({path:path.join(artifact,'dashboard.png'),fullPage:true});
+  if(process.env.RECONX_E2E_VISUAL==='1'){
+    const art=await page.locator('.workspace-feature').evaluate(el=>getComputedStyle(el).backgroundImage);
+    assert.notEqual(art,'none','Workspace artwork must render');
+    const matrix=[];
+    for(const [width,height] of [[1920,1080],[1600,900],[1440,900],[1366,768],[1280,720]]){
+      await page.setViewportSize({width,height});await delay(250);
+      const layout=await page.evaluate(()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,contentWidth:document.querySelector('.workspace-content').clientWidth,contentScrollWidth:document.querySelector('.workspace-content').scrollWidth,railWidth:document.querySelector('.icon-rail').getBoundingClientRect().width,navWidth:document.querySelector('.navigation-sidebar').getBoundingClientRect().width}));
+      assert(layout.documentWidth<=width+1,'No document overflow');assert(layout.contentScrollWidth<=layout.contentWidth+1,'No workspace clipping');assert.equal(layout.railWidth,72);
+      matrix.push({width,height,...layout});await page.screenshot({path:path.join(artifact,`dashboard-${width}x${height}.png`),fullPage:true});
+    }
+    await page.getByRole('button',{name:'Hide activity panel',exact:true}).click();
+    await page.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+    await delay(200);
+    assert.equal(await page.locator('.navigation-sidebar').evaluate(el=>el.getBoundingClientRect().width),0);
+    await page.screenshot({path:path.join(artifact,'collapsed-workspace.png'),fullPage:true});
+    await page.getByRole('button',{name:'Expand navigation',exact:true}).click();await page.getByRole('button',{name:'Show activity panel',exact:true}).click();
+    await page.setViewportSize({width:1440,height:900});
+    await page.keyboard.press('Control+k');await page.getByRole('combobox',{name:'Search workspace'}).fill('Reports');await page.keyboard.press('Enter');
+    await page.getByRole('heading',{name:'Reports',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Notifications',exact:true}).click();await page.getByRole('dialog',{name:'Notifications',exact:true}).waitFor();await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('dialog',{name:'Notifications',exact:true}).count(),0);
+    for(const module of ['Projects','AI Workspace','Settings','MCP Hub','Tool Manager','Reconnaissance','Findings','Reverse Engineering','Reports']){
+      await page.getByRole('button',{name:module,exact:true}).click();
+      const slug=module.toLowerCase().replaceAll(' ','-').replaceAll('&','and');
+      for(const [width,height] of [[1920,1080],[1600,900],[1440,900],[1366,768],[1280,720]]){
+        await page.setViewportSize({width,height});await delay(200);
+        const layout=await page.locator('.workspace-content').evaluate(el=>({documentWidth:document.documentElement.scrollWidth,contentWidth:el.clientWidth,contentScrollWidth:el.scrollWidth}));
+        assert(layout.documentWidth<=width+1,`${module} document fits ${width}`);
+        assert(layout.contentScrollWidth<=layout.contentWidth+1,`${module} has no horizontal clipping at ${width}`);
+        matrix.push({page:module,width,height,...layout});
+        await page.screenshot({path:path.join(artifact,`page-${slug}-${width}x${height}.png`),fullPage:true});
+        if(width===1440)await page.screenshot({path:path.join(artifact,`page-${slug}.png`),fullPage:true});
+      }
+      await page.setViewportSize({width:1440,height:900});
+      if(module==='AI Workspace'){
+        const splitter=page.getByRole('separator',{name:'Resize research context'});const initial=Number(await splitter.getAttribute('aria-valuenow'));await splitter.focus();await page.keyboard.press('ArrowLeft');assert.equal(Number(await splitter.getAttribute('aria-valuenow')),initial+10);
+        await page.getByRole('tab',{name:'Evidence',exact:true}).click();await page.getByRole('tabpanel',{name:'Evidence',exact:true}).getByText(/Evidence attachments are not implemented/).waitFor();
+      }
+    }
+    await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('button',{name:'Credential',exact:true}).click();
+    const keyInput=page.getByLabel('API key',{exact:true});assert.equal(await keyInput.getAttribute('type'),'password');await keyInput.fill('reconx-owned-ephemeral-fixture');await page.getByRole('button',{name:'Store credential',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Credential stored securely'}).waitFor();
+    await page.getByRole('button',{name:'Credential',exact:true}).click();await page.getByRole('button',{name:'Check status',exact:true}).click();await page.getByText('Credential is configured',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Remove credential',exact:true}).click();await page.getByRole('status').filter({hasText:'Credential removed'}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();
+    await writeFile(path.join(artifact,'viewport-matrix.json'),JSON.stringify(matrix,null,2));
+    results.push('Reference-inspired shell and nine pages render at five desktop viewports without horizontal clipping; search, panel collapse, notifications, context resize and masked credential controls work');
+  }
   if(process.env.RECONX_E2E_TOOL_INSTALL==='1'){
     await page.getByRole('button',{name:'Tool Manager',exact:true}).click();
     await page.getByRole('button',{name:'Review install plan',exact:true}).click();

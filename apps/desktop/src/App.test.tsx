@@ -25,7 +25,11 @@ const snapshot = {
 beforeEach(() => {
   cleanup();
   vi.mocked(invoke).mockReset();
-  vi.mocked(invoke).mockResolvedValue(snapshot);
+  vi.mocked(invoke).mockImplementation(async (_command, args) =>
+    (args as { request: { op: string } }).request.op === "tools_list"
+      ? []
+      : snapshot,
+  );
   vi.stubGlobal(
     "matchMedia",
     vi.fn(() => ({
@@ -36,6 +40,32 @@ beforeEach(() => {
   );
 });
 describe("Desktop interactions", () => {
+  it("opens search by keyboard and keeps module navigation usable from the rail", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Workspace overview");
+    await user.keyboard("{Control>}k{/Control}");
+    const search = screen.getByRole("combobox", { name: "Search workspace" });
+    expect(search).toHaveFocus();
+    await user.type(search, "Reports");
+    expect(screen.getByRole("option", { name: /Reports/ })).toHaveTextContent(
+      "Planned module",
+    );
+    await user.keyboard("{Enter}");
+    expect(
+      await screen.findByRole("heading", { name: "Reports" }),
+    ).toBeInTheDocument();
+    expect(search).toHaveValue("");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Collapse navigation" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Open AI Workspace" }));
+    expect(
+      await screen.findByRole("heading", { name: "AI Workspace" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Send message/ })).toBeDisabled();
+  });
   it("quick theme switching persists through the shared service", async () => {
     const user = userEvent.setup();
     let current = structuredClone(snapshot);

@@ -16,6 +16,8 @@ AI replies are unverified text and have no execution channel. Streaming uses Tau
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
 
+Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The reference-inspired token system supports Dark/Light/System, bundled Manrope and original SVG assets without runtime font/image downloads. Selected project context is local presentation state; it does not send project data to AI or change CLI operations. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
+
 Verified documentation:
 - https://v2.tauri.app/start/prerequisites/
 - https://v2.tauri.app/develop/calling-rust/

@@ -15,3 +15,7 @@
 13. Require stream completion markers, preserve interrupted output as unverified, and bound text/IPC updates.
 14. Start Tool Manager with a benign zero-dependency ripgrep adapter. Pin archive and executable hashes verified from actual official assets; never execute arbitrary third-party manifests.
 15. Build portable releases before claiming installers. CI configuration alone does not establish platform compatibility.
+16. Preserve existing IPC/business logic during the UI redesign. Use a contiguous rail/navigation/main/activity layout and shared tokens rather than a repeated statistics dashboard.
+17. Bundle licensed Manrope and original abstract SVG artwork. The supplied community reference remains an ignored design artifact and is not redistributed as product artwork.
+18. Distinguish configured provider settings from verified connectivity; use only real audit events for activity. Project card progress denotes profile completeness, not research execution.
+19. Retain Dark/Light/System preferences and accessible controls. Check responsive pages in the actual native WebView2; record viewport emulation separately from physical desktop/other-platform verification.

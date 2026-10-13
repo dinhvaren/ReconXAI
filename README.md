@@ -28,6 +28,8 @@ cargo build --locked -p reconx
 
 The custom-protocol build embeds frontend assets and needs no Vite server. Run scripts/build.ps1 for verified optimized Windows portable binaries and SHA-256 digests in artifacts/windows-x64. Both release binaries passed the native integration scenario. Installer configurations exist but installers and Linux remain unverified.
 
+The desktop uses an illustrated burgundy workbench with a lavender navigation column, narrow project rail and raspberry activity panel. Dark/Light/System can be selected in Settings; the toolbar switches light/dark immediately. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/UI_REDESIGN.md for the visual audit.
+
 ## Shared workspace
 
 Default data is stored under the OS app data directory. Set `RECONX_DATA_DIR` in the same environment for desktop and CLI to choose another workspace. CLI also supports `--database`. Tests use separate temporary data.
@@ -56,5 +58,7 @@ npm run test:native
 ```
 
 scripts/verify.ps1 -Native performs these checks and the real WebView2 test. Add -ToolInstall to exercise official tool download/verification/health/uninstall in isolated test data. Native tests require a custom-protocol desktop/CLI build and use a loopback mock AI server. Screenshots/results live in ignored artifacts. scripts/dev.ps1 starts normal development; scripts/toolchain.json records the tested compiler/runtime versions. Dependency resolution is locked; CI fixes Rust 1.95.0 and Node 24.15.0.
+
+Add -Visual to capture the dashboard and nine secondary pages at 1920x1080, 1600x900, 1440x900, 1366x768 and 1280x720, check horizontal overflow, and exercise search, panel collapse, notifications, AI pane resizing and masked credential controls. This option also enables the native build/test. Native screenshots emulate content viewports in the actual WebView2.
 
 See docs/IMPLEMENTATION_STATUS.md, docs/TEST_RESULTS.md and docs/ROADMAP.md for exact verified scope. Future module pages are explicitly labeled NOT STARTED.
