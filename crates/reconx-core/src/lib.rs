@@ -60,10 +60,11 @@ pub struct Settings {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ThemePreference {
-    #[default]
     Dark,
     Light,
-    System,
+    #[default]
+    #[serde(alias = "system")]
+    Reconx,
 }
 #[derive(Debug, Serialize)]
 pub struct AuditEvent {
@@ -114,7 +115,36 @@ impl Core {
                 )
             })?;
         let db = Database::open(path)?;
-        Ok(Self { db, secrets })
+        let core = Self { db, secrets };
+        core.migrate_theme_preference()?;
+        Ok(core)
+    }
+    fn migrate_theme_preference(&self) -> Result<()> {
+        let mut conn = self.db.connect()?;
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(db_error)?;
+        let text: Option<String> = tx
+            .query_row("SELECT json FROM settings WHERE id=1", [], |r| r.get(0))
+            .optional()
+            .map_err(db_error)?;
+        if let Some(text) = text {
+            // Validate first, then modify only the legacy appearance field.
+            let _: Settings = serde_json::from_str(&text).map_err(json_error)?;
+            let mut stored: serde_json::Value = serde_json::from_str(&text).map_err(json_error)?;
+            if stored.get("theme").is_none()
+                || stored.get("theme").and_then(|v| v.as_str()) == Some("system")
+            {
+                stored["theme"] = serde_json::Value::String("reconx".into());
+                tx.execute(
+                    "UPDATE settings SET json=?1 WHERE id=1",
+                    [serde_json::to_string(&stored).map_err(json_error)?],
+                )
+                .map_err(db_error)?;
+                Self::audit(&tx, "settings.migrated", "workspace", "completed")?;
+            }
+        }
+        tx.commit().map_err(db_error)
     }
     pub fn database_path(&self) -> &std::path::Path {
         self.db.path()

@@ -340,14 +340,14 @@ export function SettingsPage({
                     .catch(() => {})
                 }
               >
-                <option value="dark">Dark</option>
                 <option value="light">Light</option>
-                <option value="system">System</option>
+                <option value="dark">Dark</option>
+                <option value="reconx">ReconX</option>
               </select>
             </label>
             <p className="helper">
-              Appearance applies and saves immediately. System follows your
-              operating system; all appearance controls share this selection.
+              Appearance applies and saves immediately. Light, Dark and ReconX
+              share one selection across all appearance controls.
             </p>
             <label>
               Security mode

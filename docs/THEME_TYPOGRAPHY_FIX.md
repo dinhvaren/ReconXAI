@@ -1,5 +1,7 @@
 # Typography and appearance repair
 
+The earlier Light/Dark/System design below is historical. The active product now has exactly Light/Dark/ReconX and no OS-following option; see THEMES.md for the current state and migration. The typography, centralized persistence, draft protection and control repairs remain in use.
+
 ## Audit and causes
 
 Inspected the actual native screenshot at artifacts/windows-x64/desktop-preview.png and App.tsx, WorkspacePages.tsx, styles.css, the typed IPC interface, Tauri commands, shared Settings and SQLite persistence before modifying them.

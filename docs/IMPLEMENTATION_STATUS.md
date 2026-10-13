@@ -8,7 +8,7 @@ Native Tauri desktop and reconx CLI share a Rust core and SQLite database. Proje
 
 ## Desktop UI redesign: verified Windows slice
 
-Replaced the former dashboard presentation with the supplied reference's four-region composition, burgundy/lavender/raspberry palette, bundled Manrope, original illustrated banner/project cards and integrated activity panel. All implemented pages retain their operations in extracted page components. Dark/Light/System remains shared with CLI settings.
+Replaced the former dashboard presentation with the supplied reference's four-region composition, original illustrated banner/project cards and integrated activity panel. DM Sans/IBM Plex Mono and readable typography now replace the earlier Manrope system. All implemented pages retain their operations. Exactly Light/Dark/ReconX appearance remains shared with CLI settings, with the signature burgundy/lavender/raspberry palette preserved under ReconX.
 
 Keyboard workspace search, project selector, rail shortcuts, collapsible groups/panels, focus/hover/error/loading/empty states, notifications and resizable AI context work. Dashboard displays persisted projects/audit events. Future pages have task-specific empty states and NOT_STARTED labels. New UI tests and native screenshots verify common desktop dimensions; see UI_REDESIGN.md for the reference comparison and exact limits.
 
@@ -37,3 +37,9 @@ MCP, agents, workflow scheduler, target/scope workflows, recon, findings/evidenc
 Archive is reversible; permanent deletion is not exposed. Project export contains metadata only. Notes/exports are not automatically redacted. Chat is transient and single-turn. SQLite is not encrypted. Existing machine provider/MCP credentials were not imported. No public targets were tested.
 
 Machine-readable registry: docs/module-status.json.
+
+## Current appearance and typography
+
+Exactly Light, Dark and ReconX are implemented and native-tested. Light is white/gray; Dark is near-black/charcoal; ReconX preserves the extracted existing burgundy palette and original artwork. Both appearance menus and the Settings dropdown synchronize immediately and persist automatically. All three restore after native restart. System was removed; old system/missing settings migrate transactionally to reconx without changing other records. New installations default to ReconX.
+
+DM Sans/IBM Plex Mono remain bundled locally with 12px minimum metadata, 14px navigation/body and 26px page titles. Original navigation structure, project/provider/credential settings, gateways, shared storage and CLI remain accessible. See THEMES.md and THEME_TYPOGRAPHY_FIX.md for current controls and validation. Earlier references to Dark/Light/System describe superseded milestones.

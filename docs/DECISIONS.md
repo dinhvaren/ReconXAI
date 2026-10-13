@@ -23,3 +23,5 @@
 21. Read authoritative appearance before revealing the native window. Keep OS-following behavior in one media listener; match native chrome/background through an additive typed Tauri command.
 22. Replace micro-label typography with locally bundled DM Sans/IBM Plex Mono and explicit 12-26px roles. Preserve licensed sources and notices; eliminate fixed component colors in favor of semantic palette roles.
 23. Isolate native test browser profiles with WEBVIEW2_USER_DATA_FOLDER. Database isolation alone does not avoid WebView2 browser-option conflicts with an already running application.
+24. User-directed appearance is exactly Light/Dark/ReconX. Remove OS-following mode and listeners; default to ReconX. Migrate legacy system or missing preference to reconx while preserving explicit light/dark selections.
+25. Freeze the existing root color tokens before separating palettes. Keep ReconX values/original artwork intact; use neutral palette and artwork variants for Light/Dark.

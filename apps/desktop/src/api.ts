@@ -1,6 +1,6 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
 export type Mode = "passive_auto" | "authorized_auto" | "lab_research";
-export type ThemePreference = "dark" | "light" | "system";
+export type AppTheme = "light" | "dark" | "reconx";
 export interface Project {
   id: string;
   name: string;
@@ -33,7 +33,7 @@ export interface Settings {
   security_mode: Mode;
   default_provider_id: string | null;
   fallback_provider_id: string | null;
-  theme: ThemePreference;
+  theme: AppTheme;
 }
 export interface Audit {
   id: number;

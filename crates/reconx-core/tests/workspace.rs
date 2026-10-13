@@ -155,7 +155,7 @@ fn validation_does_not_modify_database() {
 }
 
 #[test]
-fn appearance_survives_restart_and_legacy_settings_default_to_dark() {
+fn appearance_survives_restart_and_missing_settings_default_to_reconx() {
     let (_dir, core) = setup();
     let db = reconx_storage::Database::open(core.database_path()).unwrap();
     db.connect()
@@ -165,10 +165,10 @@ fn appearance_survives_restart_and_legacy_settings_default_to_dark() {
             [r#"{"security_mode":"passive_auto","default_provider_id":null}"#],
         )
         .unwrap();
-    assert_eq!(core.settings().unwrap().theme, ThemePreference::Dark);
+    assert_eq!(core.settings().unwrap().theme, ThemePreference::Reconx);
     for theme in [
         ThemePreference::Light,
-        ThemePreference::System,
+        ThemePreference::Reconx,
         ThemePreference::Dark,
     ] {
         core.save_settings(&Settings {
@@ -183,6 +183,57 @@ fn appearance_survives_restart_and_legacy_settings_default_to_dark() {
         .unwrap();
         assert_eq!(reopened.settings().unwrap().theme, theme);
     }
+}
+
+#[test]
+fn three_theme_migration_preserves_records_and_is_idempotent() {
+    let (_dir, core) = setup();
+    core.create_project("Preserved project", "Local notes")
+        .unwrap();
+    let config = provider();
+    core.save_provider(&config).unwrap();
+    let db = reconx_storage::Database::open(core.database_path()).unwrap();
+    for (legacy, expected) in [
+        (Some("light"), ThemePreference::Light),
+        (Some("dark"), ThemePreference::Dark),
+        (Some("system"), ThemePreference::Reconx),
+        (None, ThemePreference::Reconx),
+    ] {
+        let mut stored = serde_json::json!({"security_mode":"lab_research","default_provider_id":config.id,"fallback_provider_id":null});
+        if let Some(theme) = legacy {
+            stored["theme"] = serde_json::json!(theme);
+        }
+        db.connect().unwrap().execute("INSERT INTO settings(id,json) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET json=excluded.json", [stored.to_string()]).unwrap();
+        let reopened = Core::with_secrets(
+            Some(core.database_path().to_path_buf()),
+            Arc::new(MemoryStore::default()),
+        )
+        .unwrap();
+        let settings = reopened.settings().unwrap();
+        assert_eq!(settings.theme, expected);
+        assert_eq!(settings.security_mode, SecurityMode::LabResearch);
+        assert_eq!(
+            settings.default_provider_id.as_deref(),
+            Some(config.id.as_str())
+        );
+        assert_eq!(reopened.list_projects(false).unwrap().len(), 1);
+        assert_eq!(reopened.providers().unwrap().len(), 1);
+        let saved: String = db
+            .connect()
+            .unwrap()
+            .query_row("SELECT json FROM settings WHERE id=1", [], |r| r.get(0))
+            .unwrap();
+        let saved: serde_json::Value = serde_json::from_str(&saved).unwrap();
+        assert_eq!(saved["theme"], serde_json::to_value(expected).unwrap());
+        let count = reopened.audit_events().unwrap().len();
+        let again = Core::with_secrets(
+            Some(core.database_path().to_path_buf()),
+            Arc::new(MemoryStore::default()),
+        )
+        .unwrap();
+        assert_eq!(again.audit_events().unwrap().len(), count);
+    }
+    assert_eq!(Settings::default().theme, ThemePreference::Reconx);
 }
 #[test]
 fn unavailable_credential_store_has_no_plaintext_fallback() {

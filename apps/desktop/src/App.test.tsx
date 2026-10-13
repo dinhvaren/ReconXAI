@@ -3,7 +3,7 @@ import { render, screen, waitFor, cleanup, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { invoke } from "@tauri-apps/api/core";
 import App from "./App";
-import type { Settings, Snapshot, ThemePreference } from "./api";
+import type { Settings, Snapshot, AppTheme } from "./api";
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
   Channel: class {
@@ -27,7 +27,7 @@ let current: Snapshot;
 function operation(args: unknown) {
   return (
     args as {
-      request?: { op: string; theme: ThemePreference; settings: Settings };
+      request?: { op: string; theme: AppTheme; settings: Settings };
     }
   )?.request;
 }
@@ -102,9 +102,14 @@ describe("Desktop interactions", () => {
     );
     expect(menuChoice("Light")).toHaveAttribute("aria-checked", "true");
     await user.keyboard("{End}{Enter}");
-    await waitFor(() => expect(current.settings.theme).toBe("system"));
+    await waitFor(() => expect(current.settings.theme).toBe("reconx"));
     await user.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByLabelText("Appearance")).toHaveValue("system");
+    expect(screen.getByLabelText("Appearance")).toHaveValue("reconx");
+    expect(
+      [...screen.getByLabelText("Appearance").querySelectorAll("option")].map(
+        (option) => option.value,
+      ),
+    ).toEqual(["light", "dark", "reconx"]);
     await user.selectOptions(screen.getByLabelText("Appearance"), "dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
     await waitFor(() => expect(current.settings.theme).toBe("dark"));
@@ -116,7 +121,7 @@ describe("Desktop interactions", () => {
       screen.getByRole("button", { name: "Topbar appearance" }),
     ).toHaveFocus();
   });
-  it("follows OS changes only while System is selected", async () => {
+  it("keeps explicit appearance unchanged when operating system appearance changes", async () => {
     const user = userEvent.setup();
     let change: (() => void) | undefined;
     const media = {
@@ -133,15 +138,16 @@ describe("Desktop interactions", () => {
     render(<App />);
     await screen.findByText("Workspace overview");
     await user.click(screen.getByRole("button", { name: "Settings" }));
-    await user.selectOptions(screen.getByLabelText("Appearance"), "system");
-    expect(document.documentElement.dataset.theme).toBe("light");
+    await user.selectOptions(screen.getByLabelText("Appearance"), "reconx");
+    expect(document.documentElement.dataset.theme).toBe("reconx");
     await act(async () => {
       media.matches = true;
       change?.();
     });
-    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("reconx");
     await user.selectOptions(screen.getByLabelText("Appearance"), "light");
-    expect(media.removeEventListener).toHaveBeenCalled();
+    expect(media.addEventListener).not.toHaveBeenCalled();
+    expect(window.matchMedia).not.toHaveBeenCalled();
     expect(document.documentElement.dataset.theme).toBe("light");
   });
   it("preserves unsaved mode edits while theme is saved independently", async () => {
@@ -199,7 +205,7 @@ describe("Desktop interactions", () => {
     render(<App />);
     await screen.findByText("Workspace overview");
     try {
-      for (const mode of ["Light", "System", "Dark"]) {
+      for (const mode of ["Light", "ReconX", "Dark"]) {
         await user.click(
           screen.getByRole("button", { name: "Topbar appearance" }),
         );
@@ -210,7 +216,7 @@ describe("Desktop interactions", () => {
     } finally {
       release();
     }
-    await waitFor(() => expect(writes).toEqual(["light", "system", "dark"]));
+    await waitFor(() => expect(writes).toEqual(["light", "reconx", "dark"]));
     await waitFor(() => expect(current.settings.theme).toBe("dark"));
   });
   it("creates projects through native IPC", async () => {

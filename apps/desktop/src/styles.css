@@ -22,7 +22,11 @@
   font-style: normal;
   font-display: block;
 }
-:root {
+:root,
+:root[data-theme="reconx"] {
+  --rx-workspace-art: url("./assets/art/workspace.svg");
+  --rx-orbital-art: url("./assets/art/orbital.svg");
+  --rx-prism-art: url("./assets/art/prism.svg");
   --font-ui: "DM Sans", "Segoe UI Variable", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
   --text-page: 26px;
@@ -97,42 +101,98 @@
   font-synthesis: none;
 }
 :root[data-theme="light"] {
-  --rx-bg: #f7f4f7;
-  --rx-bg-secondary: #f0eaf1;
+  --rx-bg: #f5f6f8;
+  --rx-bg-secondary: #ffffff;
   --rx-surface: #ffffff;
-  --rx-surface-raised: #faf7fa;
-  --rx-sidebar: #e7dfe9;
-  --rx-sidebar-dark: #ddd2e0;
-  --rx-right-panel: #f0e4ec;
-  --rx-accent: #a62563;
-  --rx-accent-hover: #871b50;
-  --rx-accent-gold: #86541a;
-  --rx-text: #271723;
-  --rx-text-muted: #675565;
-  --rx-border: #ded1dc;
+  --rx-surface-raised: #f0f2f5;
+  --rx-sidebar: #eaecf0;
+  --rx-sidebar-dark: #e1e4e9;
+  --rx-right-panel: #f4f5f7;
+  --rx-text: #181b22;
+  --rx-text-muted: #646b78;
+  --rx-accent: #b42d70;
+  --rx-accent-hover: #92245c;
+  --rx-border: #dde1e7;
   --rx-input: #ffffff;
-  --rx-input-border: #b6a1b2;
-  --rx-nav-active: #d8c5d4;
-  --rx-nav-selected-text: #442338;
-  --rx-nav-text: #33243b;
-  --rx-nav-muted: #594661;
-  --rx-hover: #efe5ed;
-  --rx-right-card: #fff9fc;
-  --rx-right-text: #342330;
-  --rx-right-muted: #675565;
-  --rx-error: #a12542;
+  --rx-input-border: #b6beca;
+  --rx-nav-active: #d5dce6;
+  --rx-nav-selected-text: #181b22;
+  --rx-nav-text: #272d37;
+  --rx-nav-muted: #59616e;
+  --rx-hover: #e8ecf2;
+  --rx-right-card: #ffffff;
+  --rx-right-text: #181b22;
+  --rx-right-muted: #646b78;
+  --rx-error: #aa2942;
   --rx-success: #286b50;
   --rx-warning: #80551c;
-  --rx-code-bg: #f0eaf1;
-  --rx-code-text: #493041;
-  --rx-shadow: rgba(54, 24, 43, 0.09);
-  --rx-faint: #756272;
-  --rx-focus: #a62563;
+  --rx-code-bg: #edf0f4;
+  --rx-code-text: #303946;
+  --rx-shadow: rgba(30, 35, 45, 0.1);
+  --rx-faint: #6d7684;
+  --rx-focus: #b42d70;
   --rx-on-accent: #ffffff;
-  --rx-project-one: #d5c8e0;
-  --rx-project-two: #e5c6d6;
-  --rx-project-three: #deced9;
+  --rx-accent-gold: #687381;
+  --rx-project-one: #dbe1e9;
+  --rx-project-two: #e1e5ec;
+  --rx-project-three: #d4dbe5;
+  --rx-on-art: #181b22;
+  --rx-art-muted: #4f5866;
+  --rx-art-button: #ffffff;
+  --rx-art-button-text: #272d37;
+  --rx-art-overlay: rgba(245, 246, 248, 0.88);
+  --rx-art-border: #ccd3dd;
+  --rx-workspace-art: url("./assets/art/workspace-light.svg");
+  --rx-orbital-art: url("./assets/art/orbital-light.svg");
+  --rx-prism-art: url("./assets/art/prism-light.svg");
   color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --rx-bg: #111318;
+  --rx-bg-secondary: #181b22;
+  --rx-surface: #20242c;
+  --rx-surface-raised: #292e38;
+  --rx-sidebar: #1a1d24;
+  --rx-sidebar-dark: #14171d;
+  --rx-right-panel: #1b1f27;
+  --rx-text: #f1f3f6;
+  --rx-text-muted: #a1a8b5;
+  --rx-accent: #c65d92;
+  --rx-accent-hover: #d976a6;
+  --rx-border: #343a45;
+  --rx-input: #181b22;
+  --rx-input-border: #515b6b;
+  --rx-nav-active: #343b49;
+  --rx-nav-selected-text: #f1f3f6;
+  --rx-nav-text: #dfe4ed;
+  --rx-nav-muted: #b0b8c6;
+  --rx-hover: #343b47;
+  --rx-right-card: #262d37;
+  --rx-right-text: #f1f3f6;
+  --rx-right-muted: #b0b8c6;
+  --rx-error: #ffadba;
+  --rx-success: #a0d9bf;
+  --rx-warning: #dfc49b;
+  --rx-code-bg: #15191f;
+  --rx-code-text: #d9e0ea;
+  --rx-shadow: rgba(0, 0, 0, 0.24);
+  --rx-faint: #a1a8b5;
+  --rx-focus: #cf8aac;
+  --rx-on-accent: #14171d;
+  --rx-accent-gold: #bac4d3;
+  --rx-project-one: #313947;
+  --rx-project-two: #414b5c;
+  --rx-project-three: #353e4d;
+  --rx-on-art: #f1f3f6;
+  --rx-art-muted: #c2cbd8;
+  --rx-art-button: #343c4a;
+  --rx-art-button-text: #f1f3f6;
+  --rx-art-overlay: rgba(17, 19, 24, 0.8);
+  --rx-art-border: #4a5260;
+  --rx-workspace-art: url("./assets/art/workspace-dark.svg");
+  --rx-orbital-art: url("./assets/art/orbital-dark.svg");
+  --rx-prism-art: url("./assets/art/prism-dark.svg");
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
@@ -800,7 +860,7 @@ code,
   margin-bottom: 6px;
 }
 .workspace-feature {
-  background-image: url("./assets/art/workspace.svg");
+  background-image: var(--rx-workspace-art);
   height: 184px;
   position: relative;
   border-radius: 17px;
@@ -929,10 +989,10 @@ code,
   position: relative;
 }
 .cover-orbital {
-  background-image: url("./assets/art/orbital.svg");
+  background-image: var(--rx-orbital-art);
 }
 .cover-prism {
-  background-image: url("./assets/art/prism.svg");
+  background-image: var(--rx-prism-art);
 }
 .cover-label {
   position: absolute;

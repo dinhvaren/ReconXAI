@@ -79,7 +79,7 @@
     {
       "id": "appearance",
       "status": "TESTED",
-      "verification": "Dark/Light/System shared settings, native restart and OS appearance events"
+      "verification": "Exactly Light/Dark/ReconX; synchronized menus/dropdown, immediate storage, three native restarts, no OS following; artifacts/native-1791906555280"
     },
     {
       "id": "project_management",
@@ -165,17 +165,18 @@
     }
   ],
   "verification": {
-    "rust_passed": 29,
+    "rust_passed": 31,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 6,
+    "frontend_passed": 9,
     "frontend_failed": 0,
-    "native_scenarios_passed": 3,
-    "native_checkpoints_per_scenario": 8,
+    "native_scenarios_passed": 2,
+    "native_checkpoints_per_scenario": 9,
     "ui_page_viewport_observations": 50,
-    "debug_record": "artifacts/native-1791901117905/results.json",
-    "release_record": "artifacts/native-1791901611396/results.json",
-    "intermediate_release_record": "artifacts/native-1791901462246/results.json"
+    "theme_page_viewport_observations": 12,
+    "debug_record": "artifacts/native-1791906428229/results.json",
+    "release_record": "artifacts/native-1791906555280/results.json",
+    "preceding_redesign_record": "artifacts/native-1791901611396/results.json"
   }
 }

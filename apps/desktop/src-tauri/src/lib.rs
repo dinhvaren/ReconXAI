@@ -211,15 +211,10 @@ fn apply_window_theme(window: tauri::WebviewWindow, theme: ThemePreference) -> R
     let (native_theme, background) = match theme {
         ThemePreference::Light => (
             tauri::Theme::Light,
-            tauri::window::Color(247, 244, 247, 255),
+            tauri::window::Color(245, 246, 248, 255),
         ),
-        ThemePreference::Dark => (tauri::Theme::Dark, tauri::window::Color(49, 0, 25, 255)),
-        ThemePreference::System => {
-            return Err(AppError::new(
-                "INVALID_INPUT",
-                "Window theme must be resolved to light or dark",
-            ));
-        }
+        ThemePreference::Dark => (tauri::Theme::Dark, tauri::window::Color(17, 19, 24, 255)),
+        ThemePreference::Reconx => (tauri::Theme::Dark, tauri::window::Color(49, 0, 25, 255)),
     };
     let map_error = |_| {
         AppError::new(

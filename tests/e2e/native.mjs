@@ -3,13 +3,14 @@ import { createServer } from 'node:http';
 import { createServer as createNetServer } from 'node:net';
 import { spawn, execFile, spawnSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const originalPalette=JSON.parse(await readFile(path.join(root,'docs','palettes','reconx-original.json'),'utf8')).tokens;
 const artifact=path.join(root,'artifacts',`native-${Date.now()}`);
 await mkdir(artifact,{recursive:true});
 const exec=promisify(execFile);
@@ -82,7 +83,7 @@ async function capture(page,name){
 }
 try{
   let page=await launch();
-  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
   await chooseTheme(page,'Light');
   await page.locator('html[data-theme="light"]').waitFor();
   assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'light');
@@ -105,13 +106,13 @@ try{
   await page.getByRole('heading',{name:'Local workspace',exact:true}).waitFor();
   await page.getByLabel('Current project',{exact:true}).selectOption(listed[0].id);
   await page.getByRole('button',{name:'Settings',exact:true}).click();
-  await page.getByLabel('Appearance',{exact:true}).selectOption('system');
+  await page.getByLabel('Appearance',{exact:true}).selectOption('reconx');
   await page.getByText('Saving appearance…',{exact:true}).waitFor({state:'hidden'});
-  assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'system');
+  assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'reconx');
   await page.emulateMedia({colorScheme:'dark'});
-  await page.locator('html[data-theme="dark"]').waitFor();
+  await page.locator('html[data-theme="reconx"]').waitFor();
   await page.emulateMedia({colorScheme:'light'});
-  await page.locator('html[data-theme="light"]').waitFor();
+  await page.locator('html[data-theme="reconx"]').waitFor();
   await page.getByLabel('Security mode').selectOption('lab_research');
   await chooseTheme(page,'Light','Sidebar');
   assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'light');
@@ -170,7 +171,7 @@ try{
   await delay(350);
   const visualStyles=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,root:getComputedStyle(document.documentElement).getPropertyValue('--rx-surface'),nav:getComputedStyle(document.querySelector('.nav-item')).color,card:getComputedStyle(document.querySelector('.feature-card')).backgroundColor,art:getComputedStyle(document.querySelector('.workspace-feature')).backgroundImage.slice(0,100)}));
   await writeFile(path.join(artifact,'visual-styles.json'),JSON.stringify(visualStyles,null,2));
-  results.push('Centralized Light/Dark/System controls apply immediately, synchronize with Settings, preserve draft preferences, persist to CLI/restart and react to OS appearance');
+  results.push('Exactly Light/Dark/ReconX apply immediately, synchronize with Settings, preserve draft preferences, persist to CLI/restart and do not follow OS appearance');
   await page.screenshot({path:path.join(artifact,'dashboard.png'),fullPage:true});
   if(process.env.RECONX_E2E_VISUAL==='1'){
     const art=await page.locator('.workspace-feature').evaluate(el=>getComputedStyle(el).backgroundImage);
@@ -239,8 +240,14 @@ try{
   }
   if(process.env.RECONX_E2E_VISUAL==='1'){
     const appearanceChecks=[];
-    for(const mode of ['Dark','Light']){
+    for(const mode of ['Dark','Light','ReconX']){
       await chooseTheme(page,mode);
+      const colors=await page.evaluate(()=>({main:getComputedStyle(document.querySelector('.main-workspace')).backgroundColor,rail:getComputedStyle(document.querySelector('.icon-rail')).backgroundColor,nav:getComputedStyle(document.querySelector('.navigation-sidebar')).backgroundColor,right:getComputedStyle(document.querySelector('.activity-sidebar')).backgroundColor}));
+      assert.equal(colors.main,mode==='Light'?'rgb(245, 246, 248)':mode==='Dark'?'rgb(17, 19, 24)':'rgb(49, 0, 25)');
+      if(mode==='ReconX'){
+        const actual=await page.evaluate(()=>Object.fromEntries([...getComputedStyle(document.documentElement)].filter(key=>key.startsWith('--rx-')).map(key=>[key,getComputedStyle(document.documentElement).getPropertyValue(key).trim()])));
+        for(const [key,value] of Object.entries(originalPalette))if(/^#[a-f0-9]{6}$/i.test(value))assert.equal(actual[key],value,`Original palette token ${key} is preserved`);
+      }
       for(const module of ['Dashboard','Settings']){
         await page.getByRole('button',{name:module,exact:true}).click();
         for(const [width,height] of [[1920,1080],[1366,768]]){
@@ -259,6 +266,7 @@ try{
           appearanceChecks.push({page:module,width,height,...typography});
           await capture(page,`theme-${mode.toLowerCase()}-${module.toLowerCase()}-${width}x${height}.png`);
           await page.getByRole('button',{name:'Topbar appearance',exact:true}).click();
+          assert.deepEqual(await page.getByRole('menuitemradio').evaluateAll(items=>items.map(item=>item.querySelector('b').textContent)),['Light','Dark','ReconX']);
           assert.equal(await page.getByRole('menuitemradio',{name:new RegExp('^'+mode)}).getAttribute('aria-checked'),'true');
           await capture(page,`theme-${mode.toLowerCase()}-menu-${width}x${height}.png`);await page.keyboard.press('Escape');
           await page.getByRole('button',{name:'Topbar appearance',exact:true}).click();await page.keyboard.press('Tab');
@@ -268,16 +276,17 @@ try{
       }
     }
     await page.getByRole('button',{name:'Sidebar appearance',exact:true}).focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('End');await page.keyboard.press('Enter');
-    assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'system');
-    await page.emulateMedia({colorScheme:'dark'});await page.locator('html[data-theme="dark"]').waitFor();
-    await page.emulateMedia({colorScheme:'light'});await page.locator('html[data-theme="light"]').waitFor();
+    assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'reconx');
+    assert.deepEqual(await page.getByLabel('Appearance',{exact:true}).locator('option').evaluateAll(options=>options.map(option=>option.value)),['light','dark','reconx']);
+    await page.emulateMedia({colorScheme:'dark'});assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
+    await page.emulateMedia({colorScheme:'light'});assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
     await page.getByText('Saving appearance…',{exact:true}).waitFor({state:'hidden'});
-    assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'system');
-    await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme-preference'),'system');
-    await page.emulateMedia({colorScheme:'dark'});await page.locator('html[data-theme="dark"]').waitFor();
+    assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'reconx');
+    await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
+    await chooseTheme(page,'Dark');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
     await chooseTheme(page,'Light');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
     await writeFile(path.join(artifact,'appearance-matrix.json'),JSON.stringify(appearanceChecks,null,2));
-    results.push('DM Sans/IBM Plex Mono load locally; no visible text below 12px or clipped navigation at 1366/1920; both themes, both menus, Settings, dialogs, keyboard, OS changes and Light/System restarts verified');
+    results.push('DM Sans/IBM Plex Mono load locally; no visible text below 12px or clipped navigation at 1366/1920; Light/Dark/ReconX, both menus, Settings, dialogs, keyboard, OS independence and all three restarts verified');
   }
   await writeFile(path.join(artifact,'results.json'),JSON.stringify({status:'passed',platform:process.platform,desktop,cli,results,calls},null,2));
   console.log(JSON.stringify({status:'passed',artifact,checks:results},null,2));

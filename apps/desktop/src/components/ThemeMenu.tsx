@@ -2,9 +2,9 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTheme } from "../theme";
 import { Icon } from "./ui";
-import type { ThemePreference } from "../api";
+import type { AppTheme } from "../api";
 const choices: {
-  value: ThemePreference;
+  value: AppTheme;
   label: string;
   detail: string;
   icon: string;
@@ -22,10 +22,10 @@ const choices: {
     icon: "moon",
   },
   {
-    value: "system",
-    label: "System",
-    detail: "Follow operating system",
-    icon: "monitor",
+    value: "reconx",
+    label: "ReconX",
+    detail: "Original burgundy workspace",
+    icon: "palette",
   },
 ];
 export default function ThemeMenu({
@@ -100,9 +100,9 @@ export default function ThemeMenu({
       >
         <Icon
           name={
-            theme.preference === "system"
-              ? "monitor"
-              : theme.resolved === "dark"
+            theme.preference === "reconx"
+              ? "palette"
+              : theme.preference === "dark"
                 ? "moon"
                 : "sun"
           }

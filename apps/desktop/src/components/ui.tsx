@@ -14,6 +14,8 @@ export const iconPaths: Record<string, string> = {
   sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M5 19l1.5-1.5 M17.5 6.5L19 5",
   moon: "M20.7 13.2A9 9 0 0 1 10.8 3.3 9 9 0 1 0 20.7 13.2z",
   monitor: "M3 3h18v13H3z M12 16v5 M7 21h10",
+  palette:
+    "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-4c-1-1 0-3 2-3h2a3 3 0 0 0 3-3c0-5-4-8-9-8 M7 9h.01 M10 6h.01 M15 6h.01 M18 9h.01",
   search: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15 M16 16l5 5",
   bell: "M6 9a6 6 0 0 1 12 0v7l2 2H4l2-2z M10 21h4",
   close: "M5 5l14 14 M19 5L5 19",
@@ -130,6 +132,7 @@ export function ActivityItem({
     "provider.saved": "Model configured",
     "provider.deleted": "Provider removed",
     "settings.updated": "Preferences updated",
+    "settings.migrated": "Appearance migrated",
     "ai.models": "Model discovery",
     "ai.chat": "Assistant response",
     "ai.stream": "Streamed analysis",

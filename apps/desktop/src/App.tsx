@@ -4,7 +4,7 @@ import {
   errorText,
   type Snapshot,
   type ToolInventory,
-  type ThemePreference,
+  type AppTheme,
 } from "./api";
 import { ThemeProvider, useTheme } from "./theme";
 import ThemeMenu from "./components/ThemeMenu";
@@ -27,11 +27,7 @@ const initials = (name: string) =>
     .map((s) => s[0])
     .join("")
     .toUpperCase();
-export default function App({
-  initialTheme,
-}: {
-  initialTheme?: ThemePreference;
-}) {
+export default function App({ initialTheme }: { initialTheme?: AppTheme }) {
   return (
     <ThemeProvider initialTheme={initialTheme}>
       <Workbench />

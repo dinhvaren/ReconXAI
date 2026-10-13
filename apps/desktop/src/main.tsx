@@ -3,12 +3,12 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import { invoke } from "@tauri-apps/api/core";
-import { request, errorText, type ThemePreference } from "./api";
+import { request, errorText, type AppTheme } from "./api";
 import { applyTheme } from "./theme";
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 async function bootstrap() {
   try {
-    const initialTheme = await request<ThemePreference>("get_theme");
+    const initialTheme = await request<AppTheme>("get_theme");
     applyTheme(initialTheme);
     root.render(
       <React.StrictMode>
@@ -26,7 +26,7 @@ async function bootstrap() {
         </button>
       </main>,
     );
-    await invoke("apply_window_theme", { theme: "dark" }).catch(() => {});
+    await invoke("apply_window_theme", { theme: "reconx" }).catch(() => {});
   }
 }
 void bootstrap();

@@ -9,46 +9,37 @@ import {
   type ReactNode,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { errorText, request, type Settings, type ThemePreference } from "./api";
+import { errorText, request, type Settings, type AppTheme } from "./api";
 
-export function resolveTheme(preference: ThemePreference): "light" | "dark" {
-  return preference === "system"
-    ? window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light"
-    : preference;
-}
-export function applyTheme(preference: ThemePreference) {
-  const resolved = resolveTheme(preference);
-  document.documentElement.dataset.theme = resolved;
+export function applyTheme(preference: AppTheme) {
+  document.documentElement.dataset.theme = preference;
   document.documentElement.dataset.themePreference = preference;
-  document.documentElement.style.colorScheme = resolved;
-  return resolved;
+  document.documentElement.style.colorScheme =
+    preference === "light" ? "light" : "dark";
+  return preference;
 }
 interface ThemeState {
-  preference: ThemePreference;
-  resolved: "light" | "dark";
+  preference: AppTheme;
   saving: boolean;
   error: string;
   activeMenu: string | null;
   setActiveMenu: (menu: string | null) => void;
-  setTheme: (preference: ThemePreference) => Promise<void>;
+  setTheme: (preference: AppTheme) => Promise<void>;
   savePreferences: (settings: Omit<Settings, "theme">) => Promise<void>;
-  syncFromStorage: (preference: ThemePreference, revision: number) => void;
+  syncFromStorage: (preference: AppTheme, revision: number) => void;
   getRevision: () => number;
   clearError: () => void;
 }
 const ThemeContext = createContext<ThemeState | null>(null);
 
 export function ThemeProvider({
-  initialTheme = "dark",
+  initialTheme = "reconx",
   children,
 }: {
-  initialTheme?: ThemePreference;
+  initialTheme?: AppTheme;
   children: ReactNode;
 }) {
   const [preference, setPreference] = useState(initialTheme);
-  const [resolved, setResolved] = useState(() => resolveTheme(initialTheme));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -59,7 +50,7 @@ export function ThemeProvider({
   const queue = useRef<Promise<void>>(Promise.resolve());
   const getRevision = useCallback(() => revision.current, []);
   const syncFromStorage = useCallback(
-    (theme: ThemePreference, readRevision: number) => {
+    (theme: AppTheme, readRevision: number) => {
       if (pending.current || readRevision !== revision.current) return;
       desired.current = committed.current = theme;
       setPreference(theme);
@@ -68,11 +59,7 @@ export function ThemeProvider({
   );
 
   useLayoutEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => setResolved(applyTheme(preference));
-    apply();
-    if (preference === "system") media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    applyTheme(preference);
   }, [preference]);
 
   useEffect(() => {
@@ -91,14 +78,14 @@ export function ThemeProvider({
       )
       .then(() => {
         if (!cancelled)
-          void invoke("apply_window_theme", { theme: resolved }).catch((e) =>
+          void invoke("apply_window_theme", { theme: preference }).catch((e) =>
             setError(errorText(e)),
           );
       });
     return () => {
       cancelled = true;
     };
-  }, [resolved]);
+  }, [preference]);
 
   function enqueue(write: () => Promise<void>): Promise<void> {
     pending.current += 1;
@@ -110,7 +97,7 @@ export function ThemeProvider({
     queue.current = task.catch(() => {});
     return task;
   }
-  function setTheme(theme: ThemePreference): Promise<void> {
+  function setTheme(theme: AppTheme): Promise<void> {
     const change = ++revision.current;
     desired.current = theme;
     setPreference(theme);
@@ -144,7 +131,6 @@ export function ThemeProvider({
     <ThemeContext.Provider
       value={{
         preference,
-        resolved,
         saving,
         error,
         activeMenu,

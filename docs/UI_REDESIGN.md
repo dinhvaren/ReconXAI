@@ -1,5 +1,7 @@
 # ReconX AI UI redesign
 
+Current appearance has exactly Light/Dark/ReconX with bundled DM Sans/IBM Plex Mono. The original visual composition/artwork is retained. Early audit/verification below documents the previous redesign; THEMES.md describes the active palette split, removal of OS-following mode, safe migration and latest runtime checks.
+
 ## Reference audit
 
 Downloaded and visually inspected the supplied Figma reference on 2026-10-13. Local reference: artifacts/design-reference/reference.png. It is a design reference only; reference branding, community content and artwork will not be shipped.

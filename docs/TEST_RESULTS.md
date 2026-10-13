@@ -2,44 +2,44 @@
 
 Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-13.
 
-## Latest checks
+## Current three-theme verification
 
-- scripts/verify.ps1: Rust format, Clippy with warnings denied, workspace tests, frontend TypeScript/Vite build and frontend tests passed.
-- Rust workspace: 29 passed, 0 failed, 1 ignored by default.
-- cargo test --locked -p reconx-ai --test gateway real_os_secret_round_trip -- --ignored: 1 passed; ephemeral Windows credential entry removed.
-- npm test after the added keyboard-search regression: 6 passed, 0 failed.
-- Final npm run build after correcting the test's ByRoleOptions types: passed (TypeScript and Vite).
-- scripts/build.ps1: optimized Windows CLI and embedded Tauri desktop built successfully. Artifacts and SHA256SUMS.txt are in artifacts/windows-x64.
-- scripts/verify.ps1 PowerShell parser check: passed after adding -Visual.
-- git diff --check: passed (line-ending notices are informational).
+Command: scripts/verify.ps1 -Native -Visual -ToolInstall.
 
-## Native debug and release scenarios
+- Rust formatting and Clippy with warnings denied: passed.
+- Rust workspace: 31 passed, 0 failed, 1 ignored by default.
+- Frontend TypeScript/Vite build: passed.
+- Frontend tests: 9 passed, 0 failed.
+- Native embedded Tauri/CLI debug build and run: passed, nine checkpoints.
+- Optimized Windows Tauri/CLI build and run: passed, nine checkpoints.
+- Explicit Windows OS credential round trip previously passed with an ephemeral entry removed; native scenarios also verify masked credential set/status/removal.
 
-Debug: artifacts/native-1791901117905/results.json, eight passing checkpoints. Release: artifacts/native-1791901462246/results.json, eight passing checkpoints. Final expanded release matrix: artifacts/native-1791901611396/results.json, eight passing checkpoints. Executed with RECONX_E2E_VISUAL=1 and RECONX_E2E_TOOL_INSTALL=1; release tests select the generated release executable paths.
+Debug record: artifacts/native-1791906428229/results.json. Release record: artifacts/native-1791906555280/results.json. Release tests use target/release executables with RECONX_E2E_VISUAL=1 and RECONX_E2E_TOOL_INSTALL=1.
 
-Checkpoints:
+scripts/build.ps1 generated final portable binaries, SHA256SUMS.txt and bundled font notices in artifacts/windows-x64. The old normal window closed gracefully and the new executable opened with a valid ReconX AI window handle. Normal saved system preference migrated to reconx; security mode and default/fallback provider settings compared equal before/after. No project database was reset. A window-only Win32 capture is saved at artifacts/windows-x64/desktop-preview.png.
 
-1. Desktop project creation is visible to CLI through the shared database.
-2. CLI project creation is visible to desktop.
-3. Provider discovery, text and streaming requests work through both interfaces against an owned loopback HTTP fixture.
-4. Native cancellation interrupts streaming and persists a cancelled audit outcome.
-5. Projects, provider configuration and settings survive full native restart.
-6. Dark/Light preferences persist and System responds to emulated OS appearance changes.
-7. Search, panel collapse, notification dialog/Escape, context resizing/tabs and masked OS credential store/status/removal work. Dashboard plus nine secondary pages fit all five desktop viewports without document/workspace horizontal overflow.
-8. Actual pinned official ripgrep download, archive/executable SHA-256 verification, desktop/CLI inventory, fixed version health checks and uninstall work.
+## Runtime checkpoints
 
-Final viewport-matrix.json contains 50 page/viewport observations: 1920x1080, 1600x900, 1440x900, 1366x768 and 1280x720 for Dashboard, Projects, AI Workspace, Settings, MCP Hub, Tool Manager, Reconnaissance, Findings, Reverse Engineering and Reports. Screenshots are beside the record. Dashboard, light appearance, secondary pages, narrow layouts and collapsed shell were visually inspected against the downloaded reference.
+1. Desktop project creation is visible to CLI in the shared SQLite database.
+2. CLI project creation is visible to desktop. Explicit Local workspace context works.
+3. Provider discovery and CLI/native text/streaming work against an owned loopback fixture.
+4. Native cancellation interrupts the response and records a cancelled audit outcome.
+5. Projects, provider configuration and settings survive complete process restart.
+6. Exactly Light/Dark/ReconX apply immediately from synchronized controls, preserve unsaved Settings edits and share persistence with CLI. OS appearance changes do not select another theme.
+7. Search, panel collapse, notifications/Escape, context resizing/tabs and masked credential operations work. Dashboard and nine pages fit all five requested desktop viewports.
+8. Actual official pinned ripgrep install, archive/executable SHA-256 verification, CLI/native inventory, version health check and uninstall work.
+9. DM Sans/IBM Plex Mono load where used. Dashboard/Settings, menus and dialogs render in all three themes at 1366x768 and 1920x1080. Titles are 26px, navigation 14px, no visible text/control below 12px, and navigation labels do not clip. Keyboard arrows, selection, Escape and Tab work. Each theme survives restart; the exact menu/dropdown choices and preserved ReconX color tokens are asserted.
 
-These are real native WebView2 captures with emulated content viewports. Physical monitor scaling, Windows chrome, Linux rendering and future module execution are not verified by them. Fixture projects, model replies and credentials are clearly test data and are isolated from normal user data. No stored user API keys were captured.
+viewport-matrix.json has 50 page/size observations across 1920x1080, 1600x900, 1440x900, 1366x768 and 1280x720. appearance-matrix.json has 12 observations (three themes, two pages, two sizes). Screenshots are beside each record, including theme-light-dashboard-1920x1080.png, theme-dark-dashboard-1920x1080.png and theme-reconx-dashboard-1920x1080.png. Light/charcoal Dark/burgundy ReconX Dashboard, Settings and menu screenshots were captured and visually inspected. Original ReconX tokens are frozen in docs/palettes/reconx-original.json from revision ac18d15 and verified against native computed values.
 
-The normal release application was also opened visibly with the existing default database and Dark appearance. A window-only Win32 capture was inspected at artifacts/windows-x64/desktop-preview.png, showing the actual Windows title bar and native content. This establishes this local window's rendering, not multiple physical monitors or DPI scales. The running release process had title ReconX AI and a valid main window handle.
+## Regression and migration coverage
 
-## Regression coverage and resolved failures
+Rust tests include transactional theme-only updates, all old light/dark/system/missing migration cases, canonical persisted values, preservation of project/provider/mode/routing records and idempotent reopening. Frontend tests cover menu/dropdown synchronization, immediate saving, draft protection, write failure rollback, rapid write serialization and absence of an OS appearance listener, alongside existing project/error/navigation checks.
 
-Rust coverage includes migrations, CLI parsing/errors, concurrent writers, project persistence/archive/import/export, appearance compatibility, gateway policy, credential binding, provider payloads/model lists/redaction, streaming/cancellation, safe fallback without HTTP replay and installer integrity/preservation of unexpected files. Frontend coverage verifies project/settings IPC, errors, theme persistence/OS updates and keyboard navigation with an unconfigured provider.
+Existing coverage remains for SQLite migrations, CLI parsing/errors, project archive/import/export, concurrent writers, credentials/gateway isolation, provider protocol parsing/redaction, streaming/cancellation, fallback without ambiguous replay and installer integrity/safe uninstall.
 
-The hero initially failed to display because of an unquoted inline SVG data URL; bundled CSS assets fixed it and native tests assert a rendered background. Planned marker titles initially changed accessible navigation names; explicit labels fixed native selection. Screenshots wait for fonts/repaint. A new unit test expected an outdated empty-state phrase; it now checks the disabled send control and passes. The same test incorrectly used Playwright's exact option in Testing Library ByRoleOptions; removing that unsupported option fixed the final TypeScript build. No known failing introduced checks remain.
+## Limits and history
 
-## Unverified scope
+Captures are emulated content viewports inside actual native WebView2. Multiple physical monitors/DPI, Linux/ARM64, live cloud accounts, CI execution and installer generation/installation remain unverified. Future analysis/MCP/workflow/reporting services remain unimplemented. Fixture responses are protocol test data, not research findings. No user API keys were captured and no public targets were tested.
 
-Cloud accounts, Linux/ARM64, installer generation/installation, CI execution and future analysis/MCP/workflow/reporting services remain unverified or unimplemented. A portable binary build does not establish installer operation. No public infrastructure was actively tested. Previous pre-redesign foundation records remain under artifacts/native-1791894959180 and artifacts/native-1791895084172.
+The preceding typography repair used Light/Dark/System; that mode is now removed. Its records remain under artifacts/native-1791904765297 and artifacts/native-1791905144941. Earlier original redesign records remain under artifacts/native-1791901611396. Native profile contention was resolved with an isolated WEBVIEW2_USER_DATA_FOLDER. No known failing introduced build/runtime checks remain.
