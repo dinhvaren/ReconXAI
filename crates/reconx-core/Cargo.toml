@@ -1,0 +1,20 @@
+[package]
+name = "reconx-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+reconx-security.workspace = true
+reconx-storage.workspace = true
+reconx-ai.workspace = true
+reconx-tools.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+directories.workspace = true
+tokio.workspace = true
+zeroize.workspace = true
+sha2.workspace = true
+[dev-dependencies]
+tempfile.workspace = true

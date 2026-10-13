@@ -1,0 +1,12 @@
+CREATE TABLE projects (
+ id TEXT PRIMARY KEY, name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+ description TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ archived INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0,1))
+);
+CREATE TABLE settings (id INTEGER PRIMARY KEY CHECK (id = 1), json TEXT NOT NULL);
+CREATE TABLE providers (id TEXT PRIMARY KEY, name TEXT NOT NULL COLLATE NOCASE UNIQUE, json TEXT NOT NULL);
+CREATE TABLE audit_events (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL,
+ entity_id TEXT NOT NULL, outcome TEXT NOT NULL, timestamp TEXT NOT NULL
+);
+CREATE INDEX audit_timestamp ON audit_events(timestamp);

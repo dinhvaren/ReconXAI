@@ -1,0 +1,15 @@
+[package]
+name = "reconx-ai"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+reconx-security.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+keyring.workspace = true
+zeroize.workspace = true
+uuid.workspace = true
+[dev-dependencies]

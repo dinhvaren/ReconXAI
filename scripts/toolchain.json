@@ -1,0 +1,17 @@
+{
+  "rust": "1.95.0",
+  "rust_host": "x86_64-pc-windows-msvc",
+  "node": "24.15.0",
+  "npm": "11.7.0",
+  "verified_on": "2026-10-13",
+  "dependency_locks": [
+    "Cargo.lock",
+    "apps/desktop/package-lock.json"
+  ],
+  "windows_prerequisites": [
+    "Visual Studio 2022 C++ Build Tools",
+    "Windows SDK",
+    "WebView2 Runtime"
+  ],
+  "privileged_installation_performed": false
+}

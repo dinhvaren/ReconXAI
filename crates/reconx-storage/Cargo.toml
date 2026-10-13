@@ -1,0 +1,10 @@
+[package]
+name = "reconx-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+rusqlite.workspace = true
+reconx-security.workspace = true
+[dev-dependencies]
+tempfile.workspace = true

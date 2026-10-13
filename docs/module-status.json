@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "updated": "2026-10-13",
+  "verified_platforms": [
+    "windows-x86_64"
+  ],
+  "unverified_platforms": [
+    "linux-x86_64",
+    "linux-aarch64",
+    "windows-aarch64"
+  ],
+  "phases": [
+    {
+      "id": "foundation",
+      "status": "TESTED"
+    },
+    {
+      "id": "ai_integration",
+      "status": "IN_PROGRESS",
+      "remaining": [
+        "live providers",
+        "advanced configuration",
+        "cost/rate/budget accounting",
+        "per-agent routing"
+      ]
+    },
+    {
+      "id": "tool_manager",
+      "status": "IN_PROGRESS",
+      "remaining": [
+        "profiles",
+        "dependency graphs",
+        "updates/rollback",
+        "installer cancellation",
+        "other adapters"
+      ]
+    },
+    {
+      "id": "mcp_hub",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "workflow_engine",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "reconnaissance",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "security_analysis",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "reporting",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "packaging_ci",
+      "status": "IN_PROGRESS",
+      "remaining": [
+        "installer validation",
+        "CI execution",
+        "Linux verification",
+        "signing"
+      ]
+    },
+    {
+      "id": "extended_modules",
+      "status": "NOT_STARTED"
+    }
+  ],
+  "modules": [
+    {
+      "id": "project_management",
+      "status": "TESTED"
+    },
+    {
+      "id": "sqlite_migrations",
+      "status": "TESTED"
+    },
+    {
+      "id": "settings",
+      "status": "TESTED"
+    },
+    {
+      "id": "native_desktop",
+      "status": "TESTED",
+      "verification": "Windows release native WebView2 workflow"
+    },
+    {
+      "id": "cli",
+      "status": "TESTED"
+    },
+    {
+      "id": "provider_configuration",
+      "status": "TESTED"
+    },
+    {
+      "id": "ai_protocol_adapters",
+      "status": "TESTED",
+      "verification": "local fixture protocols; cloud accounts unverified"
+    },
+    {
+      "id": "os_credentials",
+      "status": "TESTED",
+      "verification": "Windows ephemeral round trip"
+    },
+    {
+      "id": "credential_binding",
+      "status": "TESTED"
+    },
+    {
+      "id": "ai_streaming",
+      "status": "TESTED",
+      "verification": "five protocol fixture families and native compatible-gateway streaming"
+    },
+    {
+      "id": "ai_cancellation",
+      "status": "TESTED",
+      "verification": "native cancellation and persisted audit outcome"
+    },
+    {
+      "id": "ai_connection_fallback",
+      "status": "TESTED",
+      "verification": "local connection refusal and no replay after HTTP failure"
+    },
+    {
+      "id": "tool_installation",
+      "status": "TESTED",
+      "verification": "Windows ripgrep official archive/binary SHA-256; native desktop and CLI"
+    },
+    {
+      "id": "tool_health_uninstall",
+      "status": "TESTED"
+    },
+    {
+      "id": "windows_portable_release",
+      "status": "TESTED"
+    },
+    {
+      "id": "ci_configuration",
+      "status": "IMPLEMENTED",
+      "verification": "YAML parsed; workflows not run"
+    },
+    {
+      "id": "windows_installer",
+      "status": "NOT_STARTED",
+      "note": "configuration present; generation and installation unverified"
+    },
+    {
+      "id": "linux_packaging",
+      "status": "NOT_STARTED",
+      "note": "configuration present; CI and packages unverified"
+    }
+  ],
+  "verification": {
+    "rust_passed": 28,
+    "rust_failed": 0,
+    "rust_ignored_default": 1,
+    "explicit_os_secret_test_passed": 1,
+    "frontend_passed": 3,
+    "frontend_failed": 0,
+    "native_scenarios_passed": 2,
+    "native_checkpoints_per_scenario": 6,
+    "debug_record": "artifacts/native-1791894959180/results.json",
+    "release_record": "artifacts/native-1791895084172/results.json"
+  }
+}

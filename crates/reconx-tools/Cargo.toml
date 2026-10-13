@@ -1,0 +1,17 @@
+[package]
+name = "reconx-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+reconx-security.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+reqwest.workspace = true
+tokio = { workspace = true, features = ["process", "io-util"] }
+tempfile.workspace = true
+chrono.workspace = true
+zip = { version = "9.0.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+tar = "0.4.46"
+flate2 = "1"
