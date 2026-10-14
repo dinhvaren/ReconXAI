@@ -1,9 +1,12 @@
 use reconx_core::{
-    AppError, Core, ProjectExport, ProviderConfig, Result, Settings, ThemePreference, ToolProgress,
+    AppError, Core, ProjectExport, ProviderConfig, Result, Settings, TargetExport, TargetInput,
+    ThemePreference, ToolProgress,
 };
 use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashMap, sync::Mutex};
+use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 use tokio::sync::watch;
 use zeroize::Zeroizing;
 
@@ -79,6 +82,73 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    TargetsList {
+        project: Option<String>,
+    },
+    TargetShow {
+        id: String,
+    },
+    TargetCreate {
+        input: TargetInput,
+    },
+    TargetUpdate {
+        id: String,
+        input: TargetInput,
+    },
+    TargetRemove {
+        id: String,
+    },
+    TargetsImport {
+        export: TargetExport,
+    },
+    TargetsImportFile {
+        path: std::path::PathBuf,
+    },
+    TargetsExport {
+        project: Option<String>,
+    },
+    TargetsExportFile {
+        project: Option<String>,
+        path: std::path::PathBuf,
+    },
+    ScopeValidate {
+        id: String,
+        candidate: Option<String>,
+    },
+    FilesList {
+        project: Option<String>,
+    },
+    FileImport {
+        project: String,
+        path: std::path::PathBuf,
+        authorized: bool,
+        folder: bool,
+    },
+    FileImportTarget {
+        id: String,
+    },
+    FileRemove {
+        id: String,
+    },
+    FileAnalysis {
+        id: String,
+    },
+    FilesCompare {
+        a: String,
+        b: String,
+    },
+    JobsList {
+        project: Option<String>,
+    },
+    JobShow {
+        id: String,
+    },
+    JobCancel {
+        id: String,
+    },
+    FileAnalyze {
+        id: String,
+    },
     Snapshot,
     GetTheme,
     SetTheme {
@@ -146,6 +216,96 @@ fn value(item: impl serde::Serialize) -> Result<Value> {
 }
 fn local(core: Core, request: Request) -> Result<Value> {
     match request {
+        Request::TargetsList { project } => value(core.list_targets(project.as_deref())?),
+        Request::TargetShow { id } => value(core.target(&id)?),
+        Request::TargetCreate { input } => value(core.create_target(input)?),
+        Request::TargetUpdate { id, input } => value(core.update_target(&id, input)?),
+        Request::TargetRemove { id } => {
+            core.remove_target(&id)?;
+            Ok(Value::Null)
+        }
+        Request::TargetsImport { export } => value(core.import_targets(export)?),
+        Request::TargetsImportFile { path } => {
+            use std::io::Read;
+            let mut bytes = Vec::new();
+            let file = std::fs::File::open(path)
+                .map_err(|_| AppError::new("FILE_IO", "Cannot read target list"))?;
+            file.take(1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .map_err(|_| AppError::new("FILE_IO", "Cannot read target list"))?;
+            if bytes.len() > 1024 * 1024 {
+                return Err(AppError::new("INPUT_LIMIT", "Target list exceeds 1 MiB"));
+            }
+            let export = serde_json::from_slice(&bytes).map_err(|_| {
+                AppError::new("INVALID_IMPORT", "Expected a version-1 target export JSON")
+            })?;
+            value(core.import_targets(export)?)
+        }
+        Request::TargetsExport { project } => value(core.export_targets(project.as_deref())?),
+        Request::TargetsExportFile { project, path } => {
+            use std::io::Write;
+            let bytes = serde_json::to_vec_pretty(&core.export_targets(project.as_deref())?)
+                .map_err(|_| AppError::new("INVALID_DATA", "Cannot serialize targets"))?;
+            let mut file = std::fs::OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(path)
+                .map_err(|_| {
+                    AppError::new(
+                        "FILE_IO",
+                        "Choose a writable export path that does not exist",
+                    )
+                })?;
+            file.write_all(&bytes)
+                .map_err(|_| AppError::new("FILE_IO", "Cannot write target export"))?;
+            Ok(Value::Null)
+        }
+        Request::ScopeValidate { id, candidate } => {
+            value(core.validate_scope(&id, candidate.as_deref())?)
+        }
+        Request::FilesList { project } => value(core.list_files(project.as_deref())?),
+        Request::FileImport {
+            project,
+            path,
+            authorized,
+            folder,
+        } => {
+            if folder {
+                value(core.import_folder(&project, &path, authorized)?)
+            } else {
+                value(core.import_file(&project, &path, authorized)?)
+            }
+        }
+        Request::FileImportTarget { id } => {
+            let target = core.target(&id)?;
+            let decision = core.validate_scope(&id, None)?;
+            if decision.status != "allowed" {
+                return Err(AppError::new("BLOCKED_BY_POLICY", &decision.reason));
+            }
+            if !target.input.kind.local_file() {
+                return Err(AppError::new(
+                    "UNSUPPORTED_TARGET",
+                    "Only local binary, library, firmware or APK targets can be imported here",
+                ));
+            }
+            value(core.import_file(
+                &target.input.project_id,
+                std::path::Path::new(&target.input.value),
+                target.input.authorized,
+            )?)
+        }
+        Request::FileRemove { id } => {
+            core.remove_file(&id)?;
+            Ok(Value::Null)
+        }
+        Request::FileAnalysis { id } => value(core.file_analysis(&id)?),
+        Request::FilesCompare { a, b } => value(core.compare_files(&a, &b)?),
+        Request::JobsList { project } => value(core.list_jobs(project.as_deref())?),
+        Request::JobShow { id } => value(core.job(&id)?),
+        Request::JobCancel { id } => {
+            core.cancel_job(&id)?;
+            Ok(Value::Null)
+        }
         Request::Snapshot => value(core.snapshot()?),
         Request::GetTheme => value(core.settings()?.theme),
         Request::SetTheme { theme } => value(core.set_theme(theme)?),
@@ -198,6 +358,17 @@ fn local(core: Core, request: Request) -> Result<Value> {
 async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value> {
     let core = core.inner().clone();
     match request {
+        Request::FileAnalyze { id } => {
+            let worker = core.clone();
+            let job = tauri::async_runtime::spawn_blocking(move || worker.begin_file_analysis(&id))
+                .await
+                .map_err(|_| AppError::new("WORKER_ERROR", "Cannot start analysis worker"))??;
+            let job_id = job.id.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let _ = core.run_file_analysis(&job_id);
+            });
+            value(job)
+        }
         Request::Models { id } => value(core.models(&id).await?),
         Request::ToolsDoctor { id } => value(core.tool_doctor(&id).await?),
         Request::Chat { id, prompt } => value(core.chat(&id, &prompt).await?),
@@ -226,7 +397,44 @@ fn apply_window_theme(window: tauri::WebviewWindow, theme: ThemePreference) -> R
     window
         .set_background_color(Some(background))
         .map_err(map_error)?;
-    window.show().map_err(map_error)
+    // Native E2E instances still run the real WebView2/IPC stack. Hide only the
+    // owned test window so physical desktop input cannot race CDP interactions.
+    if std::env::var("RECONX_NATIVE_TEST_HIDDEN").as_deref() == Ok("1") {
+        window.hide().map_err(map_error)
+    } else {
+        window.show().map_err(map_error)
+    }
+}
+#[tauri::command]
+async fn select_local_paths(
+    window: tauri::WebviewWindow,
+    folder: bool,
+    save: bool,
+) -> Result<Vec<std::path::PathBuf>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dialog = window.app_handle().dialog().file().set_parent(&window);
+        let paths = if save {
+            dialog
+                .set_file_name("reconx-targets.json")
+                .blocking_save_file()
+                .into_iter()
+                .collect()
+        } else if folder {
+            dialog.blocking_pick_folder().into_iter().collect()
+        } else {
+            dialog.blocking_pick_files().unwrap_or_default()
+        };
+        paths
+            .into_iter()
+            .map(|p| {
+                p.into_path().map_err(|_| {
+                    AppError::new("INVALID_FILE", "Only native local paths are supported")
+                })
+            })
+            .collect()
+    })
+    .await
+    .map_err(|_| AppError::new("WORKER_ERROR", "Native file dialog failed"))?
 }
 pub fn run() {
     tracing_subscriber::fmt()
@@ -238,10 +446,12 @@ pub fn run() {
         std::process::exit(1)
     });
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(core)
         .manage(ActiveStreams::default())
         .invoke_handler(tauri::generate_handler![
             service,
+            select_local_paths,
             stream_chat,
             cancel_stream,
             install_tool,

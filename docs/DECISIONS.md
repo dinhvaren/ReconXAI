@@ -25,3 +25,7 @@
 23. Isolate native test browser profiles with WEBVIEW2_USER_DATA_FOLDER. Database isolation alone does not avoid WebView2 browser-option conflicts with an already running application.
 24. User-directed appearance is exactly Light/Dark/ReconX. Remove OS-following mode and listeners; default to ReconX. Migrate legacy system or missing preference to reconx while preserving explicit light/dark selections.
 25. Freeze the existing root color tokens before separating palettes. Keep ReconX values/original artwork intact; use neutral palette and artwork variants for Light/Dark.
+26. Implement inputs before scanners: 17 typed target registrations, deterministic scope rules and shared CLI/Desktop CRUD; authorization never implies installed analysis capabilities.
+27. Use object 0.40 and ZIP 9 readers for bounded local byte inspection. Do not execute samples, extract package contents or represent static strings as decompilation.
+28. Keep raw sample/result artifacts separate from ordinary SQLite fields; persist hashes, references and actual job stage logs. Recheck target identity, scope, authorization and cancellation between stages.
+29. Native import/export tests select owned samples through actual Windows dialogs. Isolate data/browser profiles and hide owned test windows to prevent physical input racing CDP; normal application windows remain visible.

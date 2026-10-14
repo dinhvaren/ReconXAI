@@ -23,6 +23,22 @@ const snapshot: Snapshot = {
     theme: "dark",
   },
 };
+// jsdom has no native modal dialog implementation. Native tests exercise the
+// actual WebView2 showModal/focus behavior separately.
+Object.defineProperties(HTMLDialogElement.prototype, {
+  showModal: {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    },
+  },
+  close: {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.removeAttribute("open");
+    },
+  },
+});
 let current: Snapshot;
 function operation(args: unknown) {
   return (
@@ -58,6 +74,102 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
     })),
   );
+});
+it("global Add Target saves a typed configuration without changing existing settings", async () => {
+  const user = userEvent.setup();
+  current.projects = [
+    {
+      id: "fixture-project",
+      name: "Fixture",
+      description: "",
+      created_at: "2026-10-14",
+      updated_at: "2026-10-14",
+      archived: false,
+    },
+  ];
+  const requests: unknown[] = [];
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    const req = operation(args);
+    if (command === "service" && req?.op === "target_create") {
+      requests.push(args);
+      return { id: "new-target" };
+    }
+    return mockService(command, args);
+  });
+  render(<App />);
+  await screen.findByText("Workspace overview");
+  await user.click(
+    screen.getByRole("button", { name: "Quick actions" }),
+  );
+  await user.click(
+    screen.getByRole("menuitem", { name: "Add Target" }),
+  );
+  await user.type(screen.getByLabelText("Target name"), "Owned lab");
+  await user.type(
+    screen.getByLabelText("Target value"),
+    "http://localhost:8080",
+  );
+  await user.selectOptions(screen.getByLabelText("Target type"), "url");
+  await user.type(screen.getByLabelText("Tags / groups"), "lab, internal");
+  await user.click(screen.getByLabelText(/I confirm I have permission/));
+  await user.click(
+    screen.getByRole("button", { name: "Save target" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("dialog", { name: "Add Target" }),
+    ).not.toBeInTheDocument(),
+  );
+  expect(requests[0]).toMatchObject({
+    request: {
+      op: "target_create",
+      input: {
+        project_id: "fixture-project",
+        kind: "url",
+        value: "http://localhost:8080",
+        tags: ["lab", "internal"],
+        authorized: true,
+        mode: "passive_auto",
+      },
+    },
+  });
+  expect(current.settings.theme).toBe("dark");
+});
+it("target validation errors keep the dialog and user input available for correction", async () => {
+  const user = userEvent.setup();
+  current.projects = [
+    {
+      id: "fixture-project",
+      name: "Fixture",
+      description: "",
+      created_at: "2026-10-14",
+      updated_at: "2026-10-14",
+      archived: false,
+    },
+  ];
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    if (command === "service" && operation(args)?.op === "target_create")
+      throw { code: "INVALID_TARGET", message: "Invalid IPv4 address" };
+    return mockService(command, args);
+  });
+  render(<App />);
+  await screen.findByText("Workspace overview");
+  await user.click(
+    screen.getByRole("button", { name: "+ Add Target" }),
+  );
+  await user.type(screen.getByLabelText("Target name"), "Lab IP");
+  await user.selectOptions(screen.getByLabelText("Target type"), "ipv4");
+  await user.type(screen.getByLabelText("Target value"), "invalid");
+  await user.click(
+    screen.getByRole("button", { name: "Save target" }),
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Invalid IPv4 address",
+  );
+  expect(screen.getByLabelText("Target value")).toHaveValue("invalid");
+  expect(
+    screen.getByRole("dialog", { name: "Add Target" }),
+  ).toBeInTheDocument();
 });
 const menuChoice = (mode: string) =>
   screen.getByRole("menuitemradio", { name: new RegExp("^" + mode) });

@@ -1,6 +1,6 @@
 # Security model
 
-This build exposes local project/configuration management, explicitly initiated AI text requests, and a pinned local utility installer/version checker. Security modes cannot unlock absent active workflows. Model output never becomes a command.
+This build exposes local project/configuration/target management, authorized read-only binary analysis, explicitly initiated AI text requests, and a pinned local utility installer/version checker. Security modes cannot unlock absent active workflows. Model output never becomes a command.
 
 Credentials use native OS storage. Configurations reject secret fields and gateway URLs containing authentication, query strings or fragments. HTTPS is required except for loopback HTTP. Secret references bind provider ID, protocol and gateway SHA-256 fingerprint. Gateway changes with a key require key removal first. Legacy UUID-only entries from the early foundation build are not reused or deleted automatically; those keys require reentry.
 
@@ -12,7 +12,25 @@ Only embedded manifests can drive tool installation. Official downloads use pinn
 
 No arbitrary process/shell execution, untrusted plugin installation, target scanning or privileged package installation is exposed. A tool is not a process sandbox.
 
-Tauri has no shell/filesystem/network plugins for the webview. CSP restricts content; AI text is not rendered as HTML. SQLite work runs outside the UI thread. Network operations are asynchronous.
+The webview has no broad shell/filesystem/network permissions. Native dialogs are
+opened through a custom Rust command; file import/export uses bounded typed services.
+CSP restricts content; AI text is not rendered as HTML. SQLite work runs outside the
+UI thread. Network operations are asynchronous.
+
+Target registration is not authorization to execute a tool. Scope exclusions win;
+host/path component and URL-origin boundaries are checked. Local analysis requires
+recorded permission, matching immutable import source identity and an active project.
+Workers recheck policy/cancellation at stage boundaries. No mode executes samples,
+shell strings, scanners or AI tool plans. A 64 MiB input limit, output cardinality
+limits, ZIP directory checks and panic containment defend parser entry points.
+These controls are not an OS process sandbox.
+
+Managed sample/result integrity is checked with SHA-256. Raw strings and hex are
+kept in private local artifact files, not ordinary database configuration. These
+files are not encrypted; custom data-directory users must provide suitable ACLs.
+Imports never execute samples or extract archive entries. Originals are preserved.
+Deletion preserves cached blobs until a future explicit GC facility; cancellation
+does not forcibly interrupt a parser already inside one bounded stage.
 
 SQLite uses ordinary account/filesystem protection, without encryption. Notes/metadata exports are user-authored and not automatically redacted. Rust secret buffers are zeroized where practical; browser inputs, libraries and OS services may copy them. Same-account malicious processes, filesystem races and comprehensive process sandboxing are outside the claimed protection.
 

@@ -147,11 +147,11 @@ export default function ActivitySidebar({
           </button>
           <button
             className="service-status"
-            onClick={() => navigate("Findings")}
+            onClick={() => navigate("Analysis Jobs")}
           >
             <Icon name="flag" />
             <span>
-              Findings & jobs<small>Storage and scheduler planned</small>
+              Analysis jobs<small>Saved local static-analysis history</small>
             </span>
             <Icon name="chevron" size={12} />
           </button>

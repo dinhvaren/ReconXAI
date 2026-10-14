@@ -1,8 +1,47 @@
 # Verification record
 
-Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-13.
+Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-14.
 
-## Current three-theme verification
+## Current functional-input verification
+
+Baseline before changes: scripts/verify.ps1, 31 Rust / 9 frontend passed.
+Final command: scripts/verify.ps1 -Inputs -Native.
+
+- Rust formatting and Clippy, warnings denied: passed.
+- Rust workspace: **45 passed, 0 failed, 1 ignored** (explicit OS credential fixture).
+- TypeScript/Vite production build: passed; frontend **11 passed, 0 failed**.
+- Native embedded debug application/CLI: passed, **6 existing regression checkpoints**
+  and **9 research-input checkpoints**, each using an isolated shared database.
+- Records: artifacts/native-1791946811208/results.json and
+  artifacts/inputs-1791946818102/results.json.
+- Native Open and Save As selected actual owned PE/JSON inputs: target create/edit,
+  scope decisions, native target import/export, quick actions, PE hash/sections/imports/
+  strings/job persistence, native restart, and document bounds at 1366×768.
+- ReconX/Light/Dark screenshots were captured from the actual renderer and inspected;
+  these illustrate real fixture results, not fabricated security findings.
+- Parser fixtures verify ELF64, thin Mach-O64, APK content identification, malformed
+  signatures, extraction limits and entropy. Core tests verify all 17 target kinds,
+  atomic imports, scope boundaries/exclusions, input failures, version-1 migration
+  preservation, archive policy, cancellation, changed authorization/identity,
+  modified sample/result rejection, comparison and retained originals/history.
+- npm run tauri -- build --no-bundle: optimized Windows desktop build passed.
+- CI YAML parsed; Windows native input step added. CI execution is still unverified.
+
+The first native attempts exposed selector/modal initialization issues and Windows
+picker automation differences; these were corrected before the final passing run.
+Earlier failed artifacts are retained. Physical OS drag/drop and folder-picker
+interaction are unverified; folder import/comparison/error handling have Rust tests.
+Linux/ARM64 runtime and installer installation are unverified. Cloud AI providers,
+MCP, recon, agents, findings and report scenarios have no new acceptance evidence.
+
+Release verification: scripts/build.ps1 passed and produced desktop/CLI plus
+SHA256SUMS.txt and bundled-font notices in artifacts/windows-x64. The actual copied
+release executables passed the same 9 input and 6 existing regression checkpoints:
+artifacts/inputs-1791947186174/results.json and
+artifacts/native-1791947198252/results.json. Release reconx --version returned 0.1.0.
+Release native screenshots were generated; these are separate from debug evidence.
+
+## Previous three-theme verification — 2026-10-13
 
 Command: scripts/verify.ps1 -Native -Visual -ToolInstall.
 

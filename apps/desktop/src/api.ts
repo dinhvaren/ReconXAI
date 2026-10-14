@@ -1,4 +1,5 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
+import type { Target, AnalysisJob } from "./research";
 export type Mode = "passive_auto" | "authorized_auto" | "lab_research";
 export type AppTheme = "light" | "dark" | "reconx";
 export interface Project {
@@ -43,6 +44,8 @@ export interface Audit {
   timestamp: string;
 }
 export interface Snapshot {
+  targets?: Target[];
+  jobs?: AnalysisJob[];
   projects: Project[];
   providers: Provider[];
   settings: Settings;

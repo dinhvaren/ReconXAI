@@ -226,7 +226,7 @@ export function Modal({
           <Icon name="close" />
         </button>
       </div>
-      {children}
+      {open ? children : null}
     </dialog>
   );
 }

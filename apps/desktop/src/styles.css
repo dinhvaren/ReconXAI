@@ -2614,6 +2614,311 @@ progress::-moz-progress-bar {
     grid-template-columns: 145px minmax(0, 1fr);
   }
 }
+
+/* Research inputs reuse the existing semantic palettes and shell. */
+.target-inventory,
+.target-details,
+.import-controls {
+  padding: 20px;
+}
+.target-details .muted,
+.import-controls .muted,
+.file-explorer .muted,
+.binary-workspace .muted {
+  color: var(--rx-text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.form-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.checkbox-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.checkbox-row input {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.binary-content .data-table td:first-child {
+  min-width: 60px;
+  max-width: 180px;
+}
+.binary-content .data-table th,
+.binary-content .data-table td {
+  padding: 10px 6px;
+}
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.target-form {
+  padding: 20px 24px 24px;
+}
+.rx-modal:has(.target-form) {
+  width: min(760px, calc(100vw - 48px));
+}
+.target-form textarea {
+  min-height: 78px;
+}
+.target-details h3 {
+  margin-top: 24px;
+  margin-bottom: 10px;
+}
+.inventory-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.inventory-toolbar label {
+  flex: 1;
+  min-width: 150px;
+}
+.inventory-toolbar label:first-child {
+  flex: 2;
+}
+.table-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th {
+  color: var(--rx-text-muted);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.data-table th,
+.data-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--rx-border);
+  vertical-align: top;
+}
+.data-table td small {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--rx-text-muted);
+}
+.data-table td:first-child {
+  min-width: 160px;
+  max-width: 260px;
+}
+.data-table .selected-row {
+  background: var(--rx-surface-raised);
+}
+.break-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.technical {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.scope-result {
+  padding: 14px;
+  border-left: 3px solid var(--rx-accent);
+  background: var(--rx-surface-raised);
+}
+.import-controls {
+  margin-bottom: 20px;
+}
+.import-controls .checkbox-row {
+  margin-top: 14px;
+}
+.reverse-layout {
+  display: flex;
+  gap: 18px;
+  align-items: stretch;
+  min-width: 0;
+  margin-bottom: 20px;
+}
+.file-explorer {
+  padding: 16px;
+  width: 210px;
+  min-width: 170px;
+  max-width: 45%;
+  resize: horizontal;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.file-explorer h2 {
+  margin-bottom: 16px;
+}
+.file-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: var(--rx-surface-raised);
+  color: var(--rx-text);
+  border: 1px solid var(--rx-border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.file-history-item span,
+.file-history-item small {
+  color: var(--rx-text-muted);
+  font-size: 12px;
+}
+.file-history-item.active {
+  border-color: var(--rx-accent);
+}
+.file-history-item:hover {
+  background: var(--rx-hover);
+}
+.binary-workspace {
+  flex: 1;
+  min-width: 0;
+}
+.binary-workspace .panel-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.research-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--rx-border);
+  margin: 20px 18px;
+  padding-bottom: 10px;
+}
+.research-tabs button {
+  padding: 7px 10px;
+  background: transparent;
+  border: 0;
+  color: var(--rx-text-muted);
+  border-radius: 7px;
+  font-size: 13px;
+}
+.research-tabs button[aria-selected="true"] {
+  background: var(--rx-surface-raised);
+  color: var(--rx-text);
+  box-shadow: inset 0 -2px var(--rx-accent);
+}
+.binary-content {
+  padding: 0 18px 18px;
+  min-height: 220px;
+  max-height: 620px;
+  overflow: auto;
+}
+.metadata-grid {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px 18px;
+  margin: 0;
+}
+.metadata-grid dt {
+  color: var(--rx-text-muted);
+  font-size: 13px;
+}
+.metadata-grid dd {
+  margin: 0;
+  font-size: 14px;
+}
+.hex-preview {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow: auto;
+  padding: 16px;
+  background: var(--rx-code-bg);
+  color: var(--rx-code-text);
+  border-radius: 10px;
+}
+.technical-list {
+  max-height: 500px;
+  overflow: auto;
+}
+.technical-list p {
+  border-bottom: 1px solid var(--rx-border);
+  padding: 6px 0;
+}
+.analysis-progress {
+  padding: 14px;
+  background: var(--rx-surface-raised);
+  border-radius: 10px;
+}
+.job-history details {
+  border-bottom: 1px solid var(--rx-border);
+  padding: 12px 0;
+}
+.job-history summary {
+  cursor: pointer;
+  line-height: 1.6;
+}
+.job-history p {
+  margin: 8px 0;
+}
+.quick-actions {
+  position: relative;
+}
+.quick-actions-menu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 250px;
+  z-index: 70;
+  padding: 8px;
+  border: 1px solid var(--rx-border);
+  border-radius: 12px;
+  background: var(--rx-surface);
+  box-shadow: 0 10px 30px var(--rx-shadow);
+}
+.quick-actions-menu > span {
+  display: block;
+  padding: 8px 10px;
+  color: var(--rx-text-muted);
+  font-size: 13px;
+}
+.quick-actions-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 10px;
+  color: var(--rx-text);
+  font-size: 14px;
+}
+.quick-actions-menu button:hover:not(:disabled) {
+  background: var(--rx-surface-raised);
+}
+.quick-actions-menu button:disabled {
+  opacity: 0.55;
+}
+@media (max-width: 1250px) {
+  .file-explorer {
+    width: 175px;
+    min-width: 140px;
+  }
+  .reverse-layout {
+    gap: 12px;
+  }
+  .form-columns {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 1050px) {
   .activity-visible {
     --activity-width: 220px;

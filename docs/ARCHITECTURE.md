@@ -6,6 +6,7 @@ The desktop and CLI call the same `reconx-core` service. Business rules live in 
 - `reconx-storage`: SQLite connections, WAL, busy timeout, transactional versioned migrations.
 - `reconx-ai`: provider-specific HTTP adapters and OS secret-store abstraction.
 - `reconx-tools`: pinned manifests, archive/executable verification, portable installer, receipts and fixed version checks.
+- `reconx-analysis`: bounded read-only object/ZIP parsing, hashes, entropy and local strings; no sample execution.
 - `reconx-core`: project lifecycle, configuration, audit trail, shared application services.
 - `apps/cli`: native `reconx`, Clap, JSON output, exit codes, completions.
 - `apps/desktop`: Tauri 2, React, TypeScript, Vite, Tailwind.
@@ -13,6 +14,14 @@ The desktop and CLI call the same `reconx-core` service. Business rules live in 
 Database selection: CLI `--database` override, then `RECONX_DATA_DIR/reconx.db`, then the OS application data directory. Desktop uses the same environment/default rule. No workspace-specific database is created implicitly.
 
 AI replies are unverified text and have no execution channel. Streaming uses Tauri IPC channels and a bounded cancellation registry. Fixed tool version checks are distinct from arbitrary external execution. MCP, recon, findings and reports remain unimplemented. Navigation marks future modules clearly.
+
+Migration 002 extends existing projects with targets, imported sample metadata,
+analysis jobs and hashed binary-analysis artifact references. Target/scope validation
+is deterministic Rust code. Both clients use the same typed CRUD/import/analysis
+services; Tauri's file dialogs supply native paths, never fabricated browser records.
+Static analysis runs on workers with persistent stage logs and cooperative cancellation.
+Policy is rechecked at each stage. Raw samples/strings/hex stay in local managed files;
+SQLite stores references and metadata. See RESEARCH_INPUTS.md for limits and removals.
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
 

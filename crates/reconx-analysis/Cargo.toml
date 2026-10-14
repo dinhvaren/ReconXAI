@@ -1,0 +1,11 @@
+[package]
+name = "reconx-analysis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+reconx-security.workspace = true
+serde.workspace = true
+sha2.workspace = true
+object = { version = "0.40.0", default-features = false, features = ["read", "std"] }
+zip = { version = "9.0.2", default-features = false }

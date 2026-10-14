@@ -28,10 +28,12 @@ export function Projects({
   data,
   busy,
   perform,
+  onAddTarget,
 }: {
   data: Snapshot;
   busy: boolean;
   perform: Perform;
+  onAddTarget: () => void;
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -83,12 +85,17 @@ export function Projects({
         title="Projects"
         description="A durable home for your research notes and workspace history."
         action={
-          <button
-            className="button secondary"
-            onClick={() => setShowImport(!showImport)}
-          >
-            Import project
-          </button>
+          <div className="inline-actions">
+            <button className="button" onClick={onAddTarget}>
+              + Add Target
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => setShowImport(!showImport)}
+            >
+              Import project
+            </button>
+          </div>
         }
       />
       <div className="projects-layout">

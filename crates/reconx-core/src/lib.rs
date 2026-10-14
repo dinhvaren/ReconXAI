@@ -13,6 +13,10 @@ use sha2::{Digest, Sha256};
 use std::{path::PathBuf, sync::Arc};
 use uuid::Uuid;
 use zeroize::Zeroizing;
+mod reverse;
+mod targets;
+pub use reverse::*;
+pub use targets::*;
 
 fn credential_reference(config: &ProviderConfig) -> String {
     let digest = Sha256::digest(format!("{}|{:?}", config.base_url, config.kind).as_bytes());
@@ -76,6 +80,8 @@ pub struct AuditEvent {
 }
 #[derive(Debug, Serialize)]
 pub struct Snapshot {
+    pub targets: Vec<Target>,
+    pub jobs: Vec<AnalysisJob>,
     pub projects: Vec<Project>,
     pub providers: Vec<ProviderConfig>,
     pub settings: Settings,
@@ -615,6 +621,8 @@ impl Core {
     }
     pub fn snapshot(&self) -> Result<Snapshot> {
         Ok(Snapshot {
+            targets: self.list_targets(None)?,
+            jobs: self.list_jobs(None)?,
             projects: self.list_projects(true)?,
             providers: self.providers()?,
             settings: self.settings()?,

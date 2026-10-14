@@ -36,3 +36,86 @@ fn native_cli_persists_projects_and_emits_machine_errors() {
         "NOT_FOUND"
     );
 }
+#[test]
+fn native_cli_targets_and_reverse_use_shared_core_and_restart_persistence() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("inputs.db");
+    assert!(run(&db, &["project", "create", "demo"]).status.success());
+    let add = run(
+        &db,
+        &[
+            "target",
+            "add",
+            "--project",
+            "demo",
+            "--type",
+            "domain",
+            "--value",
+            "example.test",
+            "--authorized",
+        ],
+    );
+    assert!(
+        add.status.success(),
+        "{}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+    let target: Value = serde_json::from_slice(&add.stdout).unwrap();
+    let id = target["id"].as_str().unwrap();
+    let listed: Value =
+        serde_json::from_slice(&run(&db, &["target", "list", "--project", "demo"]).stdout).unwrap();
+    assert_eq!(listed[0]["id"], id);
+    let scope: Value =
+        serde_json::from_slice(&run(&db, &["scope", "validate", id]).stdout).unwrap();
+    assert_eq!(scope["status"], "allowed");
+    let invalid = run(
+        &db,
+        &[
+            "target",
+            "add",
+            "--project",
+            "demo",
+            "--type",
+            "ipv4",
+            "--value",
+            "bad",
+        ],
+    );
+    assert!(!invalid.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&invalid.stderr).unwrap()["error"]["code"],
+        "INVALID_TARGET"
+    );
+    let sample = std::env::current_exe().unwrap();
+    let imported = run(
+        &db,
+        &[
+            "reverse",
+            "import",
+            sample.to_str().unwrap(),
+            "--project",
+            "demo",
+            "--authorized",
+        ],
+    );
+    assert!(
+        imported.status.success(),
+        "{}",
+        String::from_utf8_lossy(&imported.stderr)
+    );
+    let f: Value = serde_json::from_slice(&imported.stdout).unwrap();
+    let fid = f["id"].as_str().unwrap();
+    assert!(run(&db, &["reverse", "analyze", fid]).status.success());
+    let metadata: Value =
+        serde_json::from_slice(&run(&db, &["reverse", "metadata", fid]).stdout).unwrap();
+    assert_eq!(metadata["analysis"]["sha256"], f["sha256"]);
+    assert!(
+        !metadata["analysis"]["sections"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let jobs: Value = serde_json::from_slice(&run(&db, &["jobs", "list"]).stdout).unwrap();
+    assert_eq!(jobs[0]["status"], "completed");
+    assert!(run(&db, &["target", "remove", id]).status.success());
+}

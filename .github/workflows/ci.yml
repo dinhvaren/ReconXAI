@@ -44,6 +44,12 @@ jobs:
         env:
           RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
           RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+      - name: Windows native research inputs
+        if: runner.os == 'Windows'
+        run: node tests/e2e/inputs.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
       - name: Linux Debian bundle
         if: runner.os == 'Linux'
         run: npm run tauri -- build --config ../../packaging/tauri.linux.json
@@ -60,4 +66,6 @@ jobs:
             target/release/bundle/deb/*.deb
             artifacts/native-*/results.json
             artifacts/native-*/*.png
+            artifacts/inputs-*/results.json
+            artifacts/inputs-*/*.png
           if-no-files-found: warn

@@ -2,6 +2,12 @@
 
 A native desktop and CLI research workbench sharing a Rust core and SQLite database. Project management, settings, secure provider configuration, streaming chat/cancellation, safe connection fallback and a verified portable ripgrep installer work on Windows x64. The full research platform remains under development.
 
+Target/scope management and native local binary import/static analysis now share
+the same Desktop/CLI services and persisted records. Start with **+ Add Target** or
+**Reverse Engineering → Import File → Analyze File**. See
+[Research inputs](docs/RESEARCH_INPUTS.md) and [Functionality audit](docs/FUNCTIONALITY_GAP_AUDIT.md).
+Recon, MCP, autonomous agents, normalized findings and reporting remain unfinished.
+
 ## Windows development
 
 Verified environment: Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0, Visual Studio 2022 C++ Build Tools, WebView2. These were already installed; no privileged installation was performed.

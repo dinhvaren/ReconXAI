@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -13,6 +13,11 @@
     {
       "id": "foundation",
       "status": "TESTED"
+    },
+    {
+      "id": "functional_inputs",
+      "status": "TESTED",
+      "verification": "Windows target/scope CRUD and native local static-analysis acceptance slice; advanced modules are not included"
     },
     {
       "id": "ai_integration",
@@ -49,7 +54,12 @@
     },
     {
       "id": "security_analysis",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "remaining": [
+        "web/API imports and analysis",
+        "advanced reverse integrations",
+        "normalized evidence/findings"
+      ]
     },
     {
       "id": "reporting",
@@ -162,21 +172,61 @@
       "id": "linux_packaging",
       "status": "NOT_STARTED",
       "note": "configuration present; CI and packages unverified"
+    },
+    {
+      "id": "target_management",
+      "status": "TESTED",
+      "verification": "17 types; native CRUD/import/export and shared CLI/restart"
+    },
+    {
+      "id": "scope_validation",
+      "status": "TESTED",
+      "verification": "Exclusion precedence, URL/host/path/CIDR boundaries; independent backend policy"
+    },
+    {
+      "id": "native_file_import",
+      "status": "TESTED",
+      "verification": "Actual Windows Open picker imported owned PE; folder import has Rust tests"
+    },
+    {
+      "id": "native_file_drop",
+      "status": "IMPLEMENTED",
+      "verification": "Tauri native drop handler registered; physical OS drop not tested"
+    },
+    {
+      "id": "static_binary_analysis",
+      "status": "TESTED",
+      "verification": "Native PE; ELF64/Mach-O64/APK fixtures; persisted sections/strings/hashes/metadata"
+    },
+    {
+      "id": "binary_comparison",
+      "status": "TESTED",
+      "verification": "Real owned local fixture byte differences; UI service present"
+    },
+    {
+      "id": "local_analysis_jobs",
+      "status": "TESTED",
+      "verification": "Native persistent history and CLI; cooperative cancellation and policy-change tests"
     }
   ],
   "verification": {
-    "rust_passed": 31,
+    "rust_passed": 45,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 9,
+    "frontend_passed": 11,
     "frontend_failed": 0,
     "native_scenarios_passed": 2,
-    "native_checkpoints_per_scenario": 9,
+    "native_checkpoints_per_scenario": 6,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
-    "debug_record": "artifacts/native-1791906428229/results.json",
-    "release_record": "artifacts/native-1791906555280/results.json",
-    "preceding_redesign_record": "artifacts/native-1791901611396/results.json"
+    "debug_record": "artifacts/native-1791946811208/results.json",
+    "release_record": "artifacts/native-1791947198252/results.json",
+    "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
+    "inputs_debug_record": "artifacts/inputs-1791946818102/results.json",
+    "inputs_release_record": "artifacts/inputs-1791947186174/results.json",
+    "inputs_checkpoints_per_scenario": 9,
+    "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
+    "note": "Prior theme/viewport and OS-store evidence retained; current input slice does not claim Linux, MCP, recon, agents or report scenarios"
   }
 }

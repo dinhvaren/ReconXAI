@@ -12,6 +12,11 @@ import { Icon, Modal, type Perform } from "./components/ui";
 import { navigation, routes } from "./components/navigation";
 import ActivitySidebar from "./components/ActivitySidebar";
 import Dashboard from "./pages/Dashboard";
+import TargetsPage from "./pages/TargetsPage";
+import ReversePage, { JobsPage } from "./pages/ReversePage";
+import TargetDialog from "./components/TargetDialog";
+import QuickActions from "./components/QuickActions";
+import type { Target, TargetKind } from "./research";
 import {
   Projects,
   SettingsPage,
@@ -42,6 +47,11 @@ function Workbench() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [targetOpen, setTargetOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<Target>();
+  const [newTargetKind, setNewTargetKind] = useState<TargetKind>("domain");
+  const [reverseFile, setReverseFile] = useState<string>();
+  const [importRequest, setImportRequest] = useState(0);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const [groups, setGroups] = useState<string[]>([]);
   const [showActivity, setShowActivity] = useState(
@@ -112,6 +122,11 @@ function Workbench() {
     localStorage.setItem("reconx.selectedProject", id);
   };
   const projects = data?.projects.filter((p) => !p.archived) ?? [];
+  const addTarget = (kind: TargetKind = "domain") => {
+    setEditingTarget(undefined);
+    setNewTargetKind(kind);
+    setTargetOpen(true);
+  };
   const project =
     selected === null ? projects[0] : projects.find((p) => p.id === selected);
   const provider =
@@ -420,14 +435,21 @@ function Workbench() {
             ))}
           </select>
           <div className="toolbar-actions">
-            <button
-              className="icon-button"
-              title="Create project"
-              aria-label="Create project shortcut"
-              onClick={() => navigate("Projects")}
-            >
-              <Icon name="plus" />
-            </button>
+            <QuickActions
+              run={(action) => {
+                if (action === "New Project") navigate("Projects");
+                if (action === "Add Target") addTarget();
+                if (action === "Import Repository") addTarget("git_repository");
+                if (action === "Import File") {
+                  setReverseFile(undefined);
+                  setImportRequest((n) => n + 1);
+                  navigate("Reverse Engineering");
+                }
+                if (action === "View Jobs") navigate("Analysis Jobs");
+                if (action === "Open AI Workspace") navigate("AI Workspace");
+                if (action === "Install Tools") navigate("Tool Manager");
+              }}
+            />
             <ThemeMenu location="Topbar" />
             <button
               className="icon-button notification-button"
@@ -501,10 +523,16 @@ function Workbench() {
                   tools={tools}
                   navigate={navigate}
                   selectProject={selectProject}
+                  onAddTarget={() => addTarget()}
                 />
               )}
               {page === "Projects" && (
-                <Projects data={data} busy={busy} perform={perform} />
+                <Projects
+                  data={data}
+                  busy={busy}
+                  perform={perform}
+                  onAddTarget={() => addTarget()}
+                />
               )}
               {page === "Settings" && (
                 <SettingsPage data={data} busy={busy} perform={perform} />
@@ -515,9 +543,41 @@ function Workbench() {
               {page === "Tool Manager" && (
                 <ToolManagerPage busy={busy} perform={perform} />
               )}
-              {!routes.find((r) => r.name === page)?.implemented && (
-                <PlannedModule name={page} />
+              {page === "Targets & Scope" && (
+                <TargetsPage
+                  data={data}
+                  projectId={project?.id}
+                  busy={busy}
+                  perform={perform}
+                  onAdd={() => addTarget()}
+                  onEdit={(target) => {
+                    setEditingTarget(target);
+                    setTargetOpen(true);
+                  }}
+                  onReverse={(id, projectId) => {
+                    selectProject(projectId);
+                    setReverseFile(id);
+                    navigate("Reverse Engineering");
+                  }}
+                />
               )}
+              {page === "Reverse Engineering" && (
+                <ReversePage
+                  data={data}
+                  projectId={project?.id}
+                  initialFileId={reverseFile}
+                  busy={busy}
+                  perform={perform}
+                  requestImport={importRequest}
+                />
+              )}
+              {page === "Analysis Jobs" && (
+                <JobsPage data={data} busy={busy} perform={perform} />
+              )}
+              {page !== "Analysis Jobs" &&
+                !routes.find((r) => r.name === page)?.implemented && (
+                  <PlannedModule name={page} />
+                )}
             </div>
           )}
         </main>
@@ -547,6 +607,22 @@ function Workbench() {
           navigate={navigate}
           notice={notice}
           error={error}
+        />
+      )}
+      {targetOpen && (
+        <TargetDialog
+          open={targetOpen}
+          target={editingTarget}
+          initialKind={newTargetKind}
+          projects={projects}
+          projectId={project?.id}
+          onClose={() => setTargetOpen(false)}
+          onSaved={() =>
+            perform(
+              refresh,
+              editingTarget ? "Target updated" : "Target created",
+            )
+          }
         />
       )}
       <Modal

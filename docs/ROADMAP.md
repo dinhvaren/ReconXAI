@@ -1,5 +1,14 @@
 # Development roadmap
 
+2026-10-14 priority update: target/scope management and native local static-analysis
+inputs now work through the shared core. Continue from this verified slice, rather
+than rebuilding the UI or duplicating infrastructure. Next: local fixture inventory
+and evidence normalization, a permissioned benign MCP test gateway, then bounded
+local analysis plans/agent routing and findings/report export. Full public-target
+scanning and autonomous offensive actions are outside the implemented capability set.
+Add native folder/drop verification, parser process isolation, crash recovery,
+cache GC and richer string/hex pagination before calling reverse analysis complete.
+
 1. Foundation: Windows native desktop/CLI/shared SQLite project/settings milestone verified.
    Desktop redesign: reference-inspired four-region shell, illustrated dashboard, consistent secondary pages, keyboard search, activity/notifications, resizable AI context and exactly Light/Dark/ReconX verified on Windows. Future module actions still require backend implementation.
 2. AI integration: provider CRUD, secure credentials, model discovery, text/streaming/cancellation, defaults and safe connection fallback implemented. Remaining: persisted health/usage/cost, rate/budget accounting, context, advanced parameters, per-agent routing and extensions. Real cloud compatibility unverified.

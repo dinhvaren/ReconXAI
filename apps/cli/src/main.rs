@@ -1,5 +1,8 @@
 use clap::{CommandFactory, Parser, Subcommand};
-use reconx_core::{AppError, Core, ProjectExport, ProviderConfig, Result, Settings};
+use reconx_core::{
+    AppError, Core, ProjectExport, ProviderConfig, Result, SecurityMode, Settings, TargetExport,
+    TargetInput, TargetKind,
+};
 use serde_json::{Value, json};
 use std::{
     io::{Read, Write},
@@ -33,6 +36,14 @@ enum Command {
     Ai(AiCommand),
     #[command(subcommand)]
     Tools(ToolsCommand),
+    #[command(subcommand)]
+    Target(TargetCommand),
+    #[command(subcommand)]
+    Scope(ScopeCommand),
+    #[command(subcommand)]
+    Reverse(ReverseCommand),
+    #[command(subcommand)]
+    Jobs(JobCommand),
     Audit,
     Completions {
         shell: clap_complete::Shell,
@@ -72,6 +83,118 @@ enum ProjectCommand {
     Import {
         input: PathBuf,
     },
+}
+#[derive(Subcommand)]
+enum TargetCommand {
+    Add {
+        #[arg(long)]
+        project: String,
+        #[arg(long = "type")]
+        kind: String,
+        #[arg(long)]
+        value: String,
+        #[arg(long)]
+        name: Option<String>,
+        #[arg(long, default_value = "")]
+        description: String,
+        #[arg(long, value_delimiter = ',')]
+        tags: Vec<String>,
+        #[arg(long)]
+        allow: Vec<String>,
+        #[arg(long)]
+        exclude: Vec<String>,
+        #[arg(long)]
+        authorized: bool,
+        #[arg(long, default_value = "passive_auto")]
+        mode: String,
+    },
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Show {
+        id: String,
+    },
+    /// Replace target configuration using a complete TargetInput JSON file.
+    Update {
+        id: String,
+        #[arg(long)]
+        input: PathBuf,
+    },
+    Remove {
+        id: String,
+    },
+    /// Atomically import a version-1 target export (at most 500 records).
+    Import {
+        input: PathBuf,
+    },
+    Export {
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long)]
+        output: PathBuf,
+    },
+}
+#[derive(Subcommand)]
+enum ScopeCommand {
+    Validate {
+        id: String,
+        #[arg(long)]
+        value: Option<String>,
+    },
+}
+#[derive(Subcommand)]
+enum ReverseCommand {
+    Import {
+        input: PathBuf,
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long)]
+        authorized: bool,
+        #[arg(long)]
+        folder: bool,
+    },
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Analyze {
+        id: String,
+    },
+    Metadata {
+        id: String,
+    },
+    Strings {
+        id: String,
+    },
+    Remove {
+        id: String,
+    },
+    Compare {
+        a: String,
+        b: String,
+    },
+}
+#[derive(Subcommand)]
+enum JobCommand {
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Show {
+        id: String,
+    },
+    Cancel {
+        id: String,
+    },
+}
+fn enum_input<T: serde::de::DeserializeOwned>(text: &str) -> Result<T> {
+    serde_json::from_value(json!(text)).map_err(|_| {
+        AppError::new(
+            "INVALID_INPUT",
+            "Unknown target type or analysis mode; consult command help and docs",
+        )
+    })
 }
 #[derive(Subcommand)]
 enum SettingsCommand {
@@ -169,6 +292,108 @@ async fn execute(cli: &Cli) -> Result<Value> {
     }
     let core = Core::open(cli.database.clone())?;
     match &cli.command {
+        Command::Target(command) => match command {
+            TargetCommand::Add {
+                project,
+                kind,
+                value,
+                name,
+                description,
+                tags,
+                allow,
+                exclude,
+                authorized,
+                mode,
+            } => serialize(
+                core.create_target(TargetInput {
+                    project_id: project.clone(),
+                    name: name
+                        .clone()
+                        .unwrap_or_else(|| value.chars().take(120).collect()),
+                    kind: enum_input::<TargetKind>(kind)?,
+                    value: value.clone(),
+                    description: description.clone(),
+                    tags: tags.clone(),
+                    allowed_scope: allow.clone(),
+                    excluded_scope: exclude.clone(),
+                    authorized: *authorized,
+                    mode: enum_input::<SecurityMode>(mode)?,
+                })?,
+            ),
+            TargetCommand::List { project } => serialize(core.list_targets(project.as_deref())?),
+            TargetCommand::Show { id } => serialize(core.target(id)?),
+            TargetCommand::Update { id, input } => serialize(
+                core.update_target(
+                    id,
+                    serde_json::from_str(&read_file(input)?)
+                        .map_err(|_| AppError::new("INVALID_IMPORT", "Invalid TargetInput JSON"))?,
+                )?,
+            ),
+            TargetCommand::Remove { id } => {
+                core.remove_target(id)?;
+                Ok(json!({"status":"removed"}))
+            }
+            TargetCommand::Import { input } => serialize(core.import_targets(
+                serde_json::from_str::<TargetExport>(&read_file(input)?).map_err(|_| {
+                    AppError::new("INVALID_IMPORT", "Invalid versioned target export")
+                })?,
+            )?),
+            TargetCommand::Export { project, output } => {
+                write_new(
+                    output,
+                    &serde_json::to_string_pretty(&core.export_targets(project.as_deref())?)
+                        .map_err(|_| AppError::new("INVALID_DATA", "Cannot serialize targets"))?,
+                )?;
+                Ok(json!({"status":"exported"}))
+            }
+        },
+        Command::Scope(ScopeCommand::Validate { id, value }) => {
+            serialize(core.validate_scope(id, value.as_deref())?)
+        }
+        Command::Reverse(command) => match command {
+            ReverseCommand::Import {
+                input,
+                project,
+                authorized,
+                folder,
+            } => {
+                let project = match project {
+                    Some(p) => p.clone(),
+                    None => {
+                        let p = core.list_projects(false)?;
+                        if p.len() != 1 {
+                            return Err(AppError::new(
+                                "PROJECT_REQUIRED",
+                                "Use --project when the workspace does not have exactly one active project",
+                            ));
+                        }
+                        p[0].id.clone()
+                    }
+                };
+                if *folder {
+                    serialize(core.import_folder(&project, input, *authorized)?)
+                } else {
+                    serialize(core.import_file(&project, input, *authorized)?)
+                }
+            }
+            ReverseCommand::List { project } => serialize(core.list_files(project.as_deref())?),
+            ReverseCommand::Analyze { id } => serialize(core.analyze_file(id)?),
+            ReverseCommand::Metadata { id } => serialize(core.file_analysis(id)?),
+            ReverseCommand::Strings { id } => serialize(core.file_analysis(id)?.analysis.strings),
+            ReverseCommand::Remove { id } => {
+                core.remove_file(id)?;
+                Ok(json!({"status":"removed","sample_retained":true}))
+            }
+            ReverseCommand::Compare { a, b } => serialize(core.compare_files(a, b)?),
+        },
+        Command::Jobs(command) => match command {
+            JobCommand::List { project } => serialize(core.list_jobs(project.as_deref())?),
+            JobCommand::Show { id } => serialize(core.job(id)?),
+            JobCommand::Cancel { id } => {
+                core.cancel_job(id)?;
+                Ok(json!({"status":"cancelled"}))
+            }
+        },
         Command::Init => Ok(
             json!({"database":core.database_path(),"version":env!("CARGO_PKG_VERSION"),"status":"ready"}),
         ),

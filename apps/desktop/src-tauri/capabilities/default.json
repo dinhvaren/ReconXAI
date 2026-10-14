@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Local primary window; no filesystem, process, shell or network plugins",
+  "description": "Local primary window; typed Rust import/dialog commands, no broad filesystem, process, shell or network permissions",
   "windows": [
     "main"
   ],

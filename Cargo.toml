@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/reconx-security", "crates/reconx-storage", "crates/reconx-ai", "crates/reconx-tools", "crates/reconx-core", "apps/cli", "apps/desktop/src-tauri"]
+members = ["crates/reconx-security", "crates/reconx-storage", "crates/reconx-ai", "crates/reconx-tools", "crates/reconx-analysis", "crates/reconx-core", "apps/cli", "apps/desktop/src-tauri"]
 default-members = ["apps/cli", "crates/reconx-core"]
 
 [workspace.package]
@@ -19,6 +19,8 @@ chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "sync", "signal"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["json", "native-tls"] }
 url = "2"
+ipnet = "2.12.2"
+reconx-analysis = { path = "crates/reconx-analysis" }
 keyring = "4.2.0"
 zeroize = "1"
 sha2 = "0.11.1"

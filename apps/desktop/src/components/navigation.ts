@@ -9,7 +9,7 @@ export const navigation: { group: string; items: NavItem[] }[] = [
     items: [
       { name: "Dashboard", icon: "grid", implemented: true },
       { name: "Projects", icon: "folder", implemented: true },
-      { name: "Targets & Scope", icon: "shield", implemented: false },
+      { name: "Targets & Scope", icon: "shield", implemented: true },
     ],
   },
   {
@@ -19,7 +19,7 @@ export const navigation: { group: string; items: NavItem[] }[] = [
       { name: "Web Security", icon: "code", implemented: false },
       { name: "API Security", icon: "api", implemented: false },
       { name: "Network Security", icon: "network", implemented: false },
-      { name: "Reverse Engineering", icon: "binary", implemented: false },
+      { name: "Reverse Engineering", icon: "binary", implemented: true },
       { name: "Mobile Security", icon: "phone", implemented: false },
       { name: "Cloud & Containers", icon: "cloud", implemented: false },
       { name: "CI/CD Security", icon: "pipeline", implemented: false },

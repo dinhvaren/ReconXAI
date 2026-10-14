@@ -11,12 +11,14 @@ export default function Dashboard({
   tools,
   navigate,
   selectProject,
+  onAddTarget,
 }: {
   data: Snapshot;
   currentProject?: Project;
   tools: ToolInventory[];
   navigate: (page: string) => void;
   selectProject: (id: string) => void;
+  onAddTarget: () => void;
 }) {
   const projects = data.projects.filter((p) => !p.archived);
   const featured = currentProject
@@ -39,6 +41,9 @@ export default function Dashboard({
           <p className="eyebrow">ReconX / Your workspace</p>
           <h1>Workspace overview</h1>
         </div>
+        <button className="button" onClick={onAddTarget}>
+          + Add Target
+        </button>
         <span className="dashboard-summary">
           {projects.length} projects <i /> {configured.length} enabled models
         </span>
@@ -108,7 +113,9 @@ export default function Dashboard({
               <div className="project-card-metadata">
                 <span>
                   <Icon name="shield" size={12} />
-                  Scope not configured
+                  {data.targets?.filter((t) => t.project_id === project.id)
+                    .length ?? 0}{" "}
+                  registered targets
                 </span>
                 <span>{new Date(project.updated_at).toLocaleDateString()}</span>
               </div>
@@ -302,7 +309,19 @@ export default function Dashboard({
             <Icon name="workflow" size={15} />
             <div>
               <b>Recent jobs</b>
-              <p>A persistent job scheduler is not available in this build.</p>
+              {(data.jobs ?? []).length ? (
+                (data.jobs ?? []).slice(0, 3).map((j) => (
+                  <button
+                    key={j.id}
+                    className="text-button"
+                    onClick={() => navigate("Analysis Jobs")}
+                  >
+                    {j.kind.replaceAll("_", " ")} · {j.status}
+                  </button>
+                ))
+              ) : (
+                <p>No local analysis jobs yet. Import a binary to start.</p>
+              )}
             </div>
           </div>
         </section>
