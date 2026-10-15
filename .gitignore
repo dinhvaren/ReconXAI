@@ -12,3 +12,8 @@ artifacts/
 .env.*
 !.env.example
 tests/
+!/tests/
+/tests/*
+!/tests/e2e/
+/tests/e2e/*
+!/tests/e2e/typography.mjs

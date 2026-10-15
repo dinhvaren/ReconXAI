@@ -64,12 +64,18 @@ export function ThemeProvider({
 
   useEffect(() => {
     let cancelled = false;
+    const typography = getComputedStyle(document.documentElement);
+    const loadFont = (role: string, weight: number, size: number) =>
+      document.fonts.load(
+        `${weight} ${size}px ${typography.getPropertyValue(role).trim()}`,
+      );
     // The native window starts hidden, so saved appearance and fonts precede its first visible frame.
     void (
       document.fonts
         ? Promise.all([
-            document.fonts.load('500 14px "DM Sans"'),
-            document.fonts.load('400 13px "IBM Plex Mono"'),
+            loadFont("--font-ui", 400, 14),
+            loadFont("--font-code", 400, 13),
+            loadFont("--font-brand", 700, 26),
           ]).then(() => document.fonts.ready)
         : Promise.resolve()
     )

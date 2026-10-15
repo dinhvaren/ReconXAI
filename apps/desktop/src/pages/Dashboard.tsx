@@ -50,16 +50,15 @@ export default function Dashboard({
       </div>
       <section className="workspace-feature" aria-label="Featured workspace">
         <div className="feature-content">
-          <span className="feature-kicker">Research, in one place</span>
-          <h2>
-            Your security
-            <br />
-            research workspace
-          </h2>
+          <span className="feature-kicker">
+            {currentProject ? "Current project" : "Local workspace"}
+          </span>
+          <h2>{currentProject?.name ?? "Research workspace"}</h2>
           <p>
             {currentProject
-              ? currentProject.name
-              : "A place for the questions worth investigating."}
+              ? currentProject.description ||
+                "Targets, local files and analysis history."
+              : "Create a project to organize targets and local analyses."}
           </p>
           <div className="feature-actions">
             <button

@@ -2,6 +2,22 @@
 
 Updated 2026-10-14. Verified platform: Windows x64. The full ten-phase platform is unfinished.
 
+## Typography refinement: verified Windows slice
+
+The shared type system now uses Windows Segoe UI Variable Text, a locally bundled
+OFL Source Sans 3 fallback, and IBM Plex Mono for technical content. Native computed
+styles and platform font inspection confirm actual font selection. Titles are
+24px/600, body and navigation 14px/400, active navigation and controls 500;
+secondary copy is 13px and metadata 12px. Conflicting style patches, excessive bold
+and normal-text tracking were removed. Existing wordmarks, palettes, shell, routes
+and backend services remain intact. Appearance still has exactly Light/Dark/ReconX.
+
+Native before/after captures cover six pages, three themes and three desktop sizes
+(54 observations plus three device-scale captures per phase). All after checks pass;
+Windows monitor scaling and Linux rendering were not physically tested. See
+TYPOGRAPHY_OVERHAUL.md and artifacts/typography-refinement/compare.html for the
+measured causes, actual screenshots and limitations.
+
 ## Functional inputs / local analysis milestone
 
 Shared Rust target CRUD supports 17 types, tags, descriptions, scope exclusions,

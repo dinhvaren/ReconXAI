@@ -92,6 +92,21 @@
       "verification": "Exactly Light/Dark/ReconX; synchronized menus/dropdown, immediate storage, three native restarts, no OS following; artifacts/native-1791906555280"
     },
     {
+      "id": "typography_refinement",
+      "status": "TESTED",
+      "verification": "Actual Windows Tauri/WebView2 before/after: 6 pages x 3 themes x 3 viewports plus 3 emulated device scales; 57 observations per phase. Native Segoe Text and bundled Source Sans 3 resolved. Release regressions: 8 existing + 9 input checkpoints.",
+      "evidence": "artifacts/typography-refinement",
+      "fonts": {
+        "windows": "Segoe UI Variable Text",
+        "bundled_fallback": "Source Sans 3",
+        "technical": "IBM Plex Mono"
+      },
+      "limitations": [
+        "Physical monitor scaling not changed",
+        "Linux rendering unverified"
+      ]
+    },
+    {
       "id": "project_management",
       "status": "TESTED"
     },
@@ -227,6 +242,29 @@
     "inputs_release_record": "artifacts/inputs-1791947186174/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Prior theme/viewport and OS-store evidence retained; current input slice does not claim Linux, MCP, recon, agents or report scenarios"
+    "note": "Prior theme/viewport and OS-store evidence retained; current input slice does not claim Linux, MCP, recon, agents or report scenarios",
+    "typography_before_record": "artifacts/typography-refinement/before/results.json",
+    "typography_after_record": "artifacts/typography-refinement/after/results.json",
+    "typography_observations_per_phase": 57,
+    "typography_release_regression_record": "artifacts/native-1791968095176/results.json",
+    "typography_release_regression_checkpoints": 8,
+    "typography_release_inputs_record": "artifacts/inputs-1791968144226/results.json",
+    "typography_device_scale_after_pixels": [
+      {
+        "scale": 1.25,
+        "width": 1800,
+        "height": 1125
+      },
+      {
+        "scale": 1.5,
+        "width": 2160,
+        "height": 1350
+      },
+      {
+        "scale": 2,
+        "width": 2880,
+        "height": 1800
+      }
+    ]
   }
 }

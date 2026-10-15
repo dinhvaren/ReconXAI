@@ -1,0 +1,435 @@
+/* Typography roles are defined here once. Layout and all three palettes live in
+   styles.css. Use the Windows registered Text family; the unsuffixed name alone
+   falls back to Arial in this host's WebView2. No rendering/smoothing hacks. */
+@font-face {
+  font-family: "Source Sans 3";
+  src: url("./assets/fonts/sourcesans3/SourceSans3VF-Upright.ttf")
+    format("truetype");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: block;
+}
+:root {
+  --font-ui:
+    "Segoe UI Variable Text", "Segoe UI Variable", "Source Sans 3", "Noto Sans",
+    "Segoe UI", sans-serif;
+  --font-code: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --font-mono: var(--font-code);
+  --font-brand: "DM Sans", "Segoe UI", sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 15px;
+  --text-section: 17px;
+  --text-title: 24px;
+  --text-page: var(--text-title);
+  --text-card: var(--text-lg);
+  --text-body: var(--text-base);
+  --text-label: var(--text-sm);
+  --text-secondary: var(--text-sm);
+  --text-meta: var(--text-xs);
+  --text-code: var(--text-sm);
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --line-body: 1.5;
+  --line-control: 1.4;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-body);
+  letter-spacing: normal;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+}
+
+/* Ordinary emphasis is medium. Semibold belongs to titles, not every <b>. */
+b,
+strong {
+  font-weight: var(--weight-medium);
+}
+h1,
+.dashboard-intro h1 {
+  font-size: var(--text-title);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  letter-spacing: normal;
+}
+h2,
+.section-title h2,
+.panel-heading h2 {
+  font-size: var(--text-section);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+}
+h3,
+.feature-card-body h3,
+.library-title h3,
+.research-card h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+}
+p,
+.subtitle,
+.page-heading .subtitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-body);
+}
+small {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+label,
+.form label,
+.form-grid label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+}
+input,
+select,
+textarea {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-control);
+}
+textarea {
+  line-height: var(--line-body);
+}
+button,
+.button,
+.button.small,
+.text-button,
+.card-actions .text-button {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--line-control);
+}
+.inline-check,
+.checkbox-row,
+.form .inline-check,
+.form .checkbox-row {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+
+/* Preserve existing wordmarks rather than restyling icon or SVG artwork. */
+.rail-brand,
+.profile-hex {
+  font-family: var(--font-brand);
+  font-size: 26px;
+  font-weight: 700;
+}
+.rail-brand {
+  letter-spacing: -4px;
+}
+.profile-hex {
+  letter-spacing: -5px;
+}
+.rail-brand > span > span,
+.profile-hex > span > span {
+  font-size: 26px;
+}
+.navigation-heading {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+.navigation-group-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.nav-item {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-control);
+}
+.nav-item.active {
+  font-weight: var(--weight-medium);
+}
+.nav-item > span {
+  line-height: var(--line-control);
+}
+.navigation-status b {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.navigation-status small,
+.navigation-edition {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.eyebrow,
+.dashboard-intro .eyebrow,
+.feature-kicker,
+.cover-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.5;
+}
+.feature-content h2 {
+  font-size: 20px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+}
+.feature-content p,
+.feature-card-body > p,
+.research-card p {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+.feature-link,
+.button.feature-button {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+.feature-tag,
+.dashboard-summary,
+.project-card-metadata,
+.profile-progress,
+.section-caption,
+.research-card > div > span {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+
+.activity-toolbar > span {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.workspace-profile h2 {
+  font-size: var(--text-section);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+}
+.workspace-profile p,
+.activity-empty p,
+.activity-empty-copy {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+.activity-section-title h3 {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+.activity-section-title .text-button {
+  font-size: var(--text-sm);
+}
+.provider-info b,
+.provider-activity-card b {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.45;
+}
+.activity-description b,
+.activity-sidebar .activity-description b {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+}
+.activity-description small,
+.activity-sidebar .activity-description small {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.provider-activity-card small,
+.service-status small {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.service-status > span:nth-child(2) {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.badge,
+.micro-badge,
+.status-indicator,
+.activity-sidebar .status-indicator,
+.count {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+
+.toolbar-location,
+.project-selector,
+.workspace-search kbd {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+.workspace-search input {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+}
+.workspace-footer,
+.activity-footer,
+.workspace-footer .text-button {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.search-results b,
+.quick-actions-menu button {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+.search-results small,
+.quick-actions-menu > span {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+.theme-menu-heading,
+.theme-menu b {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.theme-menu small {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+
+.helper,
+.empty p,
+.library-card > p,
+.storage-detail p,
+.security-note,
+.module-banner p,
+.module-empty-state p,
+.binary-explorer p,
+.research-context-section p,
+.reasoning-summary,
+.reasoning-summary p,
+.target-details .muted,
+.import-controls .muted,
+.file-explorer .muted,
+.binary-workspace .muted {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.55;
+}
+.library-card h3,
+.model-card h3,
+.file-history-item b {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+.library-title small,
+.model-card small {
+  font-size: var(--text-sm);
+}
+.metadata-grid dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+.metadata-grid dd {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.file-history-item span,
+.file-history-item small {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+.research-tabs button,
+.workspace-tabs button,
+.context-tab,
+.prompt-hints button {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+.research-tabs button[aria-selected="true"],
+.context-tab[aria-selected="true"] {
+  font-weight: var(--weight-medium);
+}
+.research-context-header {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+}
+.research-context-section h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.chat-message pre {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: 1.6;
+}
+.chat-message-header,
+.composer-footer small,
+.composer-footer .inline-check {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+.chat-message-header b {
+  font-weight: var(--weight-medium);
+}
+.chat-composer textarea,
+.chat-panel .panel-heading select {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+}
+.jobs-empty b,
+.inline-empty b {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.jobs-empty p,
+.inline-empty p {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+table,
+.data-table {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+}
+th,
+.data-table th {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.data-table td small {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+/* Code roles are intentionally narrow: UI prose and navigation never inherit mono. */
+code,
+.mono,
+.technical,
+.hex-preview,
+.terminal-panel,
+.terminal-panel pre,
+.storage-detail code,
+.provider-info code,
+td.mono,
+.metadata-grid dd.technical {
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  font-weight: var(--weight-regular);
+  line-height: 1.6;
+}
+.terminal-panel b,
+.terminal-panel strong {
+  font-weight: var(--weight-medium);
+}

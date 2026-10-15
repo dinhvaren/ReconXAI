@@ -259,8 +259,8 @@ try{
             return {theme:document.documentElement.dataset.theme,preference:document.documentElement.dataset.themePreference,title:getComputedStyle(document.querySelector('h1')).fontSize,nav:getComputedStyle(document.querySelector('.nav-item')).fontSize,uiFont:getComputedStyle(document.body).fontFamily,codeFont:document.querySelector('.storage-detail code')?getComputedStyle(document.querySelector('.storage-detail code')).fontFamily:null,fonts:[...document.fonts].map(f=>({family:f.family,status:f.status})),tiny,clippedNavigation,documentWidth:document.documentElement.scrollWidth,width:innerWidth};
           });
           await writeFile(path.join(artifact,'typography-last.json'),JSON.stringify(typography,null,2));
-          assert.equal(typography.theme,mode.toLowerCase());assert.equal(typography.title,'26px');assert.equal(typography.nav,'14px');
-          assert(typography.uiFont.includes('DM Sans'));assert(typography.fonts.some(f=>f.family==='DM Sans'&&f.status==='loaded'));
+          assert.equal(typography.theme,mode.toLowerCase());assert.equal(typography.title,'24px');assert.equal(typography.nav,'14px');
+          assert(typography.uiFont.includes('Segoe UI Variable Text'));assert(typography.fonts.some(f=>f.family==='Source Sans 3'));
           if(module==='Settings'){assert(typography.codeFont.includes('IBM Plex Mono'));assert(typography.fonts.some(f=>f.family==='IBM Plex Mono'&&f.status==='loaded'));assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),mode.toLowerCase());}
           assert.deepEqual(typography.tiny,[],'No visible control or text below 12px');assert.deepEqual(typography.clippedNavigation,[],'Navigation labels fit');assert(typography.documentWidth<=width);
           appearanceChecks.push({page:module,width,height,...typography});
@@ -286,7 +286,7 @@ try{
     await chooseTheme(page,'Dark');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
     await chooseTheme(page,'Light');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
     await writeFile(path.join(artifact,'appearance-matrix.json'),JSON.stringify(appearanceChecks,null,2));
-    results.push('DM Sans/IBM Plex Mono load locally; no visible text below 12px or clipped navigation at 1366/1920; Light/Dark/ReconX, both menus, Settings, dialogs, keyboard, OS independence and all three restarts verified');
+    results.push('Native UI/locally bundled Source Sans 3 fallback and IBM Plex Mono; no visible text below 12px or clipped navigation at 1366/1920; Light/Dark/ReconX, both menus, Settings, dialogs, keyboard, OS independence and all three restarts verified');
   }
   await writeFile(path.join(artifact,'results.json'),JSON.stringify({status:'passed',platform:process.platform,desktop,cli,results,calls},null,2));
   console.log(JSON.stringify({status:'passed',artifact,checks:results},null,2));

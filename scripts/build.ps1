@@ -21,7 +21,7 @@ try {
     }
     [System.IO.File]::WriteAllLines((Join-Path $destination 'SHA256SUMS.txt'),$lines,[System.Text.UTF8Encoding]::new($false))
     $fontRoot=Join-Path $repoRoot 'apps\desktop\src\assets\fonts'
-    $fontNotices="ReconX AI bundled fonts`n`nDM Sans`n`n" + [System.IO.File]::ReadAllText((Join-Path $fontRoot 'dmsans\OFL.txt')) + "`n`nIBM Plex Mono`n`n" + [System.IO.File]::ReadAllText((Join-Path $fontRoot 'ibmplexmono\OFL.txt'))
+    $fontNotices="ReconX AI bundled fonts`n`nSource Sans 3`n`n" + [System.IO.File]::ReadAllText((Join-Path $fontRoot 'sourcesans3\LICENSE.md')) + "`n`nDM Sans (wordmark only)`n`n" + [System.IO.File]::ReadAllText((Join-Path $fontRoot 'dmsans\OFL.txt')) + "`n`nIBM Plex Mono`n`n" + [System.IO.File]::ReadAllText((Join-Path $fontRoot 'ibmplexmono\OFL.txt'))
     [System.IO.File]::WriteAllText((Join-Path $destination 'THIRD_PARTY_NOTICES.txt'),$fontNotices,[System.Text.UTF8Encoding]::new($false))
     if($Installer){
         Push-Location (Join-Path $repoRoot 'apps\desktop')

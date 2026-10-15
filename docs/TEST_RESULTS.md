@@ -2,6 +2,45 @@
 
 Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-14.
 
+## Current typography verification
+
+- Baseline: TypeScript/Vite build and 11 frontend tests passed before changes.
+- After: npm test **11 passed, 0 failed**; npm run build passed (TypeScript + Vite).
+- cargo check --locked --workspace: passed.
+- cargo fmt --all -- --check and cargo clippy --locked --workspace --all-targets
+  -- -D warnings: passed. cargo test --locked --workspace: **45 passed, 0 failed,
+  1 ignored** (explicit OS credential-store fixture).
+- npm run tauri -- build --no-bundle: optimized Windows desktop build passed.
+  scripts/build.ps1 also built/copied desktop and CLI, checksums and font notices
+  to artifacts/windows-x64. This does not claim an installer was generated.
+- Native typography before and after: **57 observations per phase**, including
+  Dashboard, Projects, Targets & Scope, Reverse Engineering, AI Workspace and
+  Settings at 1920x1080, 1440x900 and 1366x768 in all three themes (54), plus three
+  Settings device-scale captures. Actual Tauri/WebView2 screenshots were inspected.
+- Evidence: artifacts/typography-refinement/{before,after}/results.json,
+  computed-styles.json and PNGs. Interactive comparison: compare.html in their
+  parent directory. After checks verify 24/600 titles, 400 navigation, 500 active
+  navigation, no sampled text below 12px or above 600, actual platform fonts,
+  readable 13px technical text, navigation bounds and workspace overflow.
+- Platform-font trials found the unsuffixed Segoe UI Variable family falling back
+  to Arial; the Text family resolves to native Segoe. Bundled Source Sans 3 was
+  separately loaded from the application origin and inspected in WebView2.
+- Existing native debug regression: **8 checkpoints passed**, including 50
+  secondary-page/viewport and 12 theme/page/viewport observations, synchronized
+  appearance menus/settings/restarts, project/CLI sharing, local AI and key masking.
+  Record: artifacts/native-1791966981632/results.json.
+- Copied optimized release input regression: **9 checkpoints passed**. Record:
+  artifacts/inputs-1791968144226/results.json. Native file picker, scope editing,
+  import/export, shared target/PE results, persistent jobs and restart were tested.
+- Copied optimized release existing regression: **8 checkpoints passed**, including
+  the same 50 page/viewport and 12 appearance observations, all three theme restarts
+  and both synchronized menus. Record: artifacts/native-1791968095176/results.json.
+
+All fixtures use isolated databases and local owned samples/test gateways. No user
+project or stored credential was reset. Device scales 1.25/1.5/2 are CDP emulation
+of the native renderer, not physical Windows monitor-setting tests. Linux/ARM64
+rendering, live cloud providers and unimplemented research modules are unverified.
+
 ## Current functional-input verification
 
 Baseline before changes: scripts/verify.ps1, 31 Rust / 9 frontend passed.

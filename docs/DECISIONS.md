@@ -29,3 +29,5 @@
 27. Use object 0.40 and ZIP 9 readers for bounded local byte inspection. Do not execute samples, extract package contents or represent static strings as decompilation.
 28. Keep raw sample/result artifacts separate from ordinary SQLite fields; persist hashes, references and actual job stage logs. Recheck target identity, scope, authorization and cancellation between stages.
 29. Native import/export tests select owned samples through actual Windows dialogs. Isolate data/browser profiles and hide owned test windows to prevent physical input racing CDP; normal application windows remain visible.
+30. Typography has one role sheet with regular/medium/semibold weights. Use the registered Segoe UI Variable Text family verified in WebView2; bundle Adobe Source Sans 3 under OFL as fallback and retain IBM Plex Mono for technical text. Do not redistribute Windows fonts or add unverified smoothing flags.
+31. Verify typography using native computed styles, platform-font inspection and before/after page/theme/viewport captures. Report CDP device-scale emulation separately from physical OS DPI changes; keep font trials and local AI fixtures out of user data.
