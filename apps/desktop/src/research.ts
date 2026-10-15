@@ -1,4 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useRef } from "react";
 import type { Mode } from "./api";
 export const targetKinds = [
   ["domain", "Domain"],
@@ -53,6 +55,7 @@ export interface ImportedFile {
   target_id: string | null;
   name: string;
   sha256: string;
+  source_path?: string;
   size: number;
   format: string;
   created_at: string;
@@ -66,7 +69,14 @@ export interface AnalysisJob {
   status: string;
   created_at: string;
   finished_at: string | null;
+  started_at: string | null;
+  timeout_ms: number;
+  progress: number;
+  stage: string;
+  cancel_requested: boolean;
+  result: unknown | null;
   error_code: string | null;
+  error_message: string | null;
   logs: string[];
 }
 export interface Section {
@@ -113,3 +123,37 @@ export const localFileKinds: TargetKind[] = [
   "firmware",
   "apk",
 ];
+export const jobKinds = [
+  ["local_static_binary", "Local static analysis"],
+  ["binary_metadata", "Binary metadata"],
+  ["strings_extraction", "Strings extraction"],
+  ["artifact_index", "Local artifact index"],
+  ["target_registration_review", "Target scope review"],
+] as const;
+export type JobKind = (typeof jobKinds)[number][0];
+export const activeJob = (job: AnalysisJob) =>
+  ["queued", "running"].includes(job.status);
+export function useJobEvents(onJob: (job: AnalysisJob) => void) {
+  const handler = useRef(onJob);
+  handler.current = onJob;
+  useEffect(() => {
+    let closed = false;
+    let cleanup: (() => void) | undefined;
+    try {
+      void listen<AnalysisJob>("research-job", (event) =>
+        handler.current(event.payload),
+      )
+        .then((unlisten) => {
+          if (closed) unlisten();
+          else cleanup = unlisten;
+        })
+        .catch(() => {}); // Unit-test DOM has no native event bridge; reads still work.
+    } catch {
+      /* No native bridge. */
+    }
+    return () => {
+      closed = true;
+      cleanup?.();
+    };
+  }, []);
+}

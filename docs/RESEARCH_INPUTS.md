@@ -1,6 +1,6 @@
 # Targets and local binary analysis
 
-Both clients use shared Core services, the existing database and migration 002.
+Both clients use shared Core services, the existing database and migrations 002/003.
 No provider configuration or project reset is needed.
 
 ## Targets
@@ -81,9 +81,10 @@ normal per-user Windows storage inherits account ACLs; Unix import directories
 use 0700. Artifacts are not an encrypted vault and are not shareable reports.
 No raw strings/hex are automatically sent to AI.
 
-Cancellation is cooperative between bounded stages. Status/logs persist in both
-clients. A crash may leave a running job requiring cancellation; automatic recovery,
-retries, pause/resume and general DAG scheduling are pending. Removing imported
+Cancellation is cooperative between bounded stages and chunked reads/hash/strings.
+Status/logs/results persist in both clients. Expiring worker leases now reconcile
+interrupted jobs on startup/polling; queued jobs survive without blindly replaying
+interrupted work. Retries, pause/resume and general DAG scheduling are pending. Removing imported
 records preserves originals, cached blobs and job history. Cache GC is pending.
 
 ## Verification
@@ -94,3 +95,7 @@ database. Windows helper automation selects owned PE/JSON through real native
 dialogs. Hidden test windows retain the real renderer/IPC/dialogs and prevent
 physical input racing automation. Records/screenshots live in ignored artifacts.
 Linux runtime and installers remain unverified.
+
+Durable queue, Job Center, exact result retrieval, local notes and explicit AI
+artifact consent are documented in JOB_ENGINE.md. Native job acceptance can be run
+with scripts/verify.ps1 -Jobs (and -Native -Inputs -Visual for full regression).

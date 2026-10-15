@@ -76,14 +76,32 @@ fn symbol_name(name: object::NameOrOrdinal<&[u8]>) -> String {
         object::NameOrOrdinal::Ordinal(n) => format!("ordinal {n}"),
     }
 }
-fn extract_strings(bytes: &[u8]) -> Vec<BinaryString> {
+fn extract_strings(
+    bytes: &[u8],
+    update: &mut dyn FnMut(u8, &str) -> Result<()>,
+) -> Result<Vec<BinaryString>> {
     let mut rows = Vec::new();
     let mut start = 0;
+    let mut next_check = 0;
     while start < bytes.len() && rows.len() < MAX_STRINGS / 2 {
+        if start >= next_check {
+            update(
+                (30 + start * 20 / bytes.len().max(1)) as u8,
+                "Extracting bounded ASCII strings",
+            )?;
+            next_check = start + 1024 * 1024;
+        }
         if (32..=126).contains(&bytes[start]) {
             let mut end = start;
             while end < bytes.len() && (32..=126).contains(&bytes[end]) {
                 end += 1;
+                if end >= next_check {
+                    update(
+                        (30 + end * 20 / bytes.len().max(1)) as u8,
+                        "Extracting bounded ASCII strings",
+                    )?;
+                    next_check = end + 1024 * 1024;
+                }
             }
             if end - start >= 4 {
                 rows.push(BinaryString {
@@ -99,7 +117,15 @@ fn extract_strings(bytes: &[u8]) -> Vec<BinaryString> {
     }
     for alignment in 0..2 {
         let mut start = alignment;
+        let mut next_check = 0;
         while start + 1 < bytes.len() && rows.len() < MAX_STRINGS {
+            if start >= next_check {
+                update(
+                    (50 + alignment * 10 + start * 10 / bytes.len().max(1)) as u8,
+                    "Extracting bounded UTF-16 LE strings",
+                )?;
+                next_check = start + 1024 * 1024;
+            }
             // UTF-16 LE strings: anchor on a printable ASCII code unit, then accept
             // valid non-control BMP characters as well. No surrogate fabrication.
             if (32..=126).contains(&bytes[start])
@@ -130,30 +156,69 @@ fn extract_strings(bytes: &[u8]) -> Vec<BinaryString> {
         }
     }
     rows.sort_by_key(|s| s.offset);
-    rows
+    Ok(rows)
 }
 pub fn inspect(bytes: &[u8]) -> Result<BinaryAnalysis> {
+    inspect_with_progress(bytes, |_, _| Ok(()))
+}
+pub fn inspect_with_progress(
+    bytes: &[u8],
+    mut update: impl FnMut(u8, &str) -> Result<()>,
+) -> Result<BinaryAnalysis> {
     if bytes.len() > MAX_FILE_BYTES {
         return Err(AppError::new("INPUT_LIMIT", "Files are limited to 64 MiB"));
     }
-    std::panic::catch_unwind(|| parse(bytes))
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| parse(bytes, &mut update)))
         .map_err(|_| AppError::new("MALFORMED_BINARY", "Parser rejected malformed input"))?
 }
-fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
+fn parse(bytes: &[u8], update: &mut dyn FnMut(u8, &str) -> Result<()>) -> Result<BinaryAnalysis> {
+    let mut sha = Sha256::new();
+    let mut counts = [0usize; 256];
+    update(0, "Hashing local sample")?;
+    for (i, chunk) in bytes.chunks(1024 * 1024).enumerate() {
+        sha.update(chunk);
+        update(
+            (i * 1024 * 1024 * 15 / bytes.len().max(1)) as u8,
+            "Hashing local sample",
+        )?;
+    }
+    let sha256 = sha.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    for (i, chunk) in bytes.chunks(1024 * 1024).enumerate() {
+        for b in chunk {
+            counts[*b as usize] += 1;
+        }
+        update(
+            (15 + i * 1024 * 1024 * 15 / bytes.len().max(1)) as u8,
+            "Measuring file entropy",
+        )?;
+    }
+    let file_entropy = counts
+        .iter()
+        .filter(|&&n| n != 0)
+        .map(|&n| {
+            let p = n as f64 / bytes.len() as f64;
+            -p * p.log2()
+        })
+        .sum();
+    let strings = extract_strings(bytes, update)?;
+    update(
+        70,
+        "Parsing content signatures, sections, imports and exports",
+    )?;
     let mut result = BinaryAnalysis {
         format: "Raw binary".into(),
         architecture: None,
         size: bytes.len() as u64,
-        sha256: hash(bytes),
+        sha256,
         entry_point: None,
         little_endian: None,
-        entropy: entropy(bytes),
+        entropy: file_entropy,
         sections: vec![],
         segments: vec![],
         imports: vec![],
         exports: vec![],
         package_entries: vec![],
-        strings: extract_strings(bytes),
+        strings,
         hex_preview: bytes
             .iter()
             .take(512)
@@ -209,6 +274,9 @@ fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
             ));
         }
         for i in 0..archive.len() {
+            if i % 32 == 0 {
+                update(80, "Inspecting bounded package directory")?;
+            }
             let entry = archive
                 .by_index_raw(i)
                 .map_err(|_| AppError::new("MALFORMED_BINARY", "Invalid package entry"))?;
@@ -241,6 +309,9 @@ fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
                 let mut section_entropy_budget = MAX_FILE_BYTES;
                 let mut skipped_entropy = false;
                 for section in file.sections().take(MAX_ROWS + 1) {
+                    if result.sections.len().is_multiple_of(32) {
+                        update(80, "Inspecting binary sections")?;
+                    }
                     if result.sections.len() == MAX_ROWS {
                         return Err(AppError::new("INPUT_LIMIT", "Too many sections"));
                     }
@@ -281,6 +352,9 @@ fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
                 match file.imports() {
                     Ok(imports) => {
                         for import in imports.take(MAX_ROWS) {
+                            if result.imports.len().is_multiple_of(64) {
+                                update(90, "Inspecting import table")?;
+                            }
                             match import {
                                 Ok(i) => result.imports.push(format!(
                                     "{}!{}",
@@ -301,6 +375,9 @@ fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
                 match file.exports() {
                     Ok(exports) => {
                         for export in exports.take(MAX_ROWS) {
+                            if result.exports.len().is_multiple_of(64) {
+                                update(95, "Inspecting export table")?;
+                            }
                             match export {
                                 Ok(e) => result.exports.push(format!(
                                     "{} {}",
@@ -339,6 +416,7 @@ fn parse(bytes: &[u8]) -> Result<BinaryAnalysis> {
     if result.strings.len() == MAX_STRINGS {
         result.warnings.push("String output reached the 4000-row limit; individual strings are capped at 256 characters".into());
     }
+    update(100, "Static parser completed")?;
     Ok(result)
 }
 

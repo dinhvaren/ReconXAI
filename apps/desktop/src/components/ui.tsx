@@ -135,6 +135,7 @@ export function ActivityItem({
     "settings.migrated": "Appearance migrated",
     "ai.models": "Model discovery",
     "ai.chat": "Assistant response",
+    "ai.artifact_review": "Artifact review",
     "ai.stream": "Streamed analysis",
     "ai.fallback": "Fallback response",
     "ai.stream_fallback": "Fallback analysis",

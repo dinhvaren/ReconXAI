@@ -25,7 +25,16 @@ SQLite stores references and metadata. See RESEARCH_INPUTS.md for limits and rem
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
 
-Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The token system supports exactly Light/Dark/ReconX, locally bundled DM Sans/IBM Plex Mono and original SVG assets without runtime font/image downloads. Selected project context is local presentation state; it does not send project data to AI or change CLI operations. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
+Migration 003 adds the durable local Job Engine in reconx-core/src/jobs.rs. Atomic
+SQLite claims enforce a two-job ceiling across processes; worker leases, fenced
+terminal transitions and current-policy checkpoints protect result publication.
+Native worker events and persisted reads feed the shared Job Center. CLI can drain
+or watch the same queue. Synchronous CLI analysis waits for an already claimed job
+rather than creating an inconsistent second execution. Local notes are independent
+of provider settings. Selected-artifact AI review binds consent to its exact preview
+and destination and has no implicit fallback. See JOB_ENGINE.md for limits/interfaces.
+
+Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The token system supports exactly Light/Dark/ReconX, native Segoe UI Variable Text, locally bundled Source Sans 3/IBM Plex Mono and the original DM Sans wordmark and original SVG assets without runtime font/image downloads. Selected project context is local presentation state; it does not send project data to AI or change CLI operations. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
 
 Appearance is centralized in src/theme.tsx and shared ThemeMenu components. Saved appearance is read before the native window is shown. The core's transaction-scoped set_theme operation updates only that preference; Settings drafts exclude theme and use the central write queue. CSS roles cover the neutral Light/Dark palettes and preserved ReconX palette. Legacy system or missing preference migrates to reconx on open; new installations default to ReconX. No OS appearance listener is installed. See THEMES.md.
 

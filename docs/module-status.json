@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -221,28 +221,50 @@
     {
       "id": "local_analysis_jobs",
       "status": "TESTED",
-      "verification": "Native persistent history and CLI; cooperative cancellation and policy-change tests"
+      "verification": "Windows native debug: durable queue, five local handlers, global two-job claims, cancellation/timeout, exact results, real process kill/restart lease recovery; artifacts/jobs-1792077094197"
+    },
+    {
+      "id": "local_job_engine",
+      "status": "TESTED",
+      "verification": "Windows actual native debug/release: 11 core tests, CLI queue integration and 8 job checkpoints per build; real interruption/restart/cancellation/timeout",
+      "evidence": "artifacts/jobs-1792077094197/results.json",
+      "limitations": [
+        "Cooperative deadlines/cancellation",
+        "10-second lease recovery grace",
+        "No general DAG/retry/pause",
+        "Parser not OS-process isolated"
+      ],
+      "release_evidence": "artifacts/jobs-1792077366043/results.json"
+    },
+    {
+      "id": "local_file_notes",
+      "status": "TESTED",
+      "verification": "Native notes save/restart and shared CLI note command; artifact previews exclude notes"
+    },
+    {
+      "id": "selected_artifact_ai_review",
+      "status": "TESTED",
+      "verification": "Explicit backend consent, exact preview and gateway binding, no fallback; real native call against an owned local mock gateway; cloud unverified"
     }
   ],
   "verification": {
-    "rust_passed": 45,
+    "rust_passed": 57,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
     "frontend_passed": 11,
     "frontend_failed": 0,
-    "native_scenarios_passed": 2,
-    "native_checkpoints_per_scenario": 6,
+    "native_scenarios_passed": 3,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
-    "debug_record": "artifacts/native-1791946811208/results.json",
-    "release_record": "artifacts/native-1791947198252/results.json",
+    "debug_record": "artifacts/native-1792077037276/results.json",
+    "release_record": "artifacts/native-1792077312439/results.json",
     "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
-    "inputs_debug_record": "artifacts/inputs-1791946818102/results.json",
-    "inputs_release_record": "artifacts/inputs-1791947186174/results.json",
+    "inputs_debug_record": "artifacts/inputs-1792077081584/results.json",
+    "inputs_release_record": "artifacts/inputs-1792077355999/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Prior theme/viewport and OS-store evidence retained; current input slice does not claim Linux, MCP, recon, agents or report scenarios",
+    "note": "Current Windows: 57 Rust, 11 frontend and 25 native checkpoints per debug/release build. Previous evidence retained. Linux/ARM64, installers, scanners, MCP, general DAG/agents and reports are not claimed.",
     "typography_before_record": "artifacts/typography-refinement/before/results.json",
     "typography_after_record": "artifacts/typography-refinement/after/results.json",
     "typography_observations_per_phase": 57,
@@ -265,6 +287,20 @@
         "width": 2880,
         "height": 1800
       }
-    ]
+    ],
+    "legacy_native_checkpoints_per_scenario": 6,
+    "native_checkpoints": {
+      "regression": 8,
+      "inputs": 9,
+      "local_jobs": 8
+    },
+    "jobs_debug_record": "artifacts/jobs-1792077094197/results.json",
+    "jobs_release_record": "artifacts/jobs-1792077366043/results.json",
+    "native_configurations": [
+      "windows-debug",
+      "windows-release"
+    ],
+    "preservation_record": "artifacts/upgrade-1792077147853/after-upgrade.json",
+    "normal_startup_record": "artifacts/windows-x64/normal-startup.json"
   }
 }

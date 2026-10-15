@@ -1,3 +1,6 @@
+import JobHistory from "../components/JobHistory";
+import FileResearchPanel from "../components/FileResearchPanel";
+import { useJobEvents, activeJob as jobIsActive } from "../research";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { request, errorText, type Snapshot } from "../api";
@@ -90,9 +93,11 @@ export default function ReversePage({
   useEffect(() => {
     if (requestImport) setChooseImport(true);
   }, [requestImport]);
-  const activeJob = jobs.find(
-    (j) => j.file_id === selected && j.status === "running",
-  );
+  const activeJob = jobs.find((j) => j.file_id === selected && jobIsActive(j));
+  useJobEvents((job) => {
+    if (!projectId || job.project_id === projectId)
+      setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)]);
+  });
   const completed = jobs.find(
     (j) => j.file_id === selected && j.status === "completed",
   );
@@ -119,7 +124,7 @@ export default function ReversePage({
     };
   }, [selected, completed?.id]);
   useEffect(() => {
-    if (!jobs.some((j) => j.status === "running")) return;
+    if (!jobs.some(jobIsActive)) return;
     const timer = setInterval(() => {
       void load().catch((e) => setLocalError(errorText(e)));
     }, 750);
@@ -337,9 +342,12 @@ export default function ReversePage({
                         const job = await request<AnalysisJob>("file_analyze", {
                           id: file.id,
                         });
-                        setJobs((current) => [job, ...current]);
+                        setJobs((current) => [
+                          job,
+                          ...current.filter((j) => j.id !== job.id),
+                        ]);
                         await load();
-                      }, "Static analysis started")
+                      }, "Static analysis queued")
                     }
                   >
                     {activeJob ? "Analyzing…" : "Analyze File"}
@@ -355,18 +363,30 @@ export default function ReversePage({
               </div>
               {activeJob && (
                 <div role="status" className="analysis-progress">
-                  <b>Static analysis running</b>
-                  <p>{activeJob.logs.at(-1)}</p>
+                  <b>
+                    {activeJob.status === "queued"
+                      ? "Static analysis queued"
+                      : "Static analysis running"}
+                  </b>
+                  <progress
+                    aria-label="Analysis progress"
+                    max={100}
+                    value={activeJob.progress}
+                  />
+                  <p>{activeJob.stage}</p>
                   <button
                     className="button secondary"
+                    disabled={activeJob.cancel_requested}
                     onClick={() =>
                       void perform(async () => {
                         await request("job_cancel", { id: activeJob.id });
                         await load();
-                      }, "Analysis cancelled")
+                      }, "Cancellation requested")
                     }
                   >
-                    Cancel analysis
+                    {activeJob.cancel_requested
+                      ? "Cancellation requested"
+                      : "Cancel analysis"}
                   </button>
                 </div>
               )}
@@ -418,6 +438,10 @@ export default function ReversePage({
                     {tab === "Metadata" && (
                       <>
                         <dl className="metadata-grid">
+                          <dt>Source path</dt>
+                          <dd className="technical break-value">
+                            {file.source_path || "Not available"}
+                          </dd>
                           <dt>Content format</dt>
                           <dd>{analysis.format}</dd>
                           <dt>Architecture</dt>
@@ -593,6 +617,13 @@ export default function ReversePage({
             </div>
           )}
         </section>
+        <FileResearchPanel
+          file={file}
+          analysisId={record?.id}
+          data={data}
+          perform={perform}
+          busy={busy}
+        />
       </div>
       <section className="panel">
         <h3>Integration capabilities</h3>
@@ -649,84 +680,6 @@ export default function ReversePage({
           Remove imported file
         </button>
       </Modal>
-    </>
-  );
-}
-export function JobHistory({ jobs }: { jobs: AnalysisJob[] }) {
-  return (
-    <div className="job-history">
-      {jobs.map((j) => (
-        <details key={j.id}>
-          <summary>
-            <b>{j.status}</b> · {new Date(j.created_at).toLocaleString()} ·{" "}
-            {j.kind}
-          </summary>
-          <p className="technical break-value">{j.id}</p>
-          {j.error_code && <p>{j.error_code}</p>}
-          {j.logs.map((log, i) => (
-            <p key={i}>{log}</p>
-          ))}
-        </details>
-      ))}
-      {!jobs.length && <p className="muted">No analysis jobs recorded.</p>}
-    </div>
-  );
-}
-export function JobsPage({
-  data,
-  perform,
-  busy,
-}: {
-  data: Snapshot;
-  perform: Perform;
-  busy: boolean;
-}) {
-  const [jobs, setJobs] = useState<AnalysisJob[]>([]);
-  const [error, setError] = useState("");
-  const load = useCallback(async () => {
-    try {
-      setJobs(await request("jobs_list", { project: null }));
-      setError("");
-    } catch (e) {
-      setError(errorText(e));
-    }
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load, data.audit[0]?.id]);
-  useEffect(() => {
-    if (!jobs.some((j) => j.status === "running")) return;
-    const timer = setInterval(() => void load(), 750);
-    return () => clearInterval(timer);
-  }, [jobs, load]);
-  return (
-    <>
-      <Heading
-        eyebrow="Execution history"
-        title="Analysis Jobs"
-        description="Persistent local static-analysis jobs shared with the CLI."
-      />
-      {error && <p role="alert">{error}</p>}
-      <section className="panel">
-        <JobHistory jobs={jobs} />
-        {jobs
-          .filter((j) => j.status === "running")
-          .map((j) => (
-            <button
-              className="button secondary"
-              disabled={busy}
-              key={j.id}
-              onClick={() =>
-                void perform(async () => {
-                  await request("job_cancel", { id: j.id });
-                  await load();
-                })
-              }
-            >
-              Cancel job {j.id.slice(0, 8)}
-            </button>
-          ))}
-      </section>
     </>
   );
 }

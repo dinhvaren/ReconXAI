@@ -34,7 +34,7 @@ impl Database {
         let version: i64 = tx
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if version > 2 {
+        if version > 3 {
             return Err(AppError::new(
                 "SCHEMA_TOO_NEW",
                 "Database was created by a newer ReconX version; no migration was performed",
@@ -50,6 +50,12 @@ impl Database {
             tx.execute_batch(include_str!("../migrations/002_research_inputs.sql"))
                 .map_err(db_error)?;
             tx.pragma_update(None, "user_version", 2)
+                .map_err(db_error)?;
+        }
+        if version < 3 {
+            tx.execute_batch(include_str!("../migrations/003_job_engine.sql"))
+                .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 3)
                 .map_err(db_error)?;
         }
         tx.commit().map_err(db_error)?;

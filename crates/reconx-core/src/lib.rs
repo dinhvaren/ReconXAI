@@ -13,8 +13,10 @@ use sha2::{Digest, Sha256};
 use std::{path::PathBuf, sync::Arc};
 use uuid::Uuid;
 use zeroize::Zeroizing;
+mod jobs;
 mod reverse;
 mod targets;
+pub use jobs::{AnalysisJob, JobEngine, JobInput, JobKind};
 pub use reverse::*;
 pub use targets::*;
 
@@ -123,6 +125,7 @@ impl Core {
         let db = Database::open(path)?;
         let core = Self { db, secrets };
         core.migrate_theme_preference()?;
+        core.reconcile_jobs()?;
         Ok(core)
     }
     fn migrate_theme_preference(&self) -> Result<()> {
@@ -468,6 +471,34 @@ impl Core {
             }
             return result;
         }
+        result
+    }
+    // Artifact consent is bound to one captured destination. Ordinary chat keeps
+    // its existing fallback behavior; local artifacts must not silently follow it.
+    async fn chat_artifacts_to_gateway(
+        &self,
+        config: ProviderConfig,
+        prompt: &str,
+    ) -> Result<AiReply> {
+        let id = config.id.clone();
+        let key = if config.requires_key {
+            self.secrets.get(&credential_reference(&config))?
+        } else {
+            None
+        };
+        let result = reconx_ai::Gateway::new(config)?
+            .chat(prompt, key.as_ref().map(|k| k.as_str()))
+            .await;
+        Self::audit(
+            &self.db.connect()?,
+            "ai.artifact_review",
+            &id,
+            if result.is_ok() {
+                "completed"
+            } else {
+                "failed"
+            },
+        )?;
         result
     }
     fn fallback_for<T>(&self, id: &str, result: &Result<T>) -> Result<Option<String>> {

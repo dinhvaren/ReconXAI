@@ -1,7 +1,7 @@
 use clap::{CommandFactory, Parser, Subcommand};
 use reconx_core::{
-    AppError, Core, ProjectExport, ProviderConfig, Result, SecurityMode, Settings, TargetExport,
-    TargetInput, TargetKind,
+    AppError, Core, JobEngine, JobInput, JobKind, ProjectExport, ProviderConfig, Result,
+    SecurityMode, Settings, TargetExport, TargetInput, TargetKind,
 };
 use serde_json::{Value, json};
 use std::{
@@ -137,6 +137,9 @@ enum TargetCommand {
 }
 #[derive(Subcommand)]
 enum ScopeCommand {
+    Show {
+        id: String,
+    },
     Validate {
         id: String,
         #[arg(long)]
@@ -145,6 +148,12 @@ enum ScopeCommand {
 }
 #[derive(Subcommand)]
 enum ReverseCommand {
+    /// Read local file notes, or replace them from a UTF-8 text file.
+    Note {
+        id: String,
+        #[arg(long)]
+        input: Option<PathBuf>,
+    },
     Import {
         input: PathBuf,
         #[arg(long)]
@@ -177,6 +186,27 @@ enum ReverseCommand {
 }
 #[derive(Subcommand)]
 enum JobCommand {
+    /// Queue an allowlisted local task. Desktop or `jobs run` executes it.
+    Enqueue {
+        #[arg(long)]
+        kind: String,
+        #[arg(long)]
+        file: Option<String>,
+        #[arg(long)]
+        target: Option<String>,
+        #[arg(long, default_value_t = 60000)]
+        timeout_ms: u64,
+    },
+    /// Run the durable queue until idle, or continuously with --watch.
+    Run {
+        #[arg(long, default_value_t = 2)]
+        concurrency: usize,
+        #[arg(long)]
+        watch: bool,
+    },
+    Result {
+        id: String,
+    },
     List {
         #[arg(long)]
         project: Option<String>,
@@ -347,10 +377,22 @@ async fn execute(cli: &Cli) -> Result<Value> {
                 Ok(json!({"status":"exported"}))
             }
         },
+        Command::Scope(ScopeCommand::Show { id }) => {
+            let target = core.target(id)?;
+            Ok(
+                json!({"target_id":target.id,"value":target.input.value,"allowed_scope":target.input.allowed_scope,"excluded_scope":target.input.excluded_scope,"authorized":target.input.authorized,"mode":target.input.mode}),
+            )
+        }
         Command::Scope(ScopeCommand::Validate { id, value }) => {
             serialize(core.validate_scope(id, value.as_deref())?)
         }
         Command::Reverse(command) => match command {
+            ReverseCommand::Note { id, input } => {
+                if let Some(input) = input {
+                    core.save_file_note(id, &read_file(input)?)?;
+                }
+                Ok(json!({"file_id":id,"note":core.file_note(id)?}))
+            }
             ReverseCommand::Import {
                 input,
                 project,
@@ -387,11 +429,59 @@ async fn execute(cli: &Cli) -> Result<Value> {
             ReverseCommand::Compare { a, b } => serialize(core.compare_files(a, b)?),
         },
         Command::Jobs(command) => match command {
+            JobCommand::Enqueue {
+                kind,
+                file,
+                target,
+                timeout_ms,
+            } => serialize(core.enqueue_job(JobInput {
+                kind: enum_input::<JobKind>(kind)?,
+                file_id: file.clone(),
+                target_id: target.clone(),
+                timeout_ms: *timeout_ms,
+            })?),
+            JobCommand::Run { concurrency, watch } => {
+                let _engine = JobEngine::start(core.clone(), *concurrency, |_| {})?;
+                let interrupted = tokio::signal::ctrl_c();
+                tokio::pin!(interrupted);
+                loop {
+                    if !watch
+                        && !core
+                            .list_jobs(None)?
+                            .iter()
+                            .any(|j| matches!(j.status.as_str(), "queued" | "running"))
+                    {
+                        break;
+                    }
+                    tokio::select! {_= &mut interrupted => break, _=tokio::time::sleep(std::time::Duration::from_millis(100))=>{}}
+                }
+                drop(_engine);
+                serialize(core.list_jobs(None)?)
+            }
+            JobCommand::Result { id } => {
+                let job = core.job(id)?;
+                if job.status != "completed" {
+                    return Err(AppError::new(
+                        "JOB_NOT_COMPLETED",
+                        "This job has no committed result",
+                    ));
+                }
+                if job.file_id.is_some()
+                    && matches!(
+                        job.kind.as_str(),
+                        "local_static_binary" | "binary_metadata" | "strings_extraction"
+                    )
+                {
+                    serialize(core.analysis_for_job(id)?)
+                } else {
+                    serialize(job.result)
+                }
+            }
             JobCommand::List { project } => serialize(core.list_jobs(project.as_deref())?),
             JobCommand::Show { id } => serialize(core.job(id)?),
             JobCommand::Cancel { id } => {
                 core.cancel_job(id)?;
-                Ok(json!({"status":"cancelled"}))
+                serialize(core.job(id)?)
             }
         },
         Command::Init => Ok(

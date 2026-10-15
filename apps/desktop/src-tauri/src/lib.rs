@@ -1,17 +1,18 @@
 use reconx_core::{
-    AppError, Core, ProjectExport, ProviderConfig, Result, Settings, TargetExport, TargetInput,
-    ThemePreference, ToolProgress,
+    AppError, ArtifactReview, Core, JobEngine, JobInput, JobKind, ProjectExport, ProviderConfig,
+    Result, Settings, TargetExport, TargetInput, ThemePreference, ToolProgress,
 };
 use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashMap, sync::Mutex};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 use tokio::sync::watch;
 use zeroize::Zeroizing;
 
 #[derive(Default)]
 struct ActiveStreams(Mutex<HashMap<String, watch::Sender<bool>>>);
+struct ActiveJobs(Mutex<Option<JobEngine>>);
 
 #[tauri::command]
 async fn install_tool(
@@ -148,6 +149,28 @@ enum Request {
     },
     FileAnalyze {
         id: String,
+        timeout_ms: Option<u64>,
+        kind: Option<JobKind>,
+    },
+    JobEnqueue {
+        input: JobInput,
+    },
+    JobResult {
+        id: String,
+    },
+    FileNote {
+        id: String,
+    },
+    SaveFileNote {
+        id: String,
+        note: String,
+    },
+    FileArtifactPreview {
+        id: String,
+        section: String,
+    },
+    FileExplain {
+        review: ArtifactReview,
     },
     Snapshot,
     GetTheme,
@@ -301,6 +324,44 @@ fn local(core: Core, request: Request) -> Result<Value> {
         Request::FileAnalysis { id } => value(core.file_analysis(&id)?),
         Request::FilesCompare { a, b } => value(core.compare_files(&a, &b)?),
         Request::JobsList { project } => value(core.list_jobs(project.as_deref())?),
+        Request::JobEnqueue { input } => value(core.enqueue_job(input)?),
+        Request::FileAnalyze {
+            id,
+            timeout_ms,
+            kind,
+        } => value(core.enqueue_job(JobInput {
+            kind: kind.unwrap_or(JobKind::LocalStaticBinary),
+            file_id: Some(id),
+            target_id: None,
+            timeout_ms: timeout_ms.unwrap_or(60_000),
+        })?),
+        Request::JobResult { id } => {
+            let job = core.job(&id)?;
+            if job.status != "completed" {
+                return Err(AppError::new(
+                    "JOB_NOT_COMPLETED",
+                    "This job has no committed result",
+                ));
+            }
+            if job.file_id.is_some()
+                && matches!(
+                    job.kind.as_str(),
+                    "local_static_binary" | "binary_metadata" | "strings_extraction"
+                )
+            {
+                value(core.analysis_for_job(&id)?)
+            } else {
+                value(job.result)
+            }
+        }
+        Request::FileNote { id } => value(core.file_note(&id)?),
+        Request::SaveFileNote { id, note } => {
+            core.save_file_note(&id, &note)?;
+            Ok(Value::Null)
+        }
+        Request::FileArtifactPreview { id, section } => {
+            value(core.file_artifact_preview(&id, &section)?)
+        }
         Request::JobShow { id } => value(core.job(&id)?),
         Request::JobCancel { id } => {
             core.cancel_job(&id)?;
@@ -358,17 +419,7 @@ fn local(core: Core, request: Request) -> Result<Value> {
 async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value> {
     let core = core.inner().clone();
     match request {
-        Request::FileAnalyze { id } => {
-            let worker = core.clone();
-            let job = tauri::async_runtime::spawn_blocking(move || worker.begin_file_analysis(&id))
-                .await
-                .map_err(|_| AppError::new("WORKER_ERROR", "Cannot start analysis worker"))??;
-            let job_id = job.id.clone();
-            tauri::async_runtime::spawn_blocking(move || {
-                let _ = core.run_file_analysis(&job_id);
-            });
-            value(job)
-        }
+        Request::FileExplain { review } => value(core.explain_file_artifact(review).await?),
         Request::Models { id } => value(core.models(&id).await?),
         Request::ToolsDoctor { id } => value(core.tool_doctor(&id).await?),
         Request::Chat { id, prompt } => value(core.chat(&id, &prompt).await?),
@@ -447,7 +498,19 @@ pub fn run() {
     });
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .manage(core)
+        .manage(core.clone())
+        .manage(ActiveJobs(Mutex::new(None)))
+        .setup(move |app| {
+            let handle = app.handle().clone();
+            let engine = JobEngine::start(core.clone(), 2, move |job| {
+                let _ = handle.emit("research-job", job);
+            })?;
+            *app.state::<ActiveJobs>()
+                .0
+                .lock()
+                .map_err(|_| std::io::Error::other("Job engine lock unavailable"))? = Some(engine);
+            Ok(())
+        })
         .manage(ActiveStreams::default())
         .invoke_handler(tauri::generate_handler![
             service,
@@ -457,6 +520,13 @@ pub fn run() {
             install_tool,
             apply_window_theme
         ])
-        .run(tauri::generate_context!())
-        .expect("Desktop runtime failed");
+        .build(tauri::generate_context!())
+        .expect("Desktop runtime failed")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit)
+                && let Ok(mut jobs) = app.state::<ActiveJobs>().0.lock()
+            {
+                drop(jobs.take());
+            }
+        });
 }

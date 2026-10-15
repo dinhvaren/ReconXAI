@@ -13,10 +13,12 @@ import { navigation, routes } from "./components/navigation";
 import ActivitySidebar from "./components/ActivitySidebar";
 import Dashboard from "./pages/Dashboard";
 import TargetsPage from "./pages/TargetsPage";
-import ReversePage, { JobsPage } from "./pages/ReversePage";
+import ReversePage from "./pages/ReversePage";
+import JobsPage from "./pages/JobsPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
-import type { Target, TargetKind } from "./research";
+import { useJobEvents, type Target, type TargetKind } from "./research";
+import type { AnalysisJob } from "./research";
 import {
   Projects,
   SettingsPage,
@@ -43,6 +45,16 @@ function Workbench() {
   const theme = useTheme();
   const [page, setPage] = useState("Dashboard");
   const [data, setData] = useState<Snapshot | null>(null);
+  useJobEvents((job) =>
+    setData((current) =>
+      current
+        ? {
+            ...current,
+            jobs: [job, ...(current.jobs ?? []).filter((j) => j.id !== job.id)],
+          }
+        : current,
+    ),
+  );
   const [tools, setTools] = useState<ToolInventory[]>([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -80,6 +92,24 @@ function Workbench() {
   useEffect(() => {
     refresh().catch((e) => setError(errorText(e)));
   }, [refresh]);
+  useEffect(() => {
+    let closed = false;
+    // Reconciliation and changes from another CLI process also update Dashboard.
+    const timer = setInterval(() => {
+      void request<AnalysisJob[]>("jobs_list", { project: null })
+        .then((jobs) => {
+          if (!closed)
+            setData((current) => (current ? { ...current, jobs } : current));
+        })
+        .catch((e) => {
+          if (!closed) setError(errorText(e));
+        });
+    }, 2000);
+    return () => {
+      closed = true;
+      clearInterval(timer);
+    };
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -572,7 +602,16 @@ function Workbench() {
                 />
               )}
               {page === "Analysis Jobs" && (
-                <JobsPage data={data} busy={busy} perform={perform} />
+                <JobsPage
+                  data={data}
+                  busy={busy}
+                  perform={perform}
+                  onOpenFile={(id, projectId) => {
+                    selectProject(projectId);
+                    setReverseFile(id);
+                    navigate("Reverse Engineering");
+                  }}
+                />
               )}
               {page !== "Analysis Jobs" &&
                 !routes.find((r) => r.name === page)?.implemented && (

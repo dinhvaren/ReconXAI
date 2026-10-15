@@ -8,6 +8,18 @@ AI clients reject redirects, disable implicit proxies and preserve TLS verificat
 
 Explicit fallback handles only definite pre-transmission connection errors. HTTP errors, ambiguous timeouts and partial responses are not replayed. Audit metadata excludes prompts, replies and credentials.
 
+Selected local artifacts have a separate consent boundary: the backend compares
+the approved preview and gateway against current data, then uses the captured
+provider configuration with no fallback. No binary, source path or note is uploaded
+automatically. Optional sampled strings may contain sample secrets; their preview
+and explicit transmission approval are required. AI interpretation remains unverified.
+
+Local jobs use a closed typed handler list, not shell strings or LLM-provided code.
+SQLite claims cap cross-client concurrency at two. Cancellation retains capacity
+until acknowledged; timeouts are cooperative and result commit is fenced by worker
+ownership/current state. Expired leases are reconciled without blindly retrying
+interrupted work. This is not hard process isolation or a general tool executor.
+
 Only embedded manifests can drive tool installation. Official downloads use pinned URLs, restricted HTTPS GitHub redirects, and matching archive/executable SHA-256. Only the pinned regular entry is copied; archives are not unpacked wholesale. Managed binaries are rehashed before a fixed --version invocation with timeout/kill-on-drop. Directory containment and symbolic links are checked. Uninstall removes only named managed files and preserves unexpected files.
 
 No arbitrary process/shell execution, untrusted plugin installation, target scanning or privileged package installation is exposed. A tool is not a process sandbox.
@@ -34,7 +46,7 @@ does not forcibly interrupt a parser already inside one bounded stage.
 
 SQLite uses ordinary account/filesystem protection, without encryption. Notes/metadata exports are user-authored and not automatically redacted. Rust secret buffers are zeroized where practical; browser inputs, libraries and OS services may copy them. Same-account malicious processes, filesystem races and comprehensive process sandboxing are outside the claimed protection.
 
-Existing MCP/provider credentials are not imported. MCP isolation and scope workflows remain unimplemented. Tests isolate temporary data and loopback mock services; WebView2 debugging is set only in the test child environment. Test data is excluded from Git and release packages.
+Existing MCP/provider credentials are not imported. MCP isolation and active network workflows remain unimplemented; local scope review is available. Tests isolate temporary data and loopback mock services; WebView2 debugging is set only in the test child environment. Generated test data is excluded from Git and release packages.
 
 The visual redesign preserves IPC contracts and backend policy. Search uses project/provider metadata and module routes, never credentials. API key entry remains masked; status actions return configured/unconfigured only. Screenshots are captured before filling the ephemeral fixture credential, which is removed by the test. Original artwork and licensed font assets are bundled; no reference-site artwork or runtime font/image tracking is included. Future module pages cannot invoke absent analysis services.
 

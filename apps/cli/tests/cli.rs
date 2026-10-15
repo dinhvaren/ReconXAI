@@ -37,6 +37,85 @@ fn native_cli_persists_projects_and_emits_machine_errors() {
     );
 }
 #[test]
+fn native_cli_durable_queue_runs_typed_work_and_cancels_queued_jobs() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("jobs.db");
+    assert!(run(&db, &["project", "create", "demo"]).status.success());
+    let sample = dir.path().join("owned.raw");
+    std::fs::write(&sample, b"real owned fixture strings").unwrap();
+    let imported = run(
+        &db,
+        &[
+            "reverse",
+            "import",
+            sample.to_str().unwrap(),
+            "--project",
+            "demo",
+            "--authorized",
+        ],
+    );
+    assert!(imported.status.success());
+    let file: Value = serde_json::from_slice(&imported.stdout).unwrap();
+    let id = file["id"].as_str().unwrap();
+    let note_path = dir.path().join("note.txt");
+    std::fs::write(&note_path, "owned local notes").unwrap();
+    let note = run(
+        &db,
+        &[
+            "reverse",
+            "note",
+            id,
+            "--input",
+            note_path.to_str().unwrap(),
+        ],
+    );
+    assert!(note.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&note.stdout).unwrap()["note"],
+        "owned local notes"
+    );
+    let queued = run(
+        &db,
+        &[
+            "jobs",
+            "enqueue",
+            "--kind",
+            "strings_extraction",
+            "--file",
+            id,
+        ],
+    );
+    assert!(queued.status.success());
+    let job: Value = serde_json::from_slice(&queued.stdout).unwrap();
+    assert_eq!(job["status"], "queued");
+    let drain = run(&db, &["jobs", "run", "--concurrency", "1"]);
+    assert!(
+        drain.status.success(),
+        "{}",
+        String::from_utf8_lossy(&drain.stderr)
+    );
+    let result = run(&db, &["jobs", "result", job["id"].as_str().unwrap()]);
+    assert!(result.status.success());
+    let result: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(result["analysis"]["sha256"], file["sha256"]);
+    let queued = run(
+        &db,
+        &["jobs", "enqueue", "--kind", "artifact_index", "--file", id],
+    );
+    let job: Value = serde_json::from_slice(&queued.stdout).unwrap();
+    let cancelled = run(&db, &["jobs", "cancel", job["id"].as_str().unwrap()]);
+    assert!(cancelled.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&cancelled.stdout).unwrap()["status"],
+        "cancelled"
+    );
+    assert!(
+        !run(&db, &["jobs", "enqueue", "--kind", "shell", "--file", id])
+            .status
+            .success()
+    );
+}
+#[test]
 fn native_cli_targets_and_reverse_use_shared_core_and_restart_persistence() {
     let dir = tempfile::tempdir().unwrap();
     let db = dir.path().join("inputs.db");

@@ -1,6 +1,65 @@
 # Verification record
 
-Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-14.
+Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-15.
+
+## Current durable local-job verification
+
+Command: scripts/verify.ps1 -Native -Inputs -Jobs -Visual.
+
+- Baseline before changes: scripts/verify.ps1 passed, 45 Rust / 11 frontend tests.
+- Final formatting and Clippy (workspace/all targets, warnings denied): passed.
+- Rust workspace: **57 passed, 0 failed, 1 ignored** (explicit OS-store fixture).
+  Eleven new core job tests cover typed handlers, corruption/timeout, queued/running
+  cancellation, cross-engine concurrency, live/expired lease ownership, migration
+  with retained binary artifacts, notes/restart, explicit AI consent/destination,
+  no fallback and a synchronous CLI/already claimed Desktop worker race.
+  CLI integration also verifies actual enqueue/drain/result/cancel/note commands.
+- TypeScript/Vite production build: passed; frontend **11 passed, 0 failed**.
+- Actual embedded Tauri/WebView2 debug: **25 checkpoints passed**:
+  existing regression 8, target/file input scenario 9, new job scenario 8.
+- Debug records: artifacts/native-1792077037276/results.json,
+  artifacts/inputs-1792077081584/results.json,
+  artifacts/jobs-1792077094197/results.json and events.json.
+- Research Demo/example.test is created through Desktop in an isolated workspace,
+  reopened after process restart and read by CLI. No public target traffic occurs.
+- Actual native Windows picker imports the owned PE executable; independent Node
+  SHA-256 matches persisted Rust data. Sections/strings and exact job results reopen.
+- A real 64 MiB raw fixture enters Running, is cancelled through native UI and
+  commits no result. A configured timeout genuinely fails; killing the owned native
+  process during work and restarting produces JOB_INTERRUPTED after lease expiry.
+- The local AI fixture receives zero calls without consent, then one request after
+  explicit native approval. The payload excludes source paths and local notes.
+- Native captures verify Light/Dark/ReconX, Job Center compact control bounds and
+  document bounds at 1366/1920. Existing regression covers 50 secondary page/viewport
+  and 12 appearance observations. Actual PNGs were inspected, not just generated.
+- Existing version-2 default workspace was backed up before release upgrade at
+  artifacts/upgrade-1792077147853; only counts/digests are recorded in preservation
+  metadata. Existing OS credentials and Git remote settings were not changed; native
+  regression creates/removes only its own ephemeral credential entry.
+- scripts/build.ps1: optimized Windows desktop and CLI builds passed; copied
+  executables and SHA256SUMS.txt/font notices in artifacts/windows-x64 were verified.
+  The copied release executables passed **the same 25 native checkpoints**:
+  artifacts/native-1792077312439/results.json,
+  artifacts/inputs-1792077355999/results.json,
+  artifacts/jobs-1792077366043/results.json. Release PNGs were captured and inspected.
+- Normal release Desktop was opened on the existing default workspace. Schema 2
+  upgraded to 3, all previous record counts and settings/provider/project/file/result
+  digests matched, and foreign_key_check was empty. Preservation metadata is in
+  artifacts/upgrade-1792077147853/after-upgrade.json.
+- Updated CI YAML parsed successfully; no remote CI run or push was performed.
+- Normal startup smoke also verified a visible ReconX AI window and zero startup
+  error-log bytes: artifacts/windows-x64/normal-startup.json. This check is separate
+  from the isolated hidden native automation instances.
+
+Intermediate development failures (integer progress overflow and accessible labels
+containing loaded control text) were fixed; their failed native artifacts remain
+available. A Windows loopback refusal fixture uses a sufficient timeout to exercise
+connection failure rather than an unrelated request deadline.
+
+All development uses isolated owned samples/services and real parser output.
+Timeout/cancellation are cooperative, not process-level hard termination. Physical
+OS drop/folder-picker, Linux/ARM64, installer execution, live cloud AI and advanced
+scanner/MCP/findings/report workflows remain unverified or unimplemented as stated.
 
 ## Current typography verification
 

@@ -8,6 +8,14 @@ the same Desktop/CLI services and persisted records. Start with **+ Add Target**
 [Research inputs](docs/RESEARCH_INPUTS.md) and [Functionality audit](docs/FUNCTIONALITY_GAP_AUDIT.md).
 Recon, MCP, autonomous agents, normalized findings and reporting remain unfinished.
 
+Local work now runs through a shared durable Job Engine: queue/state/progress/logs,
+bounded concurrency, timeout/cancellation and interrupted-worker recovery. Open
+**Quick actions -> View Jobs** for Job Center, or use `reconx jobs enqueue` and
+`reconx jobs run`. File notes persist; optional AI artifact review requires explicit
+approval of the preview and destination. See [Local jobs](docs/JOB_ENGINE.md) and
+[Current milestone](docs/NEXT_MILESTONE.md). Migration 003 preserves existing data;
+stop older clients before upgrading the database.
+
 ## Windows development
 
 Verified environment: Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0, Visual Studio 2022 C++ Build Tools, WebView2. These were already installed; no privileged installation was performed.
@@ -34,7 +42,7 @@ cargo build --locked -p reconx
 
 The custom-protocol build embeds frontend assets and needs no Vite server. Run scripts/build.ps1 for verified optimized Windows portable binaries and SHA-256 digests in artifacts/windows-x64. Both release binaries passed the native integration scenario. Installer configurations exist but installers and Linux remain unverified.
 
-The desktop offers exactly Light (white/gray), Dark (black/charcoal) and ReconX (original burgundy/lavender/raspberry). Settings and the topbar/sidebar appearance menus share one immediate, automatically saved preference. ReconX is the default; legacy system or missing preferences migrate to reconx. OS appearance does not switch themes. DM Sans and IBM Plex Mono are bundled locally, with 12px minimum metadata and 14px navigation/body. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/THEMES.md for palettes, controls and migration.
+The desktop offers exactly Light (white/gray), Dark (black/charcoal) and ReconX (original burgundy/lavender/raspberry). Settings and the topbar/sidebar appearance menus share one immediate, automatically saved preference. ReconX is the default; legacy system or missing preferences migrate to reconx. OS appearance does not switch themes. Windows uses Segoe UI Variable Text, with locally bundled Source Sans 3 fallback and IBM Plex Mono for technical content; DM Sans is retained for the wordmark. Metadata starts at 12px and navigation/body use 14px. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/THEMES.md for palettes, controls and migration.
 
 ## Shared workspace
 

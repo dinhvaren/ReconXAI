@@ -1,5 +1,13 @@
 # Development roadmap
 
+2026-10-15: the target/file slice now uses durable local jobs, bounded cross-client
+claims, timeouts/cancellation, exact result links and lease recovery. Job Center,
+local notes and explicit selected-artifact AI review are implemented. Preserve the
+typography and three themes. Windows debug/release verification is recorded in
+NEXT_MILESTONE.md. Next prioritize normalized local evidence, manual findings and
+redacted report export. General DAG orchestration, scanners and MCP remain separate
+future milestones; their presence in navigation is not evidence of implementation.
+
 2026-10-14 priority update: target/scope management and native local static-analysis
 inputs now work through the shared core. Continue from this verified slice, rather
 than rebuilding the UI or duplicating infrastructure. Next: local fixture inventory
@@ -8,13 +16,14 @@ local analysis plans/agent routing and findings/report export. Full public-targe
 scanning and autonomous offensive actions are outside the implemented capability set.
 Add native folder/drop verification, parser process isolation, crash recovery,
 cache GC and richer string/hex pagination before calling reverse analysis complete.
+Crash recovery for local jobs is now implemented; parser process isolation remains pending.
 
 1. Foundation: Windows native desktop/CLI/shared SQLite project/settings milestone verified.
    Desktop redesign: reference-inspired four-region shell, illustrated dashboard, consistent secondary pages, keyboard search, activity/notifications, resizable AI context and exactly Light/Dark/ReconX verified on Windows. Future module actions still require backend implementation.
 2. AI integration: provider CRUD, secure credentials, model discovery, text/streaming/cancellation, defaults and safe connection fallback implemented. Remaining: persisted health/usage/cost, rate/budget accounting, context, advanced parameters, per-agent routing and extensions. Real cloud compatibility unverified.
 3. Tool Manager: Windows ripgrep installation/version/uninstall verified. Remaining: dependency graph, unmanaged inventory, profiles, other local-analysis adapters, updates/rollback/cancellation and signatures.
 4. MCP: centralized registry/discovery against an owned mock server; isolation and explicit tool policies before invocation.
-5. Local-analysis jobs: typed plans, persistent states, cancellation/checkpoints and budgets.
+5. Local-analysis jobs: durable local typed handlers, progress, cancellation/timeout and recovery implemented; DAG plans, retry policies and general resource budgets remain pending.
 6. Targets: inventory and deterministic scope/authorization. Autonomous public-target offensive execution is outside the implemented scope.
 7. Analysis: offline HAR and owned binary inspection with structured observations/evidence.
 8. Reporting: findings management and redacted Markdown/HTML/JSON, then PDF.

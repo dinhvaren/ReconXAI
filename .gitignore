@@ -17,3 +17,7 @@ tests/
 !/tests/e2e/
 /tests/e2e/*
 !/tests/e2e/typography.mjs
+!/tests/e2e/inputs.mjs
+!/tests/e2e/select-file.ps1
+!/tests/e2e/jobs.mjs
+!/crates/reconx-core/tests/

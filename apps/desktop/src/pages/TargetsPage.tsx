@@ -1,3 +1,4 @@
+import { useJobEvents } from "../research";
 import { useEffect, useState, useCallback } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import {
@@ -89,6 +90,13 @@ export default function TargetsPage({
       active = false;
     };
   }, [selected]);
+  useJobEvents((job) => {
+    if (job.target_id === selected?.id) {
+      setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)]);
+      if (["completed", "failed", "cancelled"].includes(job.status))
+        void load();
+    }
+  });
   const visible = targets.filter(
     (t) =>
       (!kind || t.kind === kind) &&
@@ -315,6 +323,28 @@ export default function TargetsPage({
             </p>
           )}
           <h3>Available analysis</h3>
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() =>
+              void perform(async () => {
+                const job = await request<AnalysisJob>("job_enqueue", {
+                  input: {
+                    kind: "target_registration_review",
+                    target_id: selected.id,
+                    file_id: null,
+                    timeout_ms: 60000,
+                  },
+                });
+                setJobs((current) => [
+                  job,
+                  ...current.filter((j) => j.id !== job.id),
+                ]);
+              }, "Read-only target scope review queued")
+            }
+          >
+            Review target scope
+          </button>
           {localFileKinds.includes(selected.kind) ? (
             <button
               className="button"
