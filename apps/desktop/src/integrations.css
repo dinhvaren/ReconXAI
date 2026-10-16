@@ -1,0 +1,123 @@
+/* Functional integration panes reuse existing palette and typography tokens. */
+.integration-catalog {
+  max-height: 320px;
+  overflow: auto;
+  font: inherit;
+}
+.integration-catalog p {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rx-border);
+}
+.integration-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.integration-list,
+.integration-detail {
+  padding: 20px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+.integration-server {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  gap: 6px;
+  padding: 14px;
+  margin: 8px 0;
+  border: 1px solid var(--rx-border);
+  border-radius: 10px;
+  background: var(--rx-surface);
+  color: var(--rx-text);
+}
+.integration-server.selected {
+  outline: 2px solid var(--rx-accent);
+  outline-offset: -2px;
+}
+.integration-server small {
+  color: var(--rx-text-muted);
+  font-size: 13px;
+}
+.integration-detail label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 14px 0;
+}
+.integration-detail .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+}
+.integration-detail .card-actions {
+  flex-wrap: wrap;
+}
+.integration-detail .helper {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.integration-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.integration-controls label {
+  flex: 1;
+  min-width: 180px;
+}
+.technical-output {
+  font-family: var(--font-code);
+  font-size: 12px;
+  line-height: 1.6;
+  max-height: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  border: 1px solid var(--rx-border);
+  border-radius: 8px;
+  background: var(--rx-surface);
+  color: var(--rx-text);
+}
+.code-input {
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.integration-plan {
+  padding: 16px 0;
+  border-top: 1px solid var(--rx-border);
+}
+.integration-plan li {
+  margin: 12px 0;
+}
+.integration-plan li p {
+  margin: 5px 0;
+}
+.integration-evidence {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--rx-border);
+}
+@media (max-width: 1350px) {
+  .integration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .integration-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .integration-list .panel-heading {
+    width: 100%;
+  }
+  .integration-server {
+    flex: 1;
+    min-width: 180px;
+  }
+}

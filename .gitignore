@@ -20,4 +20,6 @@ tests/
 !/tests/e2e/inputs.mjs
 !/tests/e2e/select-file.ps1
 !/tests/e2e/jobs.mjs
+!/tests/e2e/mcp-fixture.mjs
+!/tests/e2e/integrations.mjs
 !/crates/reconx-core/tests/

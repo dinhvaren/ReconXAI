@@ -1,6 +1,78 @@
 # Verification record
 
-Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-15.
+Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-16.
+
+## Milestone 2 verification (Windows x64)
+
+- Baseline before implementation: 57 Rust passed, one explicit OS-store fixture
+  ignored; 11 frontend passed. Local HEAD was 7587e63 and the working tree was clean.
+- Current Rust workspace: **66 passed, 0 failed, 1 ignored**. Seven new real MCP/
+  mock-model integration tests cover stdio/HTTP authentication, discovery/schema,
+  exact approval, persisted jobs/restart, denied permissions, timeout/cancellation,
+  unavailable executable/server, oversized output, escaped credential redaction,
+  structured AI policy rejection, actual local jobs and saved interpretation.
+  New storage/tool unit tests verify pre-upgrade SQLite backup and manifest safety.
+- Formatting/Clippy (workspace/all targets, warnings denied): passed.
+- Frontend TypeScript/Vite build: passed; **12 frontend tests passed**, including
+  secret-free MCP configuration and disabled untrusted connection controls.
+- Debug native verification: **31 checkpoints passed** (8 regression/visual,
+  9 target/import, 8 existing job engine, 6 tools/MCP/AI integration):
+  `artifacts/native-1792081858453/results.json`,
+  `artifacts/inputs-1792081901057/results.json`,
+  `artifacts/jobs-1792081914450/results.json`,
+  `artifacts/integrations-1792081951499/results.json`.
+- Native Tool Manager downloads official YARA-X, verifies archive/executable hashes,
+  runs its actual version, shares registry with CLI, executes fixed signatures,
+  updates to the pinned manifest, removes and repairs the installation, displays
+  real operation logs, and installs the reviewed Reverse profile.
+- Native MCP Hub adds a real Node stdio fixture, discovers tools/schemas, permits
+  only an approved benign echo call, persists actual output/logs, reconnects after
+  restart and proves a fixture host-secret environment marker was not inherited.
+  HTTP auth/invalid credentials are additionally covered by the Rust local server
+  fixture with an isolated in-memory secret store.
+- The **deterministic local HTTP model fixture** produces a structured capability
+  plan, then genuine metadata/YARA-X jobs run through the shared engine. Native
+  consent, actual output SHA-256/signature, events, persisted interpretation and
+  CLI reads/restart are verified. No live cloud model account is claimed.
+- Actual screenshots for MCP, reviewed plans, evidence interpretation, tool logs
+  and all three themes were captured and visually inspected. New pages also have
+  1366x768 bounds assertions; existing native visual regression covers five sizes.
+- Initial native harness runs failed on separator/accessible-name mismatches and
+  a completed-event arrival race. The corrected harness waits for actual events;
+  failed artifacts remain locally available. No production tool output was faked.
+- Linux runtime is **UNVERIFIED**: WSL lists no available distro; Docker reports
+  its Linux engine pipe unavailable. Official Linux YARA-X archive/executable
+  hashes were checked, but the executable was not run. CI was configured, not run.
+- Optimized Windows release: `npm run tauri -- build --no-bundle` and
+  `scripts/build.ps1` passed. The copied portable Desktop/CLI binaries passed the
+  same **31 native checkpoints**:
+  `artifacts/native-1792144968533/results.json`,
+  `artifacts/inputs-1792145335173/results.json`,
+  `artifacts/jobs-1792145365667/results.json`,
+  `artifacts/integrations-1792145390620/results.json`.
+- A preceding release input run failed before its first checkpoint because the
+  saved domain was `example.testo` instead of the fixture's `example.test`:
+  `artifacts/inputs-1792145013664/results.json`. The unchanged test and application
+  passed all nine input checks on rerun. Source inspection found no code appending
+  this character; the cause is not established and the failed record is retained.
+- The ordinary release Desktop started against the existing default workspace;
+  schema 3 upgraded to 4 after an automatic private SQLite backup. Before/after
+  record counts and digests for projects/settings/providers/targets/imports/jobs/
+  analyses/notes are identical. Evidence:
+  `artifacts/milestone-2-upgrade-1792082372052/before.json` and `after.json`.
+  This default workspace had one settings row and no research records; migration
+  fixtures separately verify upgrades containing existing project/file/job data.
+  No acceptance fixtures were added to the default workspace.
+- Copied release SHA-256:
+  CLI `713809688da0c0787c580dd7a0350bc53b16989eb8be1d3c84771090f69ea543`;
+  Desktop `a563bb62c5759ba4ade6ff684281d59b6879111000bf9c989a6d535747a2341a`.
+  Native release MCP captures (`mcp-light.png`, `mcp-dark.png`, `mcp-reconx.png`),
+  the 1366x768 workflow and operation/evidence dialogs were visually inspected in
+  `artifacts/integrations-1792145390620`.
+
+The older sections below retain historical evidence; their counts do not describe
+Milestone 2. Native checkpoint counts are assertions in grouped scenarios, not
+independent unique products or vulnerabilities.
 
 ## Current durable local-job verification
 

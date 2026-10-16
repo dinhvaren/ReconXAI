@@ -1,6 +1,7 @@
 use reconx_core::{
-    AppError, ArtifactReview, Core, JobEngine, JobInput, JobKind, ProjectExport, ProviderConfig,
-    Result, Settings, TargetExport, TargetInput, ThemePreference, ToolProgress,
+    AppError, ArtifactReview, Core, JobEngine, JobInput, JobKind, JobReview, McpApproval,
+    McpServerConfig, PlanReview, ProjectExport, ProviderConfig, Result, Settings, TargetExport,
+    TargetInput, ThemePreference, ToolProgress,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -18,14 +19,34 @@ struct ActiveJobs(Mutex<Option<JobEngine>>);
 async fn install_tool(
     core: tauri::State<'_, Core>,
     id: String,
+    active: tauri::State<'_, ActiveStreams>,
     updates: tauri::ipc::Channel<ToolProgress>,
 ) -> Result<Value> {
-    value(
-        core.tool_install(&id, move |progress| {
-            let _ = updates.send(progress);
-        })
-        .await?,
-    )
+    let request_id = format!("tool:{id}");
+    let (tx, mut rx) = watch::channel(false);
+    {
+        let mut running = active
+            .0
+            .lock()
+            .map_err(|_| AppError::new("WORKER_ERROR", "Cannot access installation registry"))?;
+        if running.contains_key(&request_id) {
+            return Err(AppError::new(
+                "TOOL_BUSY",
+                "An installation of this tool is already running",
+            ));
+        }
+        running.insert(request_id.clone(), tx);
+    }
+    let result = tokio::select! {
+      result=core.tool_install(&id,move |progress| {let _=updates.send(progress);}) => result,
+      _=rx.changed()=>Err(AppError::new("CANCELLED","Tool download cancelled before installation")),
+    };
+    active
+        .0
+        .lock()
+        .map_err(|_| AppError::new("WORKER_ERROR", "Cannot access installation registry"))?
+        .remove(&request_id);
+    value(result?)
 }
 
 #[tauri::command]
@@ -83,6 +104,72 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    ToolsCatalog,
+    ToolsHistory {
+        id: String,
+    },
+    ToolsHost,
+    ToolsProfiles,
+    ToolsProfilePlan {
+        id: String,
+    },
+    McpList,
+    McpHistory {
+        id: String,
+    },
+    JobEvidencePreview {
+        id: String,
+    },
+    JobInterpret {
+        review: JobReview,
+    },
+    JobInterpretations {
+        id: String,
+    },
+    McpSave {
+        server: McpServerConfig,
+    },
+    McpRemove {
+        id: String,
+    },
+    McpConnect {
+        id: String,
+    },
+    McpDisconnect {
+        id: String,
+    },
+    McpState {
+        id: String,
+    },
+    McpSetSecret {
+        id: String,
+        name: String,
+        key: String,
+    },
+    McpPreview {
+        id: String,
+        tool: String,
+        input: Value,
+    },
+    McpInvoke {
+        approval: McpApproval,
+    },
+    Capabilities {
+        project: String,
+    },
+    PlanPreview {
+        file_id: String,
+    },
+    PlanCreate {
+        review: PlanReview,
+    },
+    PlansList {
+        project: String,
+    },
+    PlanApprove {
+        id: String,
+        approved: bool,
+    },
     TargetsList {
         project: Option<String>,
     },
@@ -370,6 +457,28 @@ fn local(core: Core, request: Request) -> Result<Value> {
         Request::Snapshot => value(core.snapshot()?),
         Request::GetTheme => value(core.settings()?.theme),
         Request::SetTheme { theme } => value(core.set_theme(theme)?),
+        Request::ToolsCatalog => value(core.tool_catalog()?),
+        Request::ToolsHistory { id } => value(core.tool_history(&id)?),
+        Request::ToolsHost => value(core.tool_host()),
+        Request::ToolsProfiles => value(core.tool_profiles()),
+        Request::ToolsProfilePlan { id } => value(core.tool_profile_plan(&id)?),
+        Request::McpHistory { id } => value(core.mcp_history(&id)?),
+        Request::JobEvidencePreview { id } => value(core.job_evidence_preview(&id)?),
+        Request::JobInterpretations { id } => value(core.job_interpretations(&id)?),
+        Request::McpList => value(core.mcp_servers()?),
+        Request::McpPreview { id, tool, input } => {
+            value(core.mcp_invocation_preview(&id, &tool, &input)?)
+        }
+        Request::McpInvoke { approval } => value(core.mcp_enqueue(approval)?),
+        Request::McpSetSecret { id, name, key } => {
+            let key = Zeroizing::new(key);
+            core.mcp_set_secret(&id, &name, &key)?;
+            Ok(Value::Null)
+        }
+        Request::Capabilities { project } => value(core.capabilities(&project)?),
+        Request::PlanPreview { file_id } => value(core.plan_preview(&file_id)?),
+        Request::PlansList { project } => value(core.tool_plans(&project)?),
+        Request::PlanApprove { id, approved } => value(core.approve_tool_plan(&id, approved)?),
         Request::ToolsList => value(core.tool_inventory()?),
         Request::ToolsPlan { id } => value(core.tool_plan(&id)?),
         Request::ToolsUninstall { id } => {
@@ -419,6 +528,19 @@ fn local(core: Core, request: Request) -> Result<Value> {
 async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value> {
     let core = core.inner().clone();
     match request {
+        Request::McpSave { server } => value(core.mcp_save(server).await?),
+        Request::McpRemove { id } => {
+            core.mcp_remove(&id).await?;
+            Ok(Value::Null)
+        }
+        Request::McpConnect { id } => value(core.mcp_connect(&id).await?),
+        Request::McpDisconnect { id } => {
+            core.mcp_disconnect(&id).await?;
+            Ok(Value::Null)
+        }
+        Request::McpState { id } => value(core.mcp_state(&id).await),
+        Request::JobInterpret { review } => value(core.interpret_job(review).await?),
+        Request::PlanCreate { review } => value(core.plan_local_tools(review).await?),
         Request::FileExplain { review } => value(core.explain_file_artifact(review).await?),
         Request::Models { id } => value(core.models(&id).await?),
         Request::ToolsDoctor { id } => value(core.tool_doctor(&id).await?),
@@ -488,9 +610,18 @@ async fn select_local_paths(
     .map_err(|_| AppError::new("WORKER_ERROR", "Native file dialog failed"))?
 }
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .with_writer(std::io::stderr)
+    use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+    // SDK wire diagnostics can contain untrusted payloads or echoed credentials.
+    // This filter cannot be overridden by a more-specific RUST_LOG directive.
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr)
+                .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
+                    !metadata.target().starts_with("rmcp")
+                })),
+        )
         .init();
     let core = Core::open(None).unwrap_or_else(|e| {
         eprintln!("{e}");

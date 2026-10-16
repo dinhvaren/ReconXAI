@@ -77,6 +77,8 @@ export default function QuickActions({
             "View Jobs",
             "Open AI Workspace",
             "Install Tools",
+            "Add MCP Server",
+            "Plan local analysis",
           ].map((action) => (
             <button
               role="menuitem"
@@ -92,14 +94,7 @@ export default function QuickActions({
           <button
             role="menuitem"
             disabled
-            title="MCP server management is not implemented yet"
-          >
-            Add MCP Server — unavailable
-          </button>
-          <button
-            role="menuitem"
-            disabled
-            title="Target workflow orchestration is not implemented yet"
+            title="Autonomous target workflows are unavailable; use Plan local analysis for reviewed local jobs"
           >
             Auto Research — unavailable
           </button>

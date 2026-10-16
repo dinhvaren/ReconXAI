@@ -1,7 +1,8 @@
 use clap::{CommandFactory, Parser, Subcommand};
 use reconx_core::{
-    AppError, Core, JobEngine, JobInput, JobKind, ProjectExport, ProviderConfig, Result,
-    SecurityMode, Settings, TargetExport, TargetInput, TargetKind,
+    AppError, Core, JobEngine, JobInput, JobKind, JobReview, McpApproval, McpServerConfig,
+    PlanReview, ProjectExport, ProviderConfig, Result, SecurityMode, Settings, TargetExport,
+    TargetInput, TargetKind,
 };
 use serde_json::{Value, json};
 use std::{
@@ -44,6 +45,10 @@ enum Command {
     Reverse(ReverseCommand),
     #[command(subcommand)]
     Jobs(JobCommand),
+    #[command(subcommand)]
+    Mcp(McpCommand),
+    #[command(subcommand)]
+    Workflow(WorkflowCommand),
     Audit,
     Completions {
         shell: clap_complete::Shell,
@@ -234,6 +239,28 @@ enum SettingsCommand {
 #[derive(Subcommand)]
 enum ToolsCommand {
     List,
+    Search {
+        query: String,
+    },
+    Info {
+        tool: String,
+    },
+    Host,
+    Profiles,
+    InstallProfile {
+        profile: String,
+        #[arg(long)]
+        approve: bool,
+    },
+    Verify {
+        tool: String,
+    },
+    Update {
+        tool: String,
+    },
+    Remove {
+        tool: String,
+    },
     Plan {
         tool: String,
     },
@@ -246,6 +273,89 @@ enum ToolsCommand {
     },
     Uninstall {
         tool: String,
+    },
+}
+#[derive(Subcommand)]
+enum McpCommand {
+    List,
+    /// Register or edit a secret-free server config. Connection executes the reviewed command.
+    Add {
+        #[arg(long)]
+        input: PathBuf,
+    },
+    Remove {
+        server: String,
+    },
+    Connect {
+        server: String,
+    },
+    Disconnect {
+        server: String,
+    },
+    Test {
+        server: String,
+    },
+    Tools {
+        server: String,
+    },
+    Inspect {
+        server: String,
+        tool: String,
+    },
+    Key {
+        server: String,
+        #[arg(long, default_value = "bearer")]
+        name: String,
+    },
+    /// Preview; supply the returned fingerprint and --approve to enqueue that exact input.
+    Invoke {
+        server: String,
+        tool: String,
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        fingerprint: Option<String>,
+        #[arg(long)]
+        approve: bool,
+    },
+    History {
+        server: String,
+    },
+}
+#[derive(Subcommand)]
+enum WorkflowCommand {
+    Evidence {
+        job: String,
+    },
+    Interpret {
+        #[arg(long)]
+        input: PathBuf,
+    },
+    Interpretations {
+        job: String,
+    },
+    Capabilities {
+        #[arg(long)]
+        project: String,
+    },
+    Preview {
+        file: String,
+    },
+    /// JSON consent document contains exact metadata preview and approved gateway, never API keys.
+    Plan {
+        #[arg(long)]
+        input: PathBuf,
+    },
+    List {
+        #[arg(long)]
+        project: String,
+    },
+    Approve {
+        plan: String,
+        #[arg(long)]
+        approve: bool,
     },
 }
 #[derive(Subcommand)]
@@ -621,6 +731,56 @@ async fn execute(cli: &Cli) -> Result<Value> {
         },
         Command::Tools(command) => match command {
             ToolsCommand::List => serialize(core.tool_inventory()?),
+            ToolsCommand::Search { query } => serialize(
+                core.tool_catalog()?
+                    .into_iter()
+                    .filter(|t| t.to_string().to_lowercase().contains(&query.to_lowercase()))
+                    .collect::<Vec<_>>(),
+            ),
+            ToolsCommand::Info { tool } => serialize(
+                core.tool_catalog()?
+                    .into_iter()
+                    .find(|t| t["id"] == *tool)
+                    .ok_or_else(|| AppError::new("UNKNOWN_TOOL", "Tool is not in registry"))?,
+            ),
+            ToolsCommand::Host => serialize(core.tool_host()),
+            ToolsCommand::Profiles => serialize(core.tool_profiles()),
+            ToolsCommand::InstallProfile { profile, approve } => {
+                let plan = core.tool_profile_plan(profile)?;
+                if !approve {
+                    serialize(json!({"approval_required":true,"plan":plan}))
+                } else {
+                    let mut installed = Vec::new();
+                    for tool in plan {
+                        if core
+                            .tool_inventory()?
+                            .iter()
+                            .any(|t| t.manifest.id == tool.id && t.integrity_verified)
+                        {
+                            installed.push(core.tool_doctor(&tool.id).await?);
+                        } else {
+                            installed.push(core.tool_install(&tool.id, |_| {}).await?);
+                        }
+                    }
+                    serialize(installed)
+                }
+            }
+            ToolsCommand::Verify { tool } => serialize(core.tool_doctor(tool).await?),
+            ToolsCommand::Update { tool } => {
+                let inventory = core.tool_inventory()?;
+                if inventory
+                    .iter()
+                    .any(|t| &t.manifest.id == tool && t.integrity_verified)
+                {
+                    serialize(core.tool_doctor(tool).await?)
+                } else {
+                    serialize(core.tool_install(tool, |_| {}).await?)
+                }
+            }
+            ToolsCommand::Remove { tool } => {
+                core.tool_uninstall(tool)?;
+                Ok(json!({"status":"uninstalled"}))
+            }
             ToolsCommand::Plan { tool } => serialize(core.tool_plan(tool)?),
             ToolsCommand::Install { tool } => serialize(
                 core.tool_install(tool, |p| {
@@ -636,15 +796,115 @@ async fn execute(cli: &Cli) -> Result<Value> {
                 Ok(json!({"status":"uninstalled"}))
             }
         },
+        Command::Mcp(command) => match command {
+            McpCommand::List => serialize(core.mcp_servers()?),
+            McpCommand::Add { input } => {
+                let config: McpServerConfig =
+                    serde_json::from_str(&read_file(input)?).map_err(|_| {
+                        AppError::new("INVALID_INPUT", "Invalid secret-free MCP configuration")
+                    })?;
+                serialize(core.mcp_save(config).await?)
+            }
+            McpCommand::Remove { server } => {
+                core.mcp_remove(server).await?;
+                Ok(json!({"status":"removed"}))
+            }
+            McpCommand::Connect { server }
+            | McpCommand::Test { server }
+            | McpCommand::Tools { server } => {
+                let s = core.mcp_connect(server).await?;
+                core.mcp_disconnect(server).await?;
+                serialize(
+                    json!({"tested":true,"server":s,"session":"Closed on command completion; Desktop owns its own live sessions"}),
+                )
+            }
+            McpCommand::Disconnect { server } => {
+                core.mcp_disconnect(server).await?;
+                Ok(
+                    json!({"status":"disconnected","note":"Connections belong to the process that opened them"}),
+                )
+            }
+            McpCommand::Inspect { server, tool } => serialize(
+                core.mcp_server(server)?
+                    .tools
+                    .into_iter()
+                    .find(|t| t["name"] == *tool)
+                    .ok_or_else(|| AppError::new("MCP_TOOL_NOT_FOUND", "Discover tools first"))?,
+            ),
+            McpCommand::Key { server, name } => {
+                let key = Zeroizing::new(
+                    rpassword::prompt_password("MCP credential (hidden): ")
+                        .map_err(|_| AppError::new("SECRET_INPUT", "Cannot read credential"))?,
+                );
+                core.mcp_set_secret(server, name, &key)?;
+                Ok(json!({"status":"credential_stored"}))
+            }
+            McpCommand::Invoke {
+                server,
+                tool,
+                input,
+                project,
+                fingerprint,
+                approve,
+            } => {
+                let input: Value = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| AppError::new("MCP_INPUT", "Invalid JSON object"))?;
+                if !approve {
+                    serialize(core.mcp_invocation_preview(server, tool, &input)?)
+                } else {
+                    serialize(core.mcp_enqueue(McpApproval {
+                        server_id: server.clone(),
+                        tool: tool.clone(),
+                        input,
+                        project_id: project.clone(),
+                        fingerprint: fingerprint.clone().ok_or_else(|| {
+                            AppError::new("APPROVAL_REQUIRED", "Supply the reviewed fingerprint")
+                        })?,
+                        approved: true,
+                    })?)
+                }
+            }
+            McpCommand::History { server } => serialize(core.mcp_history(server)?),
+        },
+        Command::Workflow(command) => match command {
+            WorkflowCommand::Evidence { job } => serialize(core.job_evidence_preview(job)?),
+            WorkflowCommand::Interpret { input } => {
+                let review: JobReview = serde_json::from_str(&read_file(input)?).map_err(|_| {
+                    AppError::new("INVALID_INPUT", "Invalid evidence consent document")
+                })?;
+                serialize(core.interpret_job(review).await?)
+            }
+            WorkflowCommand::Interpretations { job } => serialize(core.job_interpretations(job)?),
+            WorkflowCommand::Capabilities { project } => serialize(core.capabilities(project)?),
+            WorkflowCommand::Preview { file } => serialize(core.plan_preview(file)?),
+            WorkflowCommand::Plan { input } => {
+                let review: PlanReview = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| AppError::new("INVALID_INPUT", "Invalid plan consent document"))?;
+                serialize(core.plan_local_tools(review).await?)
+            }
+            WorkflowCommand::List { project } => serialize(core.tool_plans(project)?),
+            WorkflowCommand::Approve { plan, approve } => {
+                serialize(core.approve_tool_plan(plan, *approve)?)
+            }
+        },
         Command::Audit => serialize(core.audit_events()?),
         Command::Completions { .. } => unreachable!(),
     }
 }
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .with_writer(std::io::stderr)
+    use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+    // SDK wire diagnostics can contain untrusted payloads or echoed credentials.
+    // This filter cannot be overridden by a more-specific RUST_LOG directive.
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr)
+                .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
+                    !metadata.target().starts_with("rmcp")
+                })),
+        )
         .init();
     let cli = match Cli::try_parse() {
         Ok(c) => c,

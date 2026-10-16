@@ -20,6 +20,7 @@ pub enum JobKind {
     BinaryMetadata,
     StringsExtraction,
     ArtifactIndex,
+    YaraSignatures,
     TargetRegistrationReview,
 }
 impl JobKind {
@@ -29,6 +30,7 @@ impl JobKind {
             Self::BinaryMetadata => "binary_metadata",
             Self::StringsExtraction => "strings_extraction",
             Self::ArtifactIndex => "artifact_index",
+            Self::YaraSignatures => "yara_signatures",
             Self::TargetRegistrationReview => "target_registration_review",
         }
     }
@@ -365,6 +367,14 @@ impl Core {
                     update(90,"Registration, authorization and exclusions reviewed locally; no network requests")?;
                     PreparedJob{result:serde_json::to_value(decision).map_err(json_error)?,analysis:None}
                 },
+                "yara_signatures"=>{
+                    let file=self.imported_file(job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","File was removed"))?)?;
+                    let bytes=self.read_sample_with_progress(&file,&mut |done,total|update((10+done*40/total.max(1)) as u8,"Reading verified sample for YARA-X"))?;
+                    update(60,"Executing fixed offline YARA-X signatures")?;
+                    let result=self.tool_manager().signatures(&bytes,||update(60,"Executing fixed offline YARA-X signatures"))?;
+                    PreparedJob{result,analysis:None}
+                },
+                "mcp_tool"=>self.prepare_mcp_job(&job,&mut update)?,
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;
                     let file=self.imported_file(id)?;

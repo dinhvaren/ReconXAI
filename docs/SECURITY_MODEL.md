@@ -51,3 +51,23 @@ Existing MCP/provider credentials are not imported. MCP isolation and active net
 The visual redesign preserves IPC contracts and backend policy. Search uses project/provider metadata and module routes, never credentials. API key entry remains masked; status actions return configured/unconfigured only. Screenshots are captured before filling the ephemeral fixture credential, which is removed by the test. Original artwork and licensed font assets are bundled; no reference-site artwork or runtime font/image tracking is included. Future module pages cannot invoke absent analysis services.
 
 Appearance changes are typed and serialized; failures roll back locally and remain visible. Legacy system/missing preference migrates to reconx in a validated SQLite transaction changing only the theme field and adding an audit event. Three-theme migration does not read/write API keys, change gateway destinations, reset projects or introduce an execution channel. Native test databases and WebView2 profiles are isolated from normal application data.
+
+
+## Milestone 2 trust boundaries
+
+MCP server programs are explicitly trusted user-account processes, not OS-sandboxed
+plugins. A cleared environment and disjoint OS credential references prevent
+implicit provider-key forwarding; they do not deny account-level filesystem or
+credential API access. Only reviewed read-only closed-world tools can enter the
+manual invocation path, with schema validation, exact approval, bounded output,
+timeout and no automatic retry. Remote redirects are disabled. Referenced schemas
+and persisted credential input fields are rejected. MCP discovery/results are
+recursively redacted for known server secrets, and SDK wire diagnostics are filtered
+out even when RUST_LOG enables detailed targets. MCP output never becomes authority.
+
+AI plans can select only available fixed offline file capability IDs for the
+user-selected authorized file. They cannot choose shell arguments, change the input
+path, grant scope or autonomously invoke MCP/network scanners. Metadata planning
+and evidence interpretation have separate exact-preview/gateway consent, no silent
+fallback, and separately labelled unverified AI output. See MCP_HUB.md and
+AI_TOOL_ORCHESTRATION.md for implemented boundaries and unsupported capabilities.

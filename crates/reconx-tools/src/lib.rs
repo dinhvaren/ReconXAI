@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+mod local;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ToolManifest {
@@ -56,6 +57,31 @@ fn io_error() -> AppError {
         "Managed tool operation failed; check workspace permissions",
     )
 }
+pub fn validate_manifest(m: &ToolManifest) -> Result<()> {
+    let safe = |s: &str| {
+        !s.is_empty()
+            && s.bytes()
+                .all(|c| c.is_ascii_alphanumeric() || b"-._".contains(&c))
+            && s != "."
+            && s != ".."
+    };
+    if !safe(&m.id)
+        || !safe(&m.version)
+        || !safe(&m.executable)
+        || !m.url.starts_with("https://github.com/")
+        || m.requires_admin
+        || !["zip", "tar_gz"].contains(&m.archive.as_str())
+        || [&m.sha256, &m.binary_sha256]
+            .iter()
+            .any(|h| h.len() != 64 || !h.bytes().all(|b| b.is_ascii_hexdigit()))
+    {
+        return Err(AppError::new(
+            "INVALID_MANIFEST",
+            "Manifest paths, source or integrity fields are invalid",
+        ));
+    }
+    Ok(())
+}
 pub fn hash(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
         .iter()
@@ -74,10 +100,18 @@ pub fn verify(bytes: &[u8], expected: &str) -> Result<()> {
     }
     Ok(())
 }
-fn manifest() -> Result<ToolManifest> {
-    let manifests: Vec<ToolManifest> =
-        serde_json::from_str(include_str!("../../../manifests/tools/ripgrep.json"))
-            .map_err(|_| AppError::new("INVALID_MANIFEST", "Embedded tool manifest is invalid"))?;
+fn manifest(id: &str) -> Result<ToolManifest> {
+    let manifests: Vec<ToolManifest> = serde_json::from_str(match id {
+        "ripgrep" => include_str!("../../../manifests/tools/ripgrep.json"),
+        "yara-x" => include_str!("../../../manifests/tools/yara-x.json"),
+        _ => {
+            return Err(AppError::new(
+                "UNKNOWN_TOOL",
+                "No verified adapter for this tool",
+            ));
+        }
+    })
+    .map_err(|_| AppError::new("INVALID_MANIFEST", "Embedded tool manifest is invalid"))?;
     let platform = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
     manifests
         .into_iter()
@@ -94,13 +128,9 @@ impl ToolManager {
         Self { root }
     }
     pub fn plan(&self, id: &str) -> Result<ToolManifest> {
-        if id != "ripgrep" {
-            return Err(AppError::new(
-                "UNKNOWN_TOOL",
-                "Only the pinned ripgrep adapter is implemented",
-            ));
-        }
-        manifest()
+        let m = manifest(id)?;
+        validate_manifest(&m)?;
+        Ok(m)
     }
     fn directory(&self, m: &ToolManifest) -> PathBuf {
         self.root.join(&m.id).join(&m.version)
@@ -146,7 +176,13 @@ impl ToolManager {
         std::fs::canonicalize(path).map_err(|_| io_error())
     }
     pub fn inventory(&self) -> Result<Vec<Inventory>> {
-        let m = manifest()?;
+        ["ripgrep", "yara-x"]
+            .iter()
+            .map(|id| self.inventory_one(id))
+            .collect()
+    }
+    fn inventory_one(&self, id: &str) -> Result<Inventory> {
+        let m = self.plan(id)?;
         let receipt = self.receipt(&m);
         let installed = self.directory(&m).join(&m.executable).exists();
         let integrity_verified = installed && self.verify_installed(&m).is_ok();
@@ -162,12 +198,12 @@ impl ToolManager {
         } else {
             "installed"
         };
-        Ok(vec![Inventory {
+        Ok(Inventory {
             manifest: m,
             status: status.into(),
             integrity_verified,
             receipt,
-        }])
+        })
     }
     pub async fn install<F>(&self, id: &str, mut progress: F) -> Result<Inventory>
     where
@@ -274,7 +310,7 @@ impl ToolManager {
             downloaded: bytes.len() as u64,
             total,
         });
-        Ok(self.inventory()?.remove(0))
+        self.inventory_one(id)
     }
     fn write_receipt(&self, m: &ToolManifest, receipt: &Receipt) -> Result<()> {
         let bytes = serde_json::to_vec_pretty(receipt).map_err(|_| io_error())?;
@@ -290,6 +326,12 @@ impl ToolManager {
         let m = self.plan(id)?;
         let executable = self.verify_installed(&m)?;
         let mut command = tokio::process::Command::new(executable);
+        command.env_clear();
+        for key in ["SystemRoot", "WINDIR", "TEMP", "TMP"] {
+            if let Some(v) = std::env::var_os(key) {
+                command.env(key, v);
+            }
+        }
         command.arg("--version").kill_on_drop(true);
         #[cfg(windows)]
         {
@@ -299,7 +341,15 @@ impl ToolManager {
             .await
             .map_err(|_| AppError::new("TOOL_TIMEOUT", "Tool version check timed out"))?
             .map_err(|_| AppError::new("TOOL_EXECUTION", "Cannot execute verified tool"))?;
-        let expected = format!("ripgrep {}", m.version);
+        let expected = format!(
+            "{} {}",
+            if id == "yara-x" {
+                "yara-x-cli"
+            } else {
+                "ripgrep"
+            },
+            m.version
+        );
         if !output.status.success()
             || output.stdout.len() > 8192
             || !String::from_utf8_lossy(&output.stdout).starts_with(&expected)
@@ -314,7 +364,7 @@ impl ToolManager {
             .ok_or_else(|| AppError::new("TOOL_NOT_MANAGED", "Installation receipt is missing"))?;
         receipt.last_health_check = Some(Utc::now().to_rfc3339());
         self.write_receipt(&m, &receipt)?;
-        Ok(self.inventory()?.remove(0))
+        self.inventory_one(id)
     }
     pub fn uninstall(&self, id: &str) -> Result<()> {
         let m = self.plan(id)?;
@@ -393,6 +443,26 @@ fn extract(m: &ToolManifest, bytes: &[u8]) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn yara_manifests_are_pinned_for_both_platforms_and_reject_unsafe_fields() {
+        let manifests: Vec<ToolManifest> =
+            serde_json::from_str(include_str!("../../../manifests/tools/yara-x.json")).unwrap();
+        assert_eq!(manifests.len(), 2);
+        for m in manifests {
+            validate_manifest(&m).unwrap();
+            assert_eq!(m.version, "1.21.0");
+            assert!(m.dependencies.is_empty());
+            let mut corrupt = m.clone();
+            corrupt.id = "../outside".into();
+            assert!(validate_manifest(&corrupt).is_err());
+            corrupt = m.clone();
+            corrupt.url = "http://untrusted.invalid/tool".into();
+            assert!(validate_manifest(&corrupt).is_err());
+            corrupt = m;
+            corrupt.sha256 = "fabricated".into();
+            assert!(validate_manifest(&corrupt).is_err());
+        }
+    }
     #[test]
     fn integrity_rejects_modified_downloads() {
         let digest = hash(b"trusted");

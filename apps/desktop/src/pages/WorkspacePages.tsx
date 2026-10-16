@@ -21,7 +21,7 @@ import {
   type Reply,
   type Settings,
 } from "../api";
-import { Heading, Icon as Glyph, type Perform } from "../components/ui";
+import { Modal, Heading, Icon as Glyph, type Perform } from "../components/ui";
 import { useTheme } from "../theme";
 const date = (text: string) => new Date(text).toLocaleString();
 export function Projects({
@@ -785,10 +785,12 @@ export function AiWorkspace({
   data,
   busy,
   perform,
+  onTools,
 }: {
   data: Snapshot;
   busy: boolean;
   perform: Perform;
+  onTools: () => void;
 }) {
   const [id, setId] = useState(
     data.settings.default_provider_id ??
@@ -824,6 +826,11 @@ export function AiWorkspace({
       <Heading
         eyebrow="AI-ASSISTED LOCAL RESEARCH"
         title="AI Workspace"
+        action={
+          <button className="button secondary" onClick={onTools}>
+            Plan local analysis
+          </button>
+        }
         description="Ask your configured model to explain evidence, review code, or draft remediation."
       />
       <div className="ai-layout">
@@ -1146,8 +1153,26 @@ export function ToolManagerPage({
   const [plan, setPlan] = useState<ToolManifest | null>(null);
   const [progress, setProgress] = useState<ToolProgress | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [profile, setProfile] = useState("reverse");
+  const [profilePlan, setProfilePlan] = useState<ToolManifest[]>([]);
+  const [catalog, setCatalog] = useState<
+    { id: string; category: string; integration: string }[]
+  >([]);
+  const [query, setQuery] = useState("");
+  const [installing, setInstalling] = useState("");
+  const [operationLog, setOperationLog] = useState("");
+  async function install(id: string) {
+    setInstalling(id);
+    try {
+      await installTool(id, setProgress);
+      await request("tools_doctor", { id });
+    } finally {
+      setInstalling("");
+    }
+  }
   const load = useCallback(async () => {
     setInventory(await request<ToolInventory[]>("tools_list"));
+    setCatalog(await request("tools_catalog"));
     setLoadError("");
   }, []);
   useEffect(() => {
@@ -1155,6 +1180,13 @@ export function ToolManagerPage({
   }, [load]);
   return (
     <>
+      <Modal
+        title="Tool operation history"
+        open={!!operationLog}
+        onClose={() => setOperationLog("")}
+      >
+        <pre className="technical-output">{operationLog}</pre>
+      </Modal>
       <Heading
         eyebrow="MANAGED LOCAL UTILITIES"
         title="Tool Manager"
@@ -1174,6 +1206,84 @@ export function ToolManagerPage({
           {loadError}
         </p>
       )}
+      <section className="panel integration-detail">
+        <div className="panel-heading">
+          <h2>Tool profiles</h2>
+        </div>
+        <label>
+          Profile
+          <select
+            aria-label="Tool profile"
+            value={profile}
+            onChange={(e) => {
+              setProfile(e.target.value);
+              setProfilePlan([]);
+            }}
+          >
+            <option value="core">Core</option>
+            <option value="reverse">Reverse Engineering</option>
+            {["recon", "web", "api", "mobile", "cloud", "full"].map((p) => (
+              <option key={p} value={p}>
+                {p} - pending adapters
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="button secondary"
+          disabled={busy}
+          onClick={() =>
+            void perform(async () =>
+              setProfilePlan(
+                await request<ToolManifest[]>("tools_profile_plan", {
+                  id: profile,
+                }),
+              ),
+            )
+          }
+        >
+          Review profile plan
+        </button>
+        {profilePlan.length > 0 && (
+          <>
+            <pre className="technical-output">
+              {JSON.stringify(
+                profilePlan.map((t) => ({
+                  id: t.id,
+                  version: t.version,
+                  url: t.url,
+                  sha256: t.sha256,
+                  dependencies: t.dependencies,
+                })),
+                null,
+                2,
+              )}
+            </pre>
+            <button
+              className="button primary"
+              disabled={busy}
+              onClick={() =>
+                void perform(async () => {
+                  for (const tool of profilePlan) {
+                    if (
+                      !inventory.some(
+                        (t) =>
+                          t.manifest.id === tool.id && t.integrity_verified,
+                      )
+                    )
+                      await install(tool.id);
+                    else await request("tools_doctor", { id: tool.id });
+                  }
+                  setProfilePlan([]);
+                  await load();
+                }, "Profile installed and health checks passed")
+              }
+            >
+              Approve profile installation
+            </button>
+          </>
+        )}
+      </section>
       <section className="panel">
         <div className="panel-heading">
           <h2>Tool inventory</h2>
@@ -1194,9 +1304,18 @@ export function ToolManagerPage({
                 {tool.manifest.version} · {tool.manifest.platform}
               </small>
               <p className="helper">
-                Local text utility. Security scanner adapters are not
-                implemented.
+                {tool.manifest.capabilities.join(", ")} - latest verified
+                manifest: {tool.manifest.version}.
               </p>
+              <details>
+                <summary>Tool details</summary>
+                <p className="helper">
+                  Platform: {tool.manifest.platform}. Dependencies:{" "}
+                  {tool.manifest.dependencies.join(", ") || "None"}. Last health
+                  check: {tool.receipt?.last_health_check || "Not checked"}.
+                </p>
+                <code>{tool.manifest.binary_sha256}</code>
+              </details>
             </div>
             <span
               className={tool.status === "tested" ? "badge" : "badge muted"}
@@ -1204,6 +1323,25 @@ export function ToolManagerPage({
               {tool.status.replaceAll("_", " ")}
             </span>
             <div className="card-actions">
+              <button
+                className="text-button"
+                disabled={busy}
+                onClick={() =>
+                  void perform(async () =>
+                    setOperationLog(
+                      JSON.stringify(
+                        await request("tools_history", {
+                          id: tool.manifest.id,
+                        }),
+                        null,
+                        2,
+                      ),
+                    ),
+                  )
+                }
+              >
+                Open logs
+              </button>
               <button
                 disabled={busy}
                 className="text-button"
@@ -1235,6 +1373,24 @@ export function ToolManagerPage({
                 }
               >
                 Health check
+              </button>
+              <button
+                className="text-button"
+                disabled={busy || tool.integrity_verified}
+                title={
+                  tool.integrity_verified
+                    ? "Installed executable matches the latest pinned verified manifest"
+                    : "Reinstall only the managed files, then verify integrity and version"
+                }
+                onClick={() =>
+                  void perform(async () => {
+                    await request("tools_uninstall", { id: tool.manifest.id });
+                    await install(tool.manifest.id);
+                    await load();
+                  }, "Managed tool repaired and verified")
+                }
+              >
+                Repair
               </button>
               <button
                 disabled={busy || tool.status === "not_installed"}
@@ -1293,7 +1449,7 @@ export function ToolManagerPage({
               onClick={() =>
                 void perform(async () => {
                   setProgress(null);
-                  await installTool(plan.id, setProgress);
+                  await install(plan.id);
                   await load();
                 }, "Official release downloaded, verified and installed")
               }
@@ -1303,6 +1459,39 @@ export function ToolManagerPage({
           </div>
         </section>
       )}
+      {busy && progress?.phase === "downloading" && installing && (
+        <button
+          className="button secondary"
+          onClick={() => void cancelStream(`tool:${installing}`)}
+        >
+          Cancel download
+        </button>
+      )}
+      <section className="panel integration-detail">
+        <div className="panel-heading">
+          <h2>Integration catalog</h2>
+        </div>
+        <input
+          aria-label="Search tool catalog"
+          placeholder="Search registered tools"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <p className="helper">
+          Only ripgrep and YARA-X have verified installers and fixed local
+          adapters. Other entries below are pending integration; no install or
+          execution is claimed.
+        </p>
+        <div className="integration-catalog">
+          {catalog
+            .filter((t) => t.id.includes(query.toLowerCase()))
+            .map((t) => (
+              <p key={t.id}>
+                <code>{t.id}</code> · {t.category} · {t.integration}
+              </p>
+            ))}
+        </div>
+      </section>
       {progress && (
         <div className="connection-result" role="status">
           {progress.phase} · {(progress.downloaded / 1024 / 1024).toFixed(2)}{" "}
@@ -1314,7 +1503,7 @@ export function ToolManagerPage({
       )}
       <p className="helper" style={{ marginTop: 18 }}>
         Discovery of unmanaged executables, profile installation, updates,
-        rollback and installer cancellation remain planned. A tested ripgrep
+        rollback and package-manager adapters remain planned. A tested local
         binary does not imply support for any security scanner.
       </p>
     </>

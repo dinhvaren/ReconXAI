@@ -19,5 +19,11 @@ directories.workspace = true
 tokio.workspace = true
 zeroize.workspace = true
 sha2.workspace = true
+rmcp = { version = "3.5.1", default-features = false, features = ["client", "transport-async-rw", "transport-streamable-http-client-reqwest", "reqwest-native-tls"] }
+jsonschema = { version = "0.58.6", default-features = false }
+tempfile.workspace = true
+reqwest.workspace = true
+futures = "0.3"
+sse-stream = "0.2.6"
 [dev-dependencies]
 tempfile.workspace = true

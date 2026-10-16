@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-15",
+  "updated": "2026-10-16",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -33,20 +33,39 @@
       "id": "tool_manager",
       "status": "IN_PROGRESS",
       "remaining": [
-        "profiles",
-        "dependency graphs",
-        "updates/rollback",
-        "installer cancellation",
-        "other adapters"
+        "unmanaged tool adoption",
+        "general dependency graphs",
+        "package managers/WSL execution",
+        "unreviewed upstream upgrades/multi-version rollback",
+        "remaining security tool adapters"
+      ],
+      "verified_adapters": [
+        "ripgrep",
+        "yara-x"
       ]
     },
     {
       "id": "mcp_hub",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "verification": "Windows actual stdio/HTTP fixture and manually approved benign calls through the shared Job Engine",
+      "remaining": [
+        "OAuth/SSO",
+        "hard OS sandboxing",
+        "large/paginated catalogs and external schema references",
+        "interactive task/MRTR follow-up",
+        "validated third-party security integrations"
+      ]
     },
     {
       "id": "workflow_engine",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "verification": "Reviewed local-file AI plans execute real typed jobs; deterministic local mock model",
+      "remaining": [
+        "general agent registry/routing",
+        "DAG scheduling",
+        "Authorized Auto",
+        "normalized findings/report agents"
+      ]
     },
     {
       "id": "reconnaissance",
@@ -227,14 +246,14 @@
       "id": "local_job_engine",
       "status": "TESTED",
       "verification": "Windows actual native debug/release: 11 core tests, CLI queue integration and 8 job checkpoints per build; real interruption/restart/cancellation/timeout",
-      "evidence": "artifacts/jobs-1792077094197/results.json",
+      "evidence": "artifacts/jobs-1792081914450/results.json",
       "limitations": [
         "Cooperative deadlines/cancellation",
         "10-second lease recovery grace",
         "No general DAG/retry/pause",
         "Parser not OS-process isolated"
       ],
-      "release_evidence": "artifacts/jobs-1792077366043/results.json"
+      "release_evidence": "artifacts/jobs-1792145365667/results.json"
     },
     {
       "id": "local_file_notes",
@@ -245,26 +264,54 @@
       "id": "selected_artifact_ai_review",
       "status": "TESTED",
       "verification": "Explicit backend consent, exact preview and gateway binding, no fallback; real native call against an owned local mock gateway; cloud unverified"
+    },
+    {
+      "id": "yara_x_portable",
+      "status": "TESTED",
+      "verification": "Windows native install/health/update/removal/Repair/profile and actual fixed offline signatures; Linux binary hashed but not executed",
+      "evidence": "artifacts/integrations-1792081951499/results.json",
+      "release_evidence": "artifacts/integrations-1792145390620/results.json"
+    },
+    {
+      "id": "mcp_benign_gateway",
+      "status": "TESTED",
+      "verification": "Windows real stdio plus bounded Streamable HTTP; read-only/closed-world allowlist, exact approval, jobs, cancellation/timeout/history; account-level child trust is required",
+      "evidence": "artifacts/integrations-1792081951499/results.json",
+      "release_evidence": "artifacts/integrations-1792145390620/results.json"
+    },
+    {
+      "id": "unified_capability_registry",
+      "status": "TESTED",
+      "verification": "Core local/MCP schemas/availability; MCP remains manual-only",
+      "evidence": "artifacts/integrations-1792081951499/results.json",
+      "release_evidence": "artifacts/integrations-1792145390620/results.json"
+    },
+    {
+      "id": "reviewed_local_ai_plans",
+      "status": "TESTED",
+      "verification": "Native explicit metadata/evidence consent, mock model JSON planning, actual local jobs, one-time approval, persisted unverified interpretation",
+      "evidence": "artifacts/integrations-1792081951499/results.json",
+      "release_evidence": "artifacts/integrations-1792145390620/results.json"
     }
   ],
   "verification": {
-    "rust_passed": 57,
+    "rust_passed": 66,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 11,
+    "frontend_passed": 12,
     "frontend_failed": 0,
-    "native_scenarios_passed": 3,
+    "native_scenarios_passed": 4,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
-    "debug_record": "artifacts/native-1792077037276/results.json",
-    "release_record": "artifacts/native-1792077312439/results.json",
+    "debug_record": "artifacts/native-1792081858453/results.json",
+    "release_record": "artifacts/native-1792144968533/results.json",
     "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
-    "inputs_debug_record": "artifacts/inputs-1792077081584/results.json",
-    "inputs_release_record": "artifacts/inputs-1792077355999/results.json",
+    "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
+    "inputs_release_record": "artifacts/inputs-1792145335173/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Current Windows: 57 Rust, 11 frontend and 25 native checkpoints per debug/release build. Previous evidence retained. Linux/ARM64, installers, scanners, MCP, general DAG/agents and reports are not claimed.",
+    "note": "Windows: 66 Rust, 12 frontend and 31 native checkpoints per debug/release build. MCP stdio/HTTP fixtures and reviewed local AI plans verified; model is a deterministic local fixture. Linux/ARM64, installers, live cloud accounts, offensive scanners, general DAG/agents and reports are not claimed. One earlier release input mismatch did not reproduce on the unchanged rerun; cause unestablished.",
     "typography_before_record": "artifacts/typography-refinement/before/results.json",
     "typography_after_record": "artifacts/typography-refinement/after/results.json",
     "typography_observations_per_phase": 57,
@@ -292,15 +339,23 @@
     "native_checkpoints": {
       "regression": 8,
       "inputs": 9,
-      "local_jobs": 8
+      "local_jobs": 8,
+      "tools_mcp_ai": 6
     },
-    "jobs_debug_record": "artifacts/jobs-1792077094197/results.json",
-    "jobs_release_record": "artifacts/jobs-1792077366043/results.json",
+    "jobs_debug_record": "artifacts/jobs-1792081914450/results.json",
+    "jobs_release_record": "artifacts/jobs-1792145365667/results.json",
     "native_configurations": [
       "windows-debug",
       "windows-release"
     ],
-    "preservation_record": "artifacts/upgrade-1792077147853/after-upgrade.json",
-    "normal_startup_record": "artifacts/windows-x64/normal-startup.json"
+    "preservation_record": "artifacts/milestone-2-upgrade-1792082372052/after.json",
+    "normal_startup_record": "artifacts/windows-x64/normal-startup.json",
+    "integrations_debug_record": "artifacts/integrations-1792081951499/results.json",
+    "integrations_release_record": "artifacts/integrations-1792145390620/results.json",
+    "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
+    "release_sha256": {
+      "reconx.exe": "713809688da0c0787c580dd7a0350bc53b16989eb8be1d3c84771090f69ea543",
+      "reconx-desktop.exe": "a563bb62c5759ba4ade6ff684281d59b6879111000bf9c989a6d535747a2341a"
+    }
   }
 }

@@ -29,8 +29,8 @@ export const navigation: { group: string; items: NavItem[] }[] = [
     group: "Intelligence",
     items: [
       { name: "AI Workspace", icon: "ai", implemented: true },
-      { name: "Agent Workflows", icon: "workflow", implemented: false },
-      { name: "MCP Hub", icon: "plug", implemented: false },
+      { name: "Agent Workflows", icon: "workflow", implemented: true },
+      { name: "MCP Hub", icon: "plug", implemented: true },
       { name: "Tool Manager", icon: "terminal", implemented: true },
     ],
   },

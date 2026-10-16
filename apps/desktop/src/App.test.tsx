@@ -58,7 +58,18 @@ async function mockService(command: string, args: unknown) {
     current.settings = structuredClone(request.settings);
     return null;
   }
-  if (request.op === "tools_list") return [];
+  if (
+    [
+      "tools_list",
+      "tools_catalog",
+      "mcp_list",
+      "mcp_history",
+      "files_list",
+      "plans_list",
+      "capabilities",
+    ].includes(request.op)
+  )
+    return [];
   return structuredClone(current);
 }
 beforeEach(() => {
@@ -74,6 +85,59 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
     })),
   );
+});
+it("MCP configuration sends typed secret-free fields and keeps untrusted connections blocked", async () => {
+  const user = userEvent.setup();
+  let saved: Record<string, unknown> | null = null;
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    const op = operation(args)?.op;
+    if (op === "mcp_save") {
+      const config = (args as { request: { server: Record<string, unknown> } })
+        .request.server;
+      saved = {
+        config: { ...config, id: "owned-test-server" },
+        revision: "fixture",
+        tools: [],
+        last_connected_at: null,
+      };
+      return saved;
+    }
+    if (op === "mcp_list") return saved ? [saved] : [];
+    if (op === "mcp_state") return "disconnected";
+    return mockService(command, args);
+  });
+  render(<App />);
+  await screen.findByText("Workspace overview");
+  await user.click(screen.getByRole("button", { name: "MCP Hub" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Add MCP Server" }),
+  );
+  await user.type(screen.getByLabelText("Server name"), "Owned MCP server");
+  await user.type(
+    screen.getByLabelText("MCP executable"),
+    "C:\\Owned\\server.exe",
+  );
+  await user.type(screen.getByLabelText("MCP environment names"), "TOKEN");
+  await user.type(screen.getByLabelText("MCP allowed tools"), "echo");
+  await user.click(screen.getByRole("button", { name: "Save server" }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Connect / Discover" }),
+    ).toBeDisabled(),
+  );
+  const config = (
+    saved as unknown as {
+      config: {
+        trusted: boolean;
+        environment: string[];
+        allowed_tools: string[];
+      };
+    }
+  ).config;
+  expect(config.trusted).toBe(false);
+  expect(config.environment).toEqual(["TOKEN"]);
+  expect(config.allowed_tools).toEqual(["echo"]);
+  expect(JSON.stringify(saved)).not.toContain("api_key");
 });
 it("global Add Target saves a typed configuration without changing existing settings", async () => {
   const user = userEvent.setup();
@@ -98,12 +162,8 @@ it("global Add Target saves a typed configuration without changing existing sett
   });
   render(<App />);
   await screen.findByText("Workspace overview");
-  await user.click(
-    screen.getByRole("button", { name: "Quick actions" }),
-  );
-  await user.click(
-    screen.getByRole("menuitem", { name: "Add Target" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Quick actions" }));
+  await user.click(screen.getByRole("menuitem", { name: "Add Target" }));
   await user.type(screen.getByLabelText("Target name"), "Owned lab");
   await user.type(
     screen.getByLabelText("Target value"),
@@ -112,9 +172,7 @@ it("global Add Target saves a typed configuration without changing existing sett
   await user.selectOptions(screen.getByLabelText("Target type"), "url");
   await user.type(screen.getByLabelText("Tags / groups"), "lab, internal");
   await user.click(screen.getByLabelText(/I confirm I have permission/));
-  await user.click(
-    screen.getByRole("button", { name: "Save target" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Save target" }));
   await waitFor(() =>
     expect(
       screen.queryByRole("dialog", { name: "Add Target" }),
@@ -154,15 +212,11 @@ it("target validation errors keep the dialog and user input available for correc
   });
   render(<App />);
   await screen.findByText("Workspace overview");
-  await user.click(
-    screen.getByRole("button", { name: "+ Add Target" }),
-  );
+  await user.click(screen.getByRole("button", { name: "+ Add Target" }));
   await user.type(screen.getByLabelText("Target name"), "Lab IP");
   await user.selectOptions(screen.getByLabelText("Target type"), "ipv4");
   await user.type(screen.getByLabelText("Target value"), "invalid");
-  await user.click(
-    screen.getByRole("button", { name: "Save target" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Save target" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Invalid IPv4 address",
   );
@@ -373,7 +427,7 @@ describe("Desktop interactions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Workspace overview");
-    await user.click(screen.getByRole("button", { name: "MCP Hub" }));
+    await user.click(screen.getByRole("button", { name: "Network Security" }));
     expect(await screen.findByText("NOT STARTED")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Invoke tool|Connect server/ }),

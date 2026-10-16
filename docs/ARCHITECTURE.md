@@ -50,3 +50,17 @@ Verified documentation:
 - https://ai.google.dev/api/generate-content
 - https://docs.ollama.com/api/chat
 - https://docs.rs/keyring/4.2.0/keyring/
+
+
+## Reviewed local tool/MCP bridge (Milestone 2)
+
+`reconx-tools` owns pinned portable manifests and the fixed YARA-X process adapter.
+Core `tooling.rs` exposes supported vs pending catalog/profile metadata and shared
+installation audit snapshots. Core `mcp.rs` owns config, disjoint secret references,
+SDK sessions, validated exact-input approvals and job-backed benign calls;
+`mcp_http.rs` bounds HTTP JSON/SSE bytes before parsing. `capabilities.rs` combines
+actual local/MCP capabilities and validates persisted local AI plans. It queues
+typed existing handlers; `jobs.rs` remains the only analysis scheduler. Management
+health/connection checks are bounded immediate operations, not separate schedulers.
+SQLite migration 004 adds configuration/cache/approval/plan/interpretation tables
+without duplicating projects, targets or jobs. Desktop and CLI call these services.

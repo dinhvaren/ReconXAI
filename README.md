@@ -1,5 +1,12 @@
 # ReconX AI
 
+Milestone 2 adds a verified YARA-X portable/local-signature adapter, actual MCP Hub
+(stdio and bounded Streamable HTTP), and reviewed local AI-to-tool plans using the
+existing Job Engine. Windows fixture verification is recorded in docs/TEST_RESULTS.md;
+Linux/ARM64 remain unverified. Other catalog tools are explicitly pending.
+See [Tool Manager](docs/TOOL_MANAGER.md), [MCP Hub](docs/MCP_HUB.md) and
+[AI tool orchestration](docs/AI_TOOL_ORCHESTRATION.md) for actual commands and limits.
+
 A native desktop and CLI research workbench sharing a Rust core and SQLite database. Project management, settings, secure provider configuration, streaming chat/cancellation, safe connection fallback and a verified portable ripgrep installer work on Windows x64. The full research platform remains under development.
 
 Target/scope management and native local binary import/static analysis now share

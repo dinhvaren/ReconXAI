@@ -14,6 +14,8 @@ import ActivitySidebar from "./components/ActivitySidebar";
 import Dashboard from "./pages/Dashboard";
 import TargetsPage from "./pages/TargetsPage";
 import ReversePage from "./pages/ReversePage";
+import { McpPage } from "./pages/McpPage";
+import { OrchestrationPage } from "./pages/OrchestrationPage";
 import JobsPage from "./pages/JobsPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
@@ -60,6 +62,7 @@ function Workbench() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [targetOpen, setTargetOpen] = useState(false);
+  const [mcpAddRequested, setMcpAddRequested] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target>();
   const [newTargetKind, setNewTargetKind] = useState<TargetKind>("domain");
   const [reverseFile, setReverseFile] = useState<string>();
@@ -478,6 +481,12 @@ function Workbench() {
                 if (action === "View Jobs") navigate("Analysis Jobs");
                 if (action === "Open AI Workspace") navigate("AI Workspace");
                 if (action === "Install Tools") navigate("Tool Manager");
+                if (action === "Add MCP Server") {
+                  setMcpAddRequested(true);
+                  navigate("MCP Hub");
+                }
+                if (action === "Plan local analysis")
+                  navigate("Agent Workflows");
               }}
             />
             <ThemeMenu location="Topbar" />
@@ -568,7 +577,30 @@ function Workbench() {
                 <SettingsPage data={data} busy={busy} perform={perform} />
               )}
               {page === "AI Workspace" && (
-                <AiWorkspace data={data} busy={busy} perform={perform} />
+                <AiWorkspace
+                  data={data}
+                  busy={busy}
+                  perform={perform}
+                  onTools={() => navigate("Agent Workflows")}
+                />
+              )}
+              {page === "MCP Hub" && (
+                <McpPage
+                  addRequested={mcpAddRequested}
+                  onAddHandled={() => setMcpAddRequested(false)}
+                  data={data}
+                  projectId={project?.id}
+                  busy={busy}
+                  perform={perform}
+                />
+              )}
+              {page === "Agent Workflows" && (
+                <OrchestrationPage
+                  data={data}
+                  projectId={project?.id}
+                  busy={busy}
+                  perform={perform}
+                />
               )}
               {page === "Tool Manager" && (
                 <ToolManagerPage busy={busy} perform={perform} />

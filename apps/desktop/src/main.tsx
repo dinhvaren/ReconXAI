@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
+import "./integrations.css";
 import { invoke } from "@tauri-apps/api/core";
 import { request, errorText, type AppTheme } from "./api";
 import { applyTheme } from "./theme";

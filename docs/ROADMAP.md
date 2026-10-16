@@ -1,5 +1,17 @@
 # Development roadmap
 
+2026-10-16: Milestone 2 adds reviewed portable YARA-X, an actual stdio/Streamable
+HTTP MCP gateway, a unified capability registry and explicitly approved local AI
+plans using the existing Job Engine. Windows native verification covers real
+tool installation/signatures, benign MCP calls, shared CLI records and restart.
+The AI acceptance model is a deterministic local fixture; live cloud accounts and
+Linux runtime remain unverified. Preserve this slice and extend normalized local
+evidence, manually reviewed findings and redacted reports next. General tool
+lifecycles, third-party MCP profiles and agent/DAG scheduling remain incomplete.
+
+Historical priority checkpoints follow; the current implementation and remaining
+scope are recorded in IMPLEMENTATION_STATUS.md and module-status.json.
+
 2026-10-15: the target/file slice now uses durable local jobs, bounded cross-client
 claims, timeouts/cancellation, exact result links and lease recovery. Job Center,
 local notes and explicit selected-artifact AI review are implemented. Preserve the
@@ -21,9 +33,9 @@ Crash recovery for local jobs is now implemented; parser process isolation remai
 1. Foundation: Windows native desktop/CLI/shared SQLite project/settings milestone verified.
    Desktop redesign: reference-inspired four-region shell, illustrated dashboard, consistent secondary pages, keyboard search, activity/notifications, resizable AI context and exactly Light/Dark/ReconX verified on Windows. Future module actions still require backend implementation.
 2. AI integration: provider CRUD, secure credentials, model discovery, text/streaming/cancellation, defaults and safe connection fallback implemented. Remaining: persisted health/usage/cost, rate/budget accounting, context, advanced parameters, per-agent routing and extensions. Real cloud compatibility unverified.
-3. Tool Manager: Windows ripgrep installation/version/uninstall verified. Remaining: dependency graph, unmanaged inventory, profiles, other local-analysis adapters, updates/rollback/cancellation and signatures.
-4. MCP: centralized registry/discovery against an owned mock server; isolation and explicit tool policies before invocation.
-5. Local-analysis jobs: durable local typed handlers, progress, cancellation/timeout and recovery implemented; DAG plans, retry policies and general resource budgets remain pending.
+3. Tool Manager: ripgrep and YARA-X verified Windows portable lifecycle/profile slice; general dependency graphs, unmanaged adoption, package manager/WSL adapters and multi-version upgrades/rollback remain pending.
+4. MCP: actual stdio/Streamable HTTP discovery, permissions and reviewed benign calls through existing jobs. Extend OAuth, pagination, sandboxing and validated integration profiles only after independent verification.
+5. Jobs and AI plans: reviewed local capability plans, actual tool jobs and consented unverified interpretation are implemented. General agents/routing/DAG scheduling remain pending.
 6. Targets: inventory and deterministic scope/authorization. Autonomous public-target offensive execution is outside the implemented scope.
 7. Analysis: offline HAR and owned binary inspection with structured observations/evidence.
 8. Reporting: findings management and redacted Markdown/HTML/JSON, then PDF.

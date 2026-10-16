@@ -57,10 +57,17 @@ jobs:
           RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
           RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
       - name: Linux Debian bundle
+        # Only Windows execution is locally verified. This job must succeed independently.
         # Runtime compatibility is unverified until this workflow actually succeeds.
         if: runner.os == 'Linux'
         run: npm run tauri -- build --config ../../packaging/tauri.linux.json
         working-directory: apps/desktop
+      - name: Windows native tool MCP and local AI integration
+        if: runner.os == 'Windows'
+        run: node tests/e2e/integrations.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -78,4 +85,7 @@ jobs:
             artifacts/jobs-*/results.json
             artifacts/jobs-*/events.json
             artifacts/jobs-*/*.png
+            artifacts/integrations-*/results.json
+            artifacts/integrations-*/events.json
+            artifacts/integrations-*/*.png
           if-no-files-found: warn

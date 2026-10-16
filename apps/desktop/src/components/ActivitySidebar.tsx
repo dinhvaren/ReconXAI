@@ -131,9 +131,9 @@ export default function ActivitySidebar({
           >
             <Icon name="workflow" />
             <span>
-              Agent workflows<small>Execution not implemented</small>
+              Agent workflows<small>Reviewed local analysis plans</small>
             </span>
-            <span className="micro-badge">Planned</span>
+            <span className="micro-badge">Local</span>
           </button>
           <button
             className="service-status"
@@ -141,9 +141,9 @@ export default function ActivitySidebar({
           >
             <Icon name="plug" />
             <span>
-              MCP gateway<small>Connections not implemented</small>
+              MCP gateway<small>Manage trusted connections</small>
             </span>
-            <span className="micro-badge">Planned</span>
+            <span className="micro-badge">Manual</span>
           </button>
           <button
             className="service-status"

@@ -13,10 +13,16 @@ use sha2::{Digest, Sha256};
 use std::{path::PathBuf, sync::Arc};
 use uuid::Uuid;
 use zeroize::Zeroizing;
+mod capabilities;
 mod jobs;
+mod mcp;
+mod mcp_http;
 mod reverse;
 mod targets;
+mod tooling;
+pub use capabilities::{JobReview, PlanProposal, PlanReview, PlanStep, ToolPlan};
 pub use jobs::{AnalysisJob, JobEngine, JobInput, JobKind};
+pub use mcp::{McpApproval, McpServer, McpServerConfig};
 pub use reverse::*;
 pub use targets::*;
 
@@ -102,6 +108,7 @@ pub struct ProjectExport {
 pub struct Core {
     db: Database,
     secrets: Arc<dyn SecretStore>,
+    mcp_gateway: Arc<mcp::McpGateway>,
 }
 impl Core {
     pub fn open(path: Option<PathBuf>) -> Result<Self> {
@@ -123,7 +130,11 @@ impl Core {
                 )
             })?;
         let db = Database::open(path)?;
-        let core = Self { db, secrets };
+        let core = Self {
+            db,
+            secrets,
+            mcp_gateway: Arc::new(mcp::McpGateway::default()),
+        };
         core.migrate_theme_preference()?;
         core.reconcile_jobs()?;
         Ok(core)
@@ -594,6 +605,7 @@ impl Core {
     {
         Self::audit(&self.db.connect()?, "tool.install", id, "running")?;
         let result = self.tool_manager().install(id, progress).await;
+        self.persist_tool_state(id)?;
         Self::audit(
             &self.db.connect()?,
             "tool.install",
@@ -608,6 +620,7 @@ impl Core {
     }
     pub async fn tool_doctor(&self, id: &str) -> Result<ToolInventory> {
         let result = self.tool_manager().doctor(id).await;
+        self.persist_tool_state(id)?;
         Self::audit(
             &self.db.connect()?,
             "tool.doctor",
@@ -622,6 +635,7 @@ impl Core {
     }
     pub fn tool_uninstall(&self, id: &str) -> Result<()> {
         let result = self.tool_manager().uninstall(id);
+        self.persist_tool_state(id)?;
         Self::audit(
             &self.db.connect()?,
             "tool.uninstall",

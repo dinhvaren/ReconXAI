@@ -128,6 +128,7 @@ export const jobKinds = [
   ["binary_metadata", "Binary metadata"],
   ["strings_extraction", "Strings extraction"],
   ["artifact_index", "Local artifact index"],
+  ["yara_signatures", "YARA-X file signatures (requires installation)"],
   ["target_registration_review", "Target scope review"],
 ] as const;
 export type JobKind = (typeof jobKinds)[number][0];
