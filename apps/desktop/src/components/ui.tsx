@@ -193,11 +193,13 @@ export function Modal({
   open,
   onClose,
   children,
+  dismissDisabled = false,
 }: {
   title: string;
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  dismissDisabled?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -209,12 +211,13 @@ export function Modal({
       ref={ref}
       className="rx-modal"
       aria-label={title}
+      aria-busy={dismissDisabled}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        if (!dismissDisabled) onClose();
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (!dismissDisabled && e.target === e.currentTarget) onClose();
       }}
     >
       <div className="modal-heading">
@@ -222,6 +225,12 @@ export function Modal({
         <button
           className="icon-button"
           aria-label="Close dialog"
+          disabled={dismissDisabled}
+          title={
+            dismissDisabled
+              ? "Operation in progress; wait to close"
+              : "Close dialog"
+          }
           onClick={onClose}
         >
           <Icon name="close" />

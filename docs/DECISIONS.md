@@ -33,3 +33,20 @@
 31. Verify typography using native computed styles, platform-font inspection and before/after page/theme/viewport captures. Report CDP device-scale emulation separately from physical OS DPI changes; keep font trials and local AI fixtures out of user data.
 32. Use SQLite as the cross-process local queue/concurrency authority. Preserve stable legacy job/result IDs in migration 003, fence commits, retain capacity during cancellation, and recover expired leases without automatic retries. Keep cancellation/deadlines explicitly cooperative until parser process isolation exists.
 33. Bind optional artifact review to an exact preview and captured gateway; exclude paths/notes and disable automatic model fallback for that route. Retain normal chat fallback separately. AI text never becomes a tool request or verified finding.
+## 2026-10-17: research outputs and bounded local inventory
+
+Reuse Core/jobs. Immutable evidence artifacts live outside SQLite with hashes and
+review/sensitivity metadata. Verification requires explicit source review; AI text
+alone cannot qualify. Immutable report previews require exact approval. Structured
+redaction precedes text embedding; raw originals stay private and detectable unsafe
+legacy previews require regeneration before export.
+
+Local HTTP inventory is one manually approved loopback HEAD, never selected by the
+model. Authorization/scope fingerprints and fixed budgets are enforced in Rust.
+Assets and response evidence commit with the existing job result. Additive
+migrations 005/006 take consistent pre-upgrade backups.
+
+Linux validation uses a task-owned toolchain/source snapshot excluding Git
+configuration and user datasets. Test-only ELF copies drop debug sections to fit
+the unchanged production limit. Linux Core/CLI verification is distinct from
+Desktop/runtime/installer acceptance. No privileged system SDK installation.

@@ -359,6 +359,7 @@ export function SettingsPage({
             <label>
               Security mode
               <select
+                aria-label="Security mode"
                 value={settings.security_mode}
                 onChange={(e) =>
                   setSettings({
@@ -373,9 +374,10 @@ export function SettingsPage({
               </select>
             </label>
             <p className="helper">
-              Modes are saved preferences. This foundation only exposes local
-              project operations and AI text; active workflows are unavailable
-              in every mode.
+              Passive Auto permits local analysis only. Authorized Auto and Lab
+              Research also permit manually approved loopback HTTP inventory
+              when the target's authorization and scope match. Other active
+              network workflows remain unavailable.
             </p>
             <label>
               Default model configuration

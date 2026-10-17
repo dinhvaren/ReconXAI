@@ -1,3 +1,27 @@
+# v1.0 continuation - 2026-10-17
+
+Read MASTER_EXECUTION_PROGRESS.md first. This section supersedes the historical
+Milestone 2 checklist below; no previous code or user data was reset.
+
+- [x] Migration 005, immutable evidence, manual findings/CVSS, four report formats.
+- [x] Phase 1 Desktop/CLI integration, Windows native/release acceptance and screenshots.
+- [x] Phase 2 migration 006, exact local HEAD approval, normalized assets, private HTTP
+  evidence, existing jobs/cancellation and CLI/Desktop bindings.
+- [x] Actual TCP fixtures and v5 migration preservation tests.
+- [x] Complete local-adapter native/release tests, visual inspection and default-DB upgrade.
+- [x] Update actual test records and portable artifact hashes after final build.
+- [x] Linux Core/CLI: 86 tests and actual ELF/evidence/four-format report smoke.
+- [ ] Linux Desktop SDK/runtime and optimized CLI/package verification.
+- [ ] Next vertical slice: bounded offline HAR/OpenAPI import, endpoint inventory
+  and deterministic header/cookie observations; preserve raw traffic privately.
+
+A report redaction defect for HTTP JSON header pairs was reproduced by the native
+local fixture and fixed. Evidence raw export and report snapshots are separate
+trust boundaries. Older detectable unsafe snapshots require a new reviewed preview.
+
+Prepared commit summary (no commit/push performed):
+`feat(core): persist reviewed research outputs and approved loopback inventory`
+
 # Milestone 2 - Tools, MCP and local AI orchestration
 
 Local HEAD 7587e63 was clean before implementation. Baseline verify.ps1 passed

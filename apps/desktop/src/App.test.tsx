@@ -1,8 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, cleanup, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  cleanup,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { invoke } from "@tauri-apps/api/core";
 import App from "./App";
+import { Modal } from "./components/ui";
 import type { Settings, Snapshot, AppTheme } from "./api";
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -67,6 +75,9 @@ async function mockService(command: string, args: unknown) {
       "files_list",
       "plans_list",
       "capabilities",
+      "evidence_list",
+      "findings_list",
+      "reports_list",
     ].includes(request.op)
   )
     return [];
@@ -85,6 +96,35 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
     })),
   );
+});
+it("busy dialogs visibly disable dismissal until the operation finishes", async () => {
+  const user = userEvent.setup();
+  const close = vi.fn();
+  const { rerender } = render(
+    <Modal title="Loading record" open onClose={close} dismissDisabled>
+      Record content
+    </Modal>,
+  );
+  const button = screen.getByRole("button", { name: "Close dialog" });
+  expect(button).toBeDisabled();
+  expect(button).toHaveAttribute(
+    "title",
+    "Operation in progress; wait to close",
+  );
+  await user.click(button);
+  fireEvent(
+    screen.getByRole("dialog"),
+    new Event("cancel", { bubbles: true, cancelable: true }),
+  );
+  expect(close).not.toHaveBeenCalled();
+  rerender(
+    <Modal title="Loading record" open onClose={close}>
+      Record content
+    </Modal>,
+  );
+  expect(button).toBeEnabled();
+  await user.click(button);
+  expect(close).toHaveBeenCalledTimes(1);
 });
 it("MCP configuration sends typed secret-free fields and keeps untrusted connections blocked", async () => {
   const user = userEvent.setup();
@@ -237,7 +277,7 @@ describe("Desktop interactions", () => {
     expect(search).toHaveFocus();
     await user.type(search, "Reports");
     expect(screen.getByRole("option", { name: /Reports/ })).toHaveTextContent(
-      "Planned module",
+      "Workspace",
     );
     await user.keyboard("{Enter}");
     expect(

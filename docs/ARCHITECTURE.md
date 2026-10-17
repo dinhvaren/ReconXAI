@@ -64,3 +64,23 @@ typed existing handlers; `jobs.rs` remains the only analysis scheduler. Manageme
 health/connection checks are bounded immediate operations, not separate schedulers.
 SQLite migration 004 adds configuration/cache/approval/plan/interpretation tables
 without duplicating projects, targets or jobs. Desktop and CLI call these services.
+
+## Research-output pipeline and local availability (2026-10-17)
+
+Core evidence.rs/findings.rs/reporting.rs own normalized outputs. Migration 005
+adds linked evidence/finding/report metadata; artifact bytes are immutable private
+UUID-named files outside SQLite. Hash verification precedes preview/export. Job
+completion publishes observed evidence within its existing transaction. Finding
+verification requires explicit manual source review; AI confidence is not evidence.
+Reports are immutable redacted snapshots with exact-preview export approval and
+locally generated Unicode PDF. Structured JSON content is redacted before text
+embedding; detectable unsafe older snapshots require regeneration before export.
+
+Migration 006 adds assets and exact local HTTP approvals. recon.rs previews one
+HEAD to an authorized loopback URL, fingerprints policy/input and queues the existing
+worker. Every checkpoint rechecks authorization. No LLM execution route is added.
+Completion atomically links the observed endpoint, private response headers and job
+result evidence. ReconPage/RecordsPage and the CLI call these same services.
+Current migrations snapshot versions 1-5 before an additive schema-6 transaction;
+there is no destructive automatic rollback. See LOCAL_INVENTORY.md and
+RESEARCH_OUTPUTS.md for byte limits and platform-dependent guarantees.

@@ -1,7 +1,8 @@
 use reconx_core::{
-    AppError, ArtifactReview, Core, JobEngine, JobInput, JobKind, JobReview, McpApproval,
-    McpServerConfig, PlanReview, ProjectExport, ProviderConfig, Result, Settings, TargetExport,
-    TargetInput, ThemePreference, ToolProgress,
+    AppError, ArtifactReview, Core, EvidenceInput, FindingInput, JobEngine, JobInput, JobKind,
+    JobReview, McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig,
+    ReportFormat, ReportInput, Result, Settings, TargetExport, TargetInput, ThemePreference,
+    ToolProgress,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -259,6 +260,88 @@ enum Request {
     FileExplain {
         review: ArtifactReview,
     },
+    ReconPreview {
+        id: String,
+    },
+    ReconEnqueue {
+        id: String,
+        fingerprint: String,
+        approved: bool,
+    },
+    AssetsList {
+        project: Option<String>,
+    },
+    EvidenceList {
+        project: Option<String>,
+    },
+    EvidenceShow {
+        id: String,
+    },
+    EvidenceAdd {
+        input: EvidenceInput,
+        text: String,
+    },
+    EvidenceImport {
+        input: EvidenceInput,
+        path: std::path::PathBuf,
+    },
+    EvidenceFromJob {
+        id: String,
+    },
+    EvidenceReview {
+        id: String,
+        note: String,
+    },
+    EvidenceVerify {
+        id: String,
+    },
+    EvidenceExport {
+        id: String,
+        path: std::path::PathBuf,
+        raw_approved: bool,
+    },
+    FindingsList {
+        project: Option<String>,
+    },
+    FindingShow {
+        id: String,
+    },
+    FindingSave {
+        id: Option<String>,
+        input: Box<FindingInput>,
+        revision: Option<u32>,
+        confirm_verified: bool,
+    },
+    FindingRemove {
+        id: String,
+        revision: u32,
+    },
+    FindingCompare {
+        a: String,
+        b: String,
+    },
+    FindingMerge {
+        primary: String,
+        duplicate: String,
+    },
+    CvssCalculate {
+        vector: String,
+    },
+    ReportsList {
+        project: Option<String>,
+    },
+    ReportShow {
+        id: String,
+    },
+    ReportPrepare {
+        input: ReportInput,
+    },
+    ReportExport {
+        id: String,
+        format: ReportFormat,
+        path: std::path::PathBuf,
+        reviewed_sha256: String,
+    },
     Snapshot,
     GetTheme,
     SetTheme {
@@ -326,6 +409,49 @@ fn value(item: impl serde::Serialize) -> Result<Value> {
 }
 fn local(core: Core, request: Request) -> Result<Value> {
     match request {
+        Request::ReconPreview { id } => value(core.local_http_preview(&id)?),
+        Request::ReconEnqueue {
+            id,
+            fingerprint,
+            approved,
+        } => value(core.local_http_enqueue(&id, &fingerprint, approved)?),
+        Request::AssetsList { project } => value(core.assets(project.as_deref())?),
+        Request::EvidenceList { project } => value(core.evidence_list(project.as_deref())?),
+        Request::EvidenceShow { id } => value(core.evidence_show(&id)?),
+        Request::EvidenceAdd { input, text } => value(core.evidence_add(input, &text)?),
+        Request::EvidenceImport { input, path } => value(core.evidence_import(input, &path)?),
+        Request::EvidenceFromJob { id } => value(core.evidence_from_job(&id)?),
+        Request::EvidenceReview { id, note } => value(core.evidence_review(&id, &note)?),
+        Request::EvidenceVerify { id } => core.evidence_verify(&id),
+        Request::EvidenceExport {
+            id,
+            path,
+            raw_approved,
+        } => core.evidence_export(&id, &path, raw_approved),
+        Request::FindingsList { project } => value(core.findings(project.as_deref())?),
+        Request::FindingShow { id } => value(core.finding(&id)?),
+        Request::FindingSave {
+            id,
+            input,
+            revision,
+            confirm_verified,
+        } => value(core.finding_save(id.as_deref(), *input, revision, confirm_verified)?),
+        Request::FindingRemove { id, revision } => {
+            core.finding_remove(&id, revision)?;
+            Ok(Value::Null)
+        }
+        Request::FindingCompare { a, b } => core.finding_compare(&a, &b),
+        Request::FindingMerge { primary, duplicate } => core.finding_merge(&primary, &duplicate),
+        Request::CvssCalculate { vector } => value(reconx_core::calculate_cvss(&vector)?),
+        Request::ReportsList { project } => value(core.reports(project.as_deref())?),
+        Request::ReportShow { id } => value(core.report_show(&id)?),
+        Request::ReportPrepare { input } => value(core.report_prepare(input)?),
+        Request::ReportExport {
+            id,
+            format,
+            path,
+            reviewed_sha256,
+        } => core.report_export(&id, format, &path, &reviewed_sha256),
         Request::TargetsList { project } => value(core.list_targets(project.as_deref())?),
         Request::TargetShow { id } => value(core.target(&id)?),
         Request::TargetCreate { input } => value(core.create_target(input)?),
@@ -583,12 +709,23 @@ async fn select_local_paths(
     window: tauri::WebviewWindow,
     folder: bool,
     save: bool,
+    file_name: Option<String>,
 ) -> Result<Vec<std::path::PathBuf>> {
+    let file_name = file_name.unwrap_or_else(|| "reconx-targets.json".into());
+    if file_name.len() > 128
+        || file_name.contains(['/', '\\'])
+        || file_name.chars().any(char::is_control)
+    {
+        return Err(AppError::new(
+            "INVALID_INPUT",
+            "Default export name must be a simple filename",
+        ));
+    }
     tauri::async_runtime::spawn_blocking(move || {
         let dialog = window.app_handle().dialog().file().set_parent(&window);
         let paths = if save {
             dialog
-                .set_file_name("reconx-targets.json")
+                .set_file_name(&file_name)
                 .blocking_save_file()
                 .into_iter()
                 .collect()

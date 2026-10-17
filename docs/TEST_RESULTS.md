@@ -1,6 +1,144 @@
-# Verification record
+# Current verified checkpoint - 2026-10-17
+
+Product version remains 0.1.0. This is not full v1.0 release acceptance.
+
+- Windows: cargo fmt --all -- --check, Clippy (workspace/all targets, warnings
+  denied), cargo test --locked --workspace passed: **86 passed, 0 failed,
+  1 explicit OS-store fixture ignored**. Frontend build and **13 tests passed**.
+- Final scripts/verify.ps1 -Outputs -LocalInventory passed. After the Linux-only
+  fixture correction, Windows CLI 5 / research-input 8 tests and Clippy passed
+  again. Production limits and binaries were unchanged by that test correction.
+- Tauri optimized no-bundle build and optimized CLI build passed. The exact copied
+  binaries in artifacts/windows-x64 passed **44 native checkpoints**:
+
+| Suite | Checkpoints | Actual result record |
+| --- | --- | --- |
+| Regression / appearance / typography | 8 | artifacts/native-1792217533338/results.json |
+| Targets / PE imports | 9 | artifacts/inputs-1792217578167/results.json |
+| Jobs / cancellation / recovery | 8 | artifacts/jobs-1792217588488/results.json |
+| YARA-X / MCP / local mock AI | 6 | artifacts/integrations-1792217614199/results.json |
+| Evidence / findings / reports | 6 | artifacts/outputs-1792217631931/results.json |
+| Approved loopback HEAD / outputs | 7 | artifacts/recon-local-1792217644790/results.json |
+
+Latest debug output/local records: outputs-1792217139477 and
+recon-local-1792217154231. Other debug suites passed earlier in this phase.
+Actual three-theme captures at 1920/1366 and a rasterized optimized PDF were
+visually inspected; shell regression covers five desktop sizes. PDFs were
+independently parsed with pypdf, including Vietnamese, redaction and intact URL
+assertions. Models and services were explicitly owned local fixtures.
+
+Normal Desktop is open from the tested executable: recorded owned PID 10840,
+title ReconX AI, zero startup stderr. Default schema 4 to 6 preserved hashes/counts
+of **all 13 original tables**, with a matching schema-4 backup and zero foreign-key
+errors. No fixture records were inserted in the normal database. Record:
+artifacts/release-upgrade-1792216876468/after.json.
+
+Known Git-token/private-key pattern scan returned zero matches in the two current
+portable binaries. Scope/limitations and hashes are in
+artifacts/windows-x64/credential-pattern-review.json. This is not a complete
+credential, dependency or release audit. No Git remote configuration was read.
+
+## Actual Linux shared Core and CLI
+
+Parrot x86_64 on WSL2 became available on 2026-10-17. Earlier no-runtime findings
+below are historical. GCC 14.2.0 and Node 20.19.2 were already installed. Official
+Rust 1.95.0 was installed only in a task-owned /tmp directory after verifying the
+published installer SHA-256. No profile or privileged system package changed.
+Provenance: https://rust-lang.github.io/rustup/installation/other.html;
+artifacts/linux-verify-1792217270990/installer.json records the actual checksum.
+
+- Actual command: cargo test --locked --workspace --exclude reconx-desktop.
+  **86 passed, 0 failed, 1 ignored**. Full stdout/stderr and exit code are retained
+  in cargo-test-final.log and test-result-final.json.
+- Standalone debug CLI smoke created a project/domain, imported /usr/bin/true ELF,
+  independently matched SHA-256, extracted 29 sections, verified evidence, saved
+  a Needs Verification observation (no vulnerability assertion), exported all four
+  report formats and reopened records from new CLI processes. Windows pypdf
+  independently extracted Vietnamese from the Linux-generated PDF.
+- Evidence permissions were checked: file 0600 and directory 0700. Acceptance:
+  artifacts/linux-verify-1792217270990/acceptance.json.
+- Initial Linux tests correctly rejected an oversized DWARF test executable. The
+  shared test-only native-sample.rs now strips debug sections from a private copy
+  using binutils; original executable and production limit remain intact. Initial
+  smoke input used invalid severity info; fixture corrected to informational.
+- Linux Desktop is **UNVERIFIED**: pkg-config cannot find webkit2gtk-4.1. Linux
+  frontend rendering, OS-store round-trip, optimized CLI packaging and installers
+  remain unverified. Core tests do not establish Linux Desktop compatibility.
+
+## Defects reproduced and fixed in this continuation
+
+Real native preview exposed cookie leakage from embedded JSON header pairs.
+Structured redaction now runs before embedding, also covering plain HTTP JSON,
+base64 values and bounded nested JSON. Detectable unsafe old snapshots are retained
+but blocked from export until a new preview is prepared. Actual PDF raster review
+also caught drive-path matching p:/ inside http://; path boundaries were corrected
+and URL preservation is asserted. Other fixes: visible busy-dialog dismissal state
+with a frontend regression, exact accessible mode labels, accepted Windows sockets
+explicitly leaving nonblocking mode, native locators and global Add Target usage.
+
+Failed local-inventory artifacts are retained (1792152575394, 1792152721168,
+1792216059876, 1792216071764, 1792216524155, 1792216580750). Both product defects
+and harness assumptions were corrected; failed runs were never reported as passes.
+Full recon, Web/API, general agents/mobile/cloud/CI/lab, installers and production
+hardening remain incomplete. No user datasets or real provider keys were uploaded.
+
+---
+
+# Historical verification record
 
 Windows x64, Rust 1.95.0 MSVC, Node 24.15.0, npm 11.7.0. Updated 2026-10-16.
+
+## v1.0 Phase 1: actual research-output pipeline
+
+- Baseline a29c5db: clean working tree; existing verify.ps1 passed 66 Rust / 12
+  frontend tests, with one explicit OS-store fixture ignored.
+- Current workspace: **76 Rust passed, 0 failed, 1 ignored**, including eight new
+  output-service tests, one migration-004-to-005 preservation/backup test and one
+  real CLI/Core evidence/finding/report test. Formatting and Clippy with warnings
+  denied passed. TypeScript/Vite production build and **12 frontend tests** passed.
+- `scripts/verify.ps1 -Native -Visual -Inputs -Jobs -Integrations -Outputs` passed
+  **37 actual native checkpoints**: regression 8, input 9, jobs 8, tools/MCP/AI 6,
+  outputs 6. Debug records:
+  `artifacts/native-1792148709941`, `inputs-1792148767745`, `jobs-1792148781944`,
+  `integrations-1792148821112`, `outputs-1792148864027`.
+- `npm run tauri -- build --no-bundle` passed. `scripts/build.ps1` built/copied
+  optimized Desktop/CLI binaries and font notices/checksums. Release regression:
+  `artifacts/native-1792150150622`, `inputs-1792150193087`, `jobs-1792150202938`,
+  `integrations-1792150227775`, `outputs-1792150245675`.
+  After full JSON preview and format-reapproval were added, the final release
+  output scenario passed again: **`artifacts/outputs-1792150784430/results.json`**.
+- Actual local file parsing automatically publishes immutable source/job evidence.
+  Native PNG import uses a real Windows picker; the browser renders the stored
+  image. HTTP text is retained privately; integrity and manual review persist.
+  A native Verified finding is rejected without supporting review, then an actual
+  fixture observation saves with explicit confirmation. No vulnerability is invented.
+- Native report preview exposes redactions and omitted images. JSON mode shows
+  every structured field; changing format clears approval. The Windows save dialog
+  default filename is checked against the chosen PDF format. A real multi-page
+  PDF is independently parsed by installed pypdf 6.16.1, including Vietnamese text
+  and redaction assertions. CLI exports valid JSON, safe escaped HTML and Markdown
+  from the same immutable snapshot. Restart reopens the same records.
+- Outputs captures cover Evidence/Findings/Reports in all three themes at 1920x1080
+  and 1366x768. Actual captures and a rasterized PDF page were visually inspected;
+  spacing and explicit PDF font weight were corrected from those observations.
+- Failures fixed during development: initial Rust/TypeScript type/ownership issues;
+  library CVSS defaults for incomplete vectors; discarded temporary test-directory
+  ownership; missing dropdown accessible labels; native harness expecting a code
+  instead of a UI error message; a locator bound to the pre-restart page; and a
+  cross-process Edit read incorrectly using GetWindowText rather than WM_GETTEXT.
+  A real redaction regression for JSON `name: Api-Key / value` pairs was reproduced
+  and fixed. Failed native records remain under outputs-1792147772431,
+  1792147922248, 1792148096942, 1792148332827 and 1792149695212.
+- One release copy attempt failed because the previously opened owned Desktop
+  locked its executable. Its exact PID/path and zero active workspace jobs were
+  checked; it was closed normally, then the build/copy passed. No forced termination
+  of a normal user application or deletion of user data was used.
+- Existing default-workspace preservation baseline:
+  `artifacts/outputs-upgrade-1792148765308/before.json`. Normal startup upgrade smoke
+  is recorded separately when performed. Linux runtime remains **UNVERIFIED**;
+  WSL lists no installed distribution. No cloud provider/user data upload occurred.
+
+The earlier sections below retain their original milestone counts and limitations.
 
 ## Milestone 2 verification (Windows x64)
 

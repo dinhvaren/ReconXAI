@@ -1,9 +1,22 @@
 # ReconX AI
 
+The research-output pipeline now links actual jobs to integrity-checked evidence,
+manually reviewed findings and immutable redacted reports (Markdown/JSON/HTML/PDF).
+Desktop and CLI share these records. See [Research outputs](docs/RESEARCH_OUTPUTS.md)
+and the [resumable v1.0 ledger](docs/MASTER_EXECUTION_PROGRESS.md) for current
+acceptance, commands and limits. ReconX AI v1.0 is not yet release-ready.
+
+Reconnaissance now has a manually approved loopback HTTP inventory adapter, using
+the same scope, jobs, evidence and report services. It performs one HEAD request
+and no vulnerability scanning. See [Local inventory](docs/LOCAL_INVENTORY.md) for
+requirements, CLI commands and actual platform verification.
+
 Milestone 2 adds a verified YARA-X portable/local-signature adapter, actual MCP Hub
 (stdio and bounded Streamable HTTP), and reviewed local AI-to-tool plans using the
 existing Job Engine. Windows fixture verification is recorded in docs/TEST_RESULTS.md;
-Linux/ARM64 remain unverified. Other catalog tools are explicitly pending.
+Linux shared Core/CLI now has actual Parrot WSL tests and ELF/report runtime
+verification. Linux Desktop, optimized packaging and ARM64 remain unverified.
+Other catalog tools are explicitly pending.
 See [Tool Manager](docs/TOOL_MANAGER.md), [MCP Hub](docs/MCP_HUB.md) and
 [AI tool orchestration](docs/AI_TOOL_ORCHESTRATION.md) for actual commands and limits.
 
@@ -13,7 +26,8 @@ Target/scope management and native local binary import/static analysis now share
 the same Desktop/CLI services and persisted records. Start with **+ Add Target** or
 **Reverse Engineering → Import File → Analyze File**. See
 [Research inputs](docs/RESEARCH_INPUTS.md) and [Functionality audit](docs/FUNCTIONALITY_GAP_AUDIT.md).
-Recon, MCP, autonomous agents, normalized findings and reporting remain unfinished.
+Recon, advanced MCP integrations, autonomous agents and the remaining security
+domains remain unfinished; reviewed local MCP and output records are described above.
 
 Local work now runs through a shared durable Job Engine: queue/state/progress/logs,
 bounded concurrency, timeout/cancellation and interrupted-worker recovery. Open
@@ -47,7 +61,7 @@ cargo build --locked -p reconx
 .\target\debug\reconx.exe --help
 ```
 
-The custom-protocol build embeds frontend assets and needs no Vite server. Run scripts/build.ps1 for verified optimized Windows portable binaries and SHA-256 digests in artifacts/windows-x64. Both release binaries passed the native integration scenario. Installer configurations exist but installers and Linux remain unverified.
+The custom-protocol build embeds frontend assets and needs no Vite server. Run scripts/build.ps1 for verified optimized Windows portable binaries and SHA-256 digests in artifacts/windows-x64. Both release binaries passed the native integration scenario. Installer configurations exist but installers and Linux Desktop remain unverified; Linux Core/CLI acceptance is recorded in TEST_RESULTS.md.
 
 The desktop offers exactly Light (white/gray), Dark (black/charcoal) and ReconX (original burgundy/lavender/raspberry). Settings and the topbar/sidebar appearance menus share one immediate, automatically saved preference. ReconX is the default; legacy system or missing preferences migrate to reconx. OS appearance does not switch themes. Windows uses Segoe UI Variable Text, with locally bundled Source Sans 3 fallback and IBM Plex Mono for technical content; DM Sans is retained for the wordmark. Metadata starts at 12px and navigation/body use 14px. Ctrl+K searches projects, model configurations and pages. Both side panels can collapse and the AI context pane can resize. Future modules are visibly labeled, without fake research results. See docs/THEMES.md for palettes, controls and migration.
 

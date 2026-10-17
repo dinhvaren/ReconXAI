@@ -46,7 +46,7 @@ does not forcibly interrupt a parser already inside one bounded stage.
 
 SQLite uses ordinary account/filesystem protection, without encryption. Notes/metadata exports are user-authored and not automatically redacted. Rust secret buffers are zeroized where practical; browser inputs, libraries and OS services may copy them. Same-account malicious processes, filesystem races and comprehensive process sandboxing are outside the claimed protection.
 
-Existing MCP/provider credentials are not imported. MCP isolation and active network workflows remain unimplemented; local scope review is available. Tests isolate temporary data and loopback mock services; WebView2 debugging is set only in the test child environment. Generated test data is excluded from Git and release packages.
+Existing MCP/provider credentials are not imported. MCP children have no OS sandbox; manually approved loopback HTTP inventory is bounded as described below. General active network workflows remain unimplemented; local scope review is available. Tests isolate temporary data and loopback mock services; WebView2 debugging is set only in the test child environment. Generated test data is excluded from Git and release packages.
 
 The visual redesign preserves IPC contracts and backend policy. Search uses project/provider metadata and module routes, never credentials. API key entry remains masked; status actions return configured/unconfigured only. Screenshots are captured before filling the ephemeral fixture credential, which is removed by the test. Original artwork and licensed font assets are bundled; no reference-site artwork or runtime font/image tracking is included. Future module pages cannot invoke absent analysis services.
 
@@ -71,3 +71,36 @@ path, grant scope or autonomously invoke MCP/network scanners. Metadata planning
 and evidence interpretation have separate exact-preview/gateway consent, no silent
 fallback, and separately labelled unverified AI output. See MCP_HUB.md and
 AI_TOOL_ORCHESTRATION.md for implemented boundaries and unsupported capabilities.
+
+## Evidence, manual verification and report redaction (2026-10-17)
+
+Evidence hashes prove retained bytes match a record; they do not prove a security
+conclusion. AI summaries cannot become reviewed source evidence. Verified findings
+need explicit independent review, matching-project evidence with a checked hash
+and a review note. Reports preserve statuses and warnings instead of asserting
+vulnerabilities from HTTP status, banners, signatures or model confidence.
+
+Artifacts use generated UUID filenames, reject final symlink/reparse inputs/roots
+and have bounded reads. Unix artifacts use 0600/0700; Windows inherits workspace
+ACLs. This is not encryption, an untrusted same-account process boundary, or a
+claim of race-free descriptor-relative filesystem isolation. Custom shared
+workspaces must have their permissions reviewed. Export never overwrites files.
+
+Raw evidence stays private; raw binary/image exports require explicit approval.
+Text/JSON reports redact known credentials, header name/value pairs, private keys
+and local paths. Unknown patterns may remain; preview is mandatory and redactions
+are visible. A native fixture found an embedded-JSON header leak in report text;
+structured redaction now precedes embedding. Detectable legacy unsafe snapshots
+are preserved but export is blocked until a new snapshot is prepared/reviewed.
+
+## Single-request loopback inventory
+
+Only exact localhost (pinned to 127.0.0.1) or loopback IPs, matching target scope,
+active project, declared authorization and permitted application/target modes are
+accepted. Exact manual approval is bound to policy/input; revalidation occurs
+while awaiting headers and before result commit. One HEAD, no proxy/redirect,
+retry/auth/cookies/body analysis; fixed deadlines/header budgets and a persisted
+20 approvals/project/minute ceiling. Cancellation cannot undo an already-sent
+request. A response may contain secrets, so raw headers are private evidence;
+normalized assets/job summaries omit cookie/auth fields. These are availability
+observations only. AI cannot choose this adapter or enable public scanning.

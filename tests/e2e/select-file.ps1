@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][int]$AppProcessId,[Parameter(Mandatory)][string]$SamplePath)
+param([Parameter(Mandatory)][int]$AppProcessId,[Parameter(Mandatory)][string]$SamplePath,[string]$ExpectedName)
 $ErrorActionPreference='Stop'
 Add-Type @'
 using System;
@@ -13,6 +13,7 @@ public static class ReconXPicker {
  [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, string text);
  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
  [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder b, int n);
+ [DllImport("user32.dll",EntryPoint="SendMessageW",CharSet=CharSet.Unicode)] public static extern IntPtr ReadControlText(IntPtr h, uint message, IntPtr capacity, System.Text.StringBuilder text);
  public static string Describe(IntPtr h) {
   var title=new System.Text.StringBuilder(256);GetWindowText(h,title,256);
   var result="Dialog title: "+title.ToString()+"; controls: ";
@@ -44,6 +45,11 @@ for($attempt=0;$attempt -lt 80;$attempt++) {
  Start-Sleep -Milliseconds 100
 }
 if($filename -eq [IntPtr]::Zero){Write-Output ([ReconXPicker]::Describe($pickerHandle));throw 'Native filename input was not found'}
+if($ExpectedName){
+ $nameText=[System.Text.StringBuilder]::new(512)
+ [void][ReconXPicker]::ReadControlText($filename,0x000D,[IntPtr]512,$nameText)
+ if(-not $nameText.ToString().EndsWith($ExpectedName,[System.StringComparison]::OrdinalIgnoreCase)){throw 'Default export filename did not match the selected format'}
+}
 [void][ReconXPicker]::SendMessage($filename,0x000C,[IntPtr]::Zero,$SamplePath)
 $openButton=[ReconXPicker]::Control($pickerHandle,'Button',1)
 if($openButton -eq [IntPtr]::Zero){throw 'Native Open button was not found'}

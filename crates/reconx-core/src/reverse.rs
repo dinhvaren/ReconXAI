@@ -453,6 +453,7 @@ impl Core {
         Ok(super::jobs::PreparedJob {
             result: serde_json::json!({"analysis_id":record.id,"file_id":record.file_id,"format":record.analysis.format,"sha256":record.analysis.sha256,"sections":record.analysis.sections.len(),"strings":record.analysis.strings.len()}),
             analysis: Some((record, name, hash(&bytes))),
+            http: None,
         })
     }
     pub(super) fn read_sample_with_progress(

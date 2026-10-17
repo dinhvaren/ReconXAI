@@ -1,3 +1,51 @@
+# Current feature inventory - 2026-10-17
+
+Inspected shared Rust Core, typed Tauri requests, React routes, CLI, migrations
+and actual Windows fixtures. This table supersedes the historical audit below.
+No Git remotes/credentials were inspected and no local changes were reset.
+
+| Product area | Current state | Verified behavior / remaining gap |
+| --- | --- | --- |
+| Projects / targets / scope | TESTED | Existing CRUD/import/export/restart and typed CLI |
+| Typography / three themes | TESTED | Retained Segoe/Source Sans/Plex and Light/Dark/ReconX |
+| Shared jobs | TESTED | Queue/claims/cancel/timeouts/recovery; no general DAG/pause |
+| Native binary inspection | TESTED | PE native, ELF/Mach-O/APK fixtures; no decompiler |
+| Tool lifecycle | PARTIAL | Tested ripgrep/YARA-X only; catalog entries are pending |
+| MCP gateway | PARTIAL | Real stdio/HTTP benign fixtures; no OS sandbox/OAuth |
+| AI provider protocols | PARTIAL | Local protocol fixtures; live cloud accounts unverified |
+| Reviewed local AI plans | TESTED | Mock model, exact consent, real local jobs and saved output |
+| General agents/routing/budgets | NOT_STARTED | No multi-domain autonomous agent system |
+| Evidence management | TESTED | Immutable artifacts/hash/review, native imports, shared records |
+| Manual findings | TESTED | Lifecycle/revisions/evidence/duplicates/CVSS supplied vectors |
+| Research report exports | TESTED | Reviewed Markdown/JSON/HTML/PDF; actual Unicode PDF inspection |
+| Dedicated report visual layouts | PARTIAL | Seven labels share text-first structure |
+| Local HTTP inventory | TESTED | Windows actual approved HEAD, job/cancel/failure, asset/evidence/report and restart parity |
+| Passive public intelligence | NOT_STARTED | No DNS/RDAP/CT/history service |
+| Crawling/scanner adapters | NOT_STARTED | No external scanner workflow or vulnerability claims |
+| Web/API offline imports | NOT_STARTED | HAR/OpenAPI/Burp/schema inventory next |
+| Auth identity matrix | NOT_STARTED | No multi-identity request execution |
+| Network assessment | NOT_STARTED | No network inventory/import service |
+| Ghidra/debugger adapters | NOT_STARTED | Generic MCP discovery does not prove interoperability |
+| Android analysis | PARTIAL | APK content identification only; manifest/JADX not implemented |
+| iOS research | PARTIAL | Thin Mach-O static parser only; IPA/entitlements unsupported |
+| Cloud/IaC | NOT_STARTED | No analyzer |
+| Containers/SBOM | NOT_STARTED | No analyzer or vulnerability DB correlation |
+| CI/CD source review | NOT_STARTED | No YAML analyzer |
+| Red team lab | NOT_STARTED | No lab inventory/trust model |
+| Windows portable build | TESTED | Current optimized binaries passed 44 native checkpoints |
+| Windows installer | PARTIAL | Configuration only, generation/install unverified |
+| Linux core/CLI | TESTED | Parrot WSL: 86 tests and actual ELF/hash/evidence/report acceptance |
+| Linux Desktop | BLOCKED | webkit2gtk-4.1 development package missing; no privileged installation performed |
+| Linux/ARM packages | UNSUPPORTED | Current runtime acceptance not established |
+| v1.0 release | BLOCKED | Remaining domains/runtime/packaging/security review incomplete |
+
+BLOCKED here is a feature inventory label, not a claim that no independent work
+can continue. Windows custom shared-directory ACLs, parser process isolation,
+large-workspace pagination, live AI verification and release signing remain open.
+See MASTER_EXECUTION_PROGRESS.md and TEST_RESULTS.md for current exact evidence.
+
+---
+
 # Functionality gap audit — 2026-10-14
 
 Audited local commit `e355fd4`, Rust services, SQLite migration 001, CLI dispatch,

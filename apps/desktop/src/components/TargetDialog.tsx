@@ -248,6 +248,7 @@ export default function TargetDialog({
         <label>
           Preferred analysis mode
           <select
+            aria-label="Preferred analysis mode"
             value={draft.mode}
             onChange={(e) =>
               change("mode", e.target.value as TargetInput["mode"])

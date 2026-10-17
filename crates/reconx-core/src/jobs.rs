@@ -70,6 +70,7 @@ pub struct AnalysisJob {
 pub(super) struct PreparedJob {
     pub result: serde_json::Value,
     pub analysis: Option<(AnalysisRecord, String, String)>,
+    pub http: Option<super::recon::HttpObservation>,
 }
 fn decode_job(
     r: &reconx_storage::rusqlite::Row<'_>,
@@ -275,6 +276,9 @@ impl Core {
         if let Some(file) = &job.file_id {
             self.require_file_authorization(&self.imported_file(file)?)?;
         }
+        if job.kind == "local_http_inventory" {
+            self.local_http_job_plan(job)?;
+        }
         if self.project(&job.project_id)?.archived {
             return Err(AppError::new(
                 "PROJECT_ARCHIVED",
@@ -287,7 +291,12 @@ impl Core {
         }
         Ok(())
     }
-    fn complete_job(&self, job: &AnalysisJob, owner: &str, prepared: PreparedJob) -> Result<()> {
+    fn complete_job(
+        &self,
+        job: &AnalysisJob,
+        owner: &str,
+        mut prepared: PreparedJob,
+    ) -> Result<()> {
         let mut conn = self.db.connect()?;
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -302,6 +311,9 @@ impl Core {
                 "Timeout expired before result commit",
             ));
         }
+        if let Some(http) = prepared.http.as_ref() {
+            prepared.result = self.commit_local_http(&tx, job, http)?;
+        }
         let changed=tx.execute("UPDATE analysis_jobs SET status='completed',progress=100,stage='Completed',finished_at=?1,result_json=?2,worker_id=NULL,lease_until=NULL,logs_json=json_insert(logs_json,'$[#]','Result committed') WHERE id=?3 AND status='running' AND worker_id=?4 AND cancel_requested=0",params![now(),serde_json::to_string(&prepared.result).map_err(json_error)?,job.id,owner]).map_err(db_error)?;
         if changed != 1 {
             return Err(AppError::new(
@@ -309,6 +321,12 @@ impl Core {
                 "Job cancelled or lease lost before result commit",
             ));
         }
+        self.record_job_evidence(
+            &tx,
+            job,
+            &prepared.result,
+            prepared.analysis.as_ref().map(|a| &a.0),
+        )?;
         if let Some((record, name, digest)) = prepared.analysis {
             tx.execute("INSERT INTO binary_analyses(id,file_id,job_id,created_at,artifact_name,artifact_sha256) VALUES(?1,?2,?3,?4,?5,?6)",params![record.id,record.file_id,record.job_id,record.created_at,name,digest]).map_err(db_error)?;
             if let Some(target) = &job.target_id {
@@ -365,15 +383,16 @@ impl Core {
                     let id=job.target_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job target was removed"))?;
                     let decision=self.validate_scope(id,None)?;
                     update(90,"Registration, authorization and exclusions reviewed locally; no network requests")?;
-                    PreparedJob{result:serde_json::to_value(decision).map_err(json_error)?,analysis:None}
+                    PreparedJob{result:serde_json::to_value(decision).map_err(json_error)?,analysis:None,http:None}
                 },
                 "yara_signatures"=>{
                     let file=self.imported_file(job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","File was removed"))?)?;
                     let bytes=self.read_sample_with_progress(&file,&mut |done,total|update((10+done*40/total.max(1)) as u8,"Reading verified sample for YARA-X"))?;
                     update(60,"Executing fixed offline YARA-X signatures")?;
                     let result=self.tool_manager().signatures(&bytes,||update(60,"Executing fixed offline YARA-X signatures"))?;
-                    PreparedJob{result,analysis:None}
+                    PreparedJob{result,analysis:None,http:None}
                 },
+                "local_http_inventory"=>self.prepare_local_http(&job,&mut update)?,
                 "mcp_tool"=>self.prepare_mcp_job(&job,&mut update)?,
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;
@@ -381,7 +400,7 @@ impl Core {
                     self.read_sample_with_progress(&file,&mut |done,total|update((10+done*60/total.max(1)) as u8,"Indexing verified local sample bytes"))?;
                     let record=match self.file_analysis(id){Ok(r)=>Some(r),Err(e) if e.code=="NOT_ANALYZED"=>None,Err(e)=>return Err(e)};
                     update(90,"Sample and available analysis artifact indexed")?;
-                    PreparedJob{result:serde_json::json!({"file_id":id,"sha256":file.sha256,"size":file.size,"format":file.format,"analysis_id":record.as_ref().map(|r|&r.id),"sections":record.as_ref().map(|r|r.analysis.sections.len()),"strings":record.as_ref().map(|r|r.analysis.strings.len())}),analysis:None}
+                    PreparedJob{result:serde_json::json!({"file_id":id,"sha256":file.sha256,"size":file.size,"format":file.format,"analysis_id":record.as_ref().map(|r|&r.id),"sections":record.as_ref().map(|r|r.analysis.sections.len()),"strings":record.as_ref().map(|r|r.analysis.strings.len())}),analysis:None,http:None}
                 },
                 _=>return Err(AppError::new("INVALID_JOB","No allowlisted handler for this job type")),
             };

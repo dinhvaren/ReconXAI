@@ -22,4 +22,8 @@ tests/
 !/tests/e2e/jobs.mjs
 !/tests/e2e/mcp-fixture.mjs
 !/tests/e2e/integrations.mjs
+!/tests/e2e/outputs.mjs
+!/tests/e2e/recon-local.mjs
+!/tests/e2e/native-sample.rs
+!/tests/e2e/requirements.txt
 !/crates/reconx-core/tests/

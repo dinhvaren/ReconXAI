@@ -1,6 +1,51 @@
+## 2026-10-17 continuation: local HTTP inventory
+
+Phase 1 Windows optimized runtime acceptance passed, including actual PDF exports
+and restart. Phase 2 adds one manually approved HEAD request to owned loopback
+URLs through the existing jobs; normalized endpoint assets and private HTTP
+evidence are persisted. Desktop preview, target-context navigation, job/result
+view, cancellation and CLI preview/approval/assets are implemented. The local adapter passed actual Windows debug/optimized native acceptance; the
+optimized application passed six suites (44 checkpoints). Broader reconnaissance
+remains PARTIAL. Linux Core/CLI passed 86 tests plus real ELF/output acceptance;
+Linux Desktop and installers remain UNVERIFIED.
+
+Migration 006 preserves output records and backs up schemas 1-5 to pre-v6 snapshots.
+A report-only JSON header redaction defect was reproduced by native acceptance and
+fixed structurally, with regression tests and a safe export refusal for detectable
+legacy unsafe snapshots. See LOCAL_INVENTORY.md, RESEARCH_OUTPUTS.md and the master
+ledger. No public scanning or automatic model-driven network execution is added.
+
 # Implementation status
 
 Updated 2026-10-16. Verified platform: Windows x64. The full ten-phase platform is unfinished.
+
+## v1.0 Phase 1: evidence, findings and reports
+
+The output pipeline is implemented through the existing Core/SQLite services and
+available in Desktop and CLI. Completed jobs now atomically create immutable,
+hashed evidence; older results can be collected idempotently. Manual text/JSON,
+native file/screenshot imports, bounded previews, source review, integrity checks
+and explicit raw/redacted local exports work. Evidence retains source/project/
+target/job links and sensitivity; integrity is distinct from verification.
+
+Findings support lifecycle, fields/evidence, stale-edit revisions, comparison and
+transactional duplicate merging. Verified requires explicit manual confirmation,
+a review note and reviewed non-AI source evidence. CVSS 3.1/4.0 uses supplied
+complete vectors; missing/duplicate metrics are rejected rather than defaulted.
+
+Reports are immutable redacted snapshots with exact-preview export approval,
+integrity/quality checks, visible omission/redaction warnings and actual Markdown,
+JSON, escaped HTML and locally generated Unicode PDF. Seven template labels use a
+shared text-first structure with bounty-specific headings. Image/binary contents
+remain separate. These are real result records, not fabricated vulnerability data.
+
+Migration 005 preserves earlier tables and creates a consistent pre-v5 backup.
+Windows debug verification reached 76 Rust tests, 12 frontend tests and 37 native
+checkpoints. Optimized native verification also passed; see TEST_RESULTS.md for the
+latest evidence. This is not full v1.0 completion: list pagination, richer report
+layouts, Windows custom-workspace ACL review and all remaining research domains/
+Linux/installer acceptance remain open. See RESEARCH_OUTPUTS.md and the resumable
+MASTER_EXECUTION_PROGRESS.md. The historical sections below are prior checkpoints.
 
 ## Milestone 2: reviewed local tools, MCP and AI plans
 

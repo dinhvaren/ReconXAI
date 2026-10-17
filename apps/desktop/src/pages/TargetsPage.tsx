@@ -17,6 +17,7 @@ export default function TargetsPage({
   onAdd,
   onEdit,
   onReverse,
+  onRecon,
   perform,
   busy,
 }: {
@@ -25,6 +26,7 @@ export default function TargetsPage({
   onAdd: () => void;
   onEdit: (target: Target) => void;
   onReverse: (fileId: string, projectId: string) => void;
+  onRecon: (targetId: string, projectId: string) => void;
   perform: Perform;
   busy: boolean;
 }) {
@@ -323,6 +325,14 @@ export default function TargetsPage({
             </p>
           )}
           <h3>Available analysis</h3>
+          {["url", "rest_api", "graphql"].includes(selected.kind) && (
+            <button
+              className="button secondary"
+              onClick={() => onRecon(selected.id, selected.project_id)}
+            >
+              Plan local HTTP inventory
+            </button>
+          )}
           <button
             className="button secondary"
             disabled={busy}
@@ -361,12 +371,12 @@ export default function TargetsPage({
             >
               Import for static analysis
             </button>
-          ) : (
+          ) : !["url", "rest_api", "graphql"].includes(selected.kind) ? (
             <p className="muted">
               Target registration is available. This target type has no
               execution adapter in this build.
             </p>
-          )}
+          ) : null}
           <h3>Imported assets</h3>
           {files.length ? (
             files.map((f) => (
@@ -397,8 +407,9 @@ export default function TargetsPage({
             <p className="muted">No analysis jobs recorded.</p>
           )}
           <p className="muted">
-            Evidence, findings and target-aware AI correlation are not
-            implemented yet.
+            Completed jobs publish evidence. Open Evidence, Findings or Reports
+            for this project to review research outputs. Target-aware AI
+            correlation is not implemented yet.
           </p>
         </section>
       )}

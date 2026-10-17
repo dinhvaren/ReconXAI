@@ -1,4 +1,22 @@
+## Current continuation - 2026-10-17
+
+Phase 1 has Windows native/debug/optimized acceptance for evidence, manual findings
+and four report formats. Preserve this slice. Phase 2 implements manually approved
+loopback HEAD inventory using the same targets, jobs, assets and output services;
+Windows optimized native regression passed (44 checkpoints). Linux Core/CLI also
+passed 86 tests plus actual ELF/report acceptance; Linux Desktop remains unverified. Next prioritize offline HAR/OpenAPI ingestion and
+header/cookie observations with explicit evidence, followed by selected-artifact AI
+correlation. Do not call remaining recon/scanner, mobile, cloud or release phases
+complete. Linux/runtime/installers and process isolation remain unresolved.
+
 # Development roadmap
+
+Current v1.0 execution ledger: MASTER_EXECUTION_PROGRESS.md. Phase 1 now provides a
+real local job -> evidence -> manually reviewed finding -> redacted report pipeline
+with Desktop/CLI parity. Windows release/native verification passed, and bounded
+owned-local HTTP inventory now persists observations and evidence. Next implement
+offline traffic/configuration imports using these same records. Do not infer
+scanner/agent completion from navigation entries or skip unresolved output defects.
 
 2026-10-16: Milestone 2 adds reviewed portable YARA-X, an actual stdio/Streamable
 HTTP MCP gateway, a unified capability registry and explicitly approved local AI

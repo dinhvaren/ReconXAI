@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-16",
+  "updated": "2026-10-17",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -69,7 +69,13 @@
     },
     {
       "id": "reconnaissance",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "verification": "Windows actual manually approved loopback HEAD only; full passive/active recon remains incomplete",
+      "remaining": [
+        "DNS/RDAP/CT/history",
+        "offline traffic imports",
+        "broader normalized observations and safe adapters"
+      ]
     },
     {
       "id": "security_analysis",
@@ -77,12 +83,18 @@
       "remaining": [
         "web/API imports and analysis",
         "advanced reverse integrations",
-        "normalized evidence/findings"
+        "additional normalized observations"
       ]
     },
     {
       "id": "reporting",
-      "status": "NOT_STARTED"
+      "status": "IN_PROGRESS",
+      "verification": "Windows actual evidence/finding/report pipeline; Markdown/JSON/HTML/PDF and reviewed snapshots",
+      "remaining": [
+        "dedicated visual template layouts",
+        "large-workspace pagination and richer taxonomy UI",
+        "cross-platform runtime and release hardening"
+      ]
     },
     {
       "id": "packaging_ci",
@@ -292,26 +304,74 @@
       "verification": "Native explicit metadata/evidence consent, mock model JSON planning, actual local jobs, one-time approval, persisted unverified interpretation",
       "evidence": "artifacts/integrations-1792081951499/results.json",
       "release_evidence": "artifacts/integrations-1792145390620/results.json"
+    },
+    {
+      "id": "evidence_engine",
+      "verification": "Immutable artifacts/SHA-256, actual job completion, native PNG/HTTP imports, review, raw/redacted export, integrity and restart",
+      "status": "TESTED",
+      "platform": "windows-x86_64",
+      "evidence": "artifacts/outputs-1792217631931/results.json",
+      "additional_verification": {
+        "platform": "linux-x86_64",
+        "interface": "cli",
+        "record": "artifacts/linux-verify-1792217270990/acceptance.json"
+      }
+    },
+    {
+      "id": "manual_findings",
+      "verification": "CRUD/revisions, source evidence links, explicit verification gate, comparison/duplicate merge; CVSS 3.1 base and 4.0 supplied metrics",
+      "status": "TESTED",
+      "platform": "windows-x86_64",
+      "evidence": "artifacts/outputs-1792217631931/results.json",
+      "additional_verification": {
+        "platform": "linux-x86_64",
+        "interface": "cli",
+        "record": "artifacts/linux-verify-1792217270990/acceptance.json"
+      }
+    },
+    {
+      "id": "report_snapshots",
+      "verification": "Reviewed redacted Markdown/JSON/HTML/PDF, full JSON preview, format reapproval, pypdf Unicode extraction and native restart",
+      "status": "TESTED",
+      "platform": "windows-x86_64",
+      "evidence": "artifacts/outputs-1792217631931/results.json",
+      "additional_verification": {
+        "platform": "linux-x86_64",
+        "interface": "cli",
+        "record": "artifacts/linux-verify-1792217270990/acceptance.json"
+      }
+    },
+    {
+      "id": "local_http_inventory",
+      "status": "TESTED",
+      "verification": "One manually approved loopback HEAD; real assets/private evidence/report, cancel/failure/restart and CLI parity",
+      "evidence": "artifacts/recon-local-1792217644790/results.json"
+    },
+    {
+      "id": "linux_core_cli",
+      "status": "TESTED",
+      "verification": "Parrot WSL2: 86 Rust tests and actual CLI ELF/hash/evidence/finding/four-format report smoke; Desktop and optimized packaging unverified",
+      "evidence": "artifacts/linux-verify-1792217270990/acceptance.json"
     }
   ],
   "verification": {
-    "rust_passed": 66,
+    "rust_passed": 86,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 12,
+    "frontend_passed": 13,
     "frontend_failed": 0,
-    "native_scenarios_passed": 4,
+    "native_scenarios_passed": 6,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
     "debug_record": "artifacts/native-1792081858453/results.json",
-    "release_record": "artifacts/native-1792144968533/results.json",
+    "release_record": "artifacts/native-1792217533338/results.json",
     "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
     "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
-    "inputs_release_record": "artifacts/inputs-1792145335173/results.json",
+    "inputs_release_record": "artifacts/inputs-1792217578167/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Windows: 66 Rust, 12 frontend and 31 native checkpoints per debug/release build. MCP stdio/HTTP fixtures and reviewed local AI plans verified; model is a deterministic local fixture. Linux/ARM64, installers, live cloud accounts, offensive scanners, general DAG/agents and reports are not claimed. One earlier release input mismatch did not reproduce on the unchanged rerun; cause unestablished.",
+    "note": "Windows: 86 Rust / 13 frontend, all six optimized native suites (44 checkpoints). Linux: 86 Rust / one ignored and actual CLI ELF/output workflow. Linux Desktop, optimized CLI/installer, live cloud and remaining research domains unverified or incomplete.",
     "typography_before_record": "artifacts/typography-refinement/before/results.json",
     "typography_after_record": "artifacts/typography-refinement/after/results.json",
     "typography_observations_per_phase": 57,
@@ -340,22 +400,66 @@
       "regression": 8,
       "inputs": 9,
       "local_jobs": 8,
-      "tools_mcp_ai": 6
+      "tools_mcp_ai": 6,
+      "research_outputs": 6,
+      "local_inventory": 7
     },
     "jobs_debug_record": "artifacts/jobs-1792081914450/results.json",
-    "jobs_release_record": "artifacts/jobs-1792145365667/results.json",
+    "jobs_release_record": "artifacts/jobs-1792217588488/results.json",
     "native_configurations": [
       "windows-debug",
       "windows-release"
     ],
-    "preservation_record": "artifacts/milestone-2-upgrade-1792082372052/after.json",
+    "preservation_record": "artifacts/release-upgrade-1792216876468/after.json",
     "normal_startup_record": "artifacts/windows-x64/normal-startup.json",
     "integrations_debug_record": "artifacts/integrations-1792081951499/results.json",
-    "integrations_release_record": "artifacts/integrations-1792145390620/results.json",
+    "integrations_release_record": "artifacts/integrations-1792217614199/results.json",
     "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
     "release_sha256": {
-      "reconx.exe": "713809688da0c0787c580dd7a0350bc53b16989eb8be1d3c84771090f69ea543",
-      "reconx-desktop.exe": "a563bb62c5759ba4ade6ff684281d59b6879111000bf9c989a6d535747a2341a"
+      "reconx.exe": "289545e950353dc48f62b3c2c62f306a361133d7a0a558901383ea84315ece37",
+      "reconx-desktop.exe": "b79c574d4828c21bec38fca35eb0c00602657933ee790f8f16138096d19d37a4"
+    },
+    "outputs_release_record": "artifacts/outputs-1792217631931/results.json",
+    "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
+    "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
+    "local_inventory_release_record": "artifacts/recon-local-1792217644790/results.json",
+    "linux_core_cli_record": "artifacts/linux-verify-1792217270990/acceptance.json",
+    "release_native_checkpoints_total": 44,
+    "release_records": {
+      "regression": "artifacts/native-1792217533338/results.json",
+      "inputs": "artifacts/inputs-1792217578167/results.json",
+      "local_jobs": "artifacts/jobs-1792217588488/results.json",
+      "tools_mcp_ai": "artifacts/integrations-1792217614199/results.json",
+      "research_outputs": "artifacts/outputs-1792217631931/results.json",
+      "local_inventory": "artifacts/recon-local-1792217644790/results.json"
+    }
+  },
+  "v1_release": {
+    "ready": false,
+    "ledger": "docs/MASTER_EXECUTION_PROGRESS.md",
+    "blockers": [
+      "Remaining research domains and agents are incomplete",
+      "Linux Desktop runtime, optimized CLI packaging and installers unverified",
+      "Windows custom-workspace ACLs require review; no process sandbox",
+      "Report profiles share a text-first structure; list views capped at latest 1000",
+      "Live cloud providers and security integration profiles unverified"
+    ]
+  },
+  "database_schema_version": 6,
+  "platform_verification": {
+    "windows-x86_64": {
+      "desktop": "TESTED",
+      "cli": "TESTED",
+      "installer": "UNVERIFIED"
+    },
+    "linux-x86_64": {
+      "core": "TESTED",
+      "cli_debug": "TESTED",
+      "desktop": "UNVERIFIED",
+      "optimized_cli": "UNVERIFIED",
+      "packaging": "UNVERIFIED",
+      "distribution": "Parrot on WSL2",
+      "desktop_blocker": "webkit2gtk-4.1 SDK absent; no privileged system packages installed"
     }
   }
 }

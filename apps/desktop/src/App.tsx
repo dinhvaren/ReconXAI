@@ -17,6 +17,8 @@ import ReversePage from "./pages/ReversePage";
 import { McpPage } from "./pages/McpPage";
 import { OrchestrationPage } from "./pages/OrchestrationPage";
 import JobsPage from "./pages/JobsPage";
+import RecordsPage from "./pages/RecordsPage";
+import ReconPage from "./pages/ReconPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
 import { useJobEvents, type Target, type TargetKind } from "./research";
@@ -62,9 +64,11 @@ function Workbench() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [targetOpen, setTargetOpen] = useState(false);
+  const [findingCreateRequest, setFindingCreateRequest] = useState(0);
   const [mcpAddRequested, setMcpAddRequested] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target>();
   const [newTargetKind, setNewTargetKind] = useState<TargetKind>("domain");
+  const [reconTarget, setReconTarget] = useState<string>();
   const [reverseFile, setReverseFile] = useState<string>();
   const [importRequest, setImportRequest] = useState(0);
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -478,6 +482,17 @@ function Workbench() {
                   setImportRequest((n) => n + 1);
                   navigate("Reverse Engineering");
                 }
+                if (action === "Create Finding") {
+                  if (data?.projects.some((p) => !p.archived))
+                    setFindingCreateRequest((n) => n + 1);
+                  else setNotice("Create a project before recording findings");
+                  navigate("Findings");
+                }
+                if (action === "Start Recon") {
+                  setReconTarget(undefined);
+                  navigate("Reconnaissance");
+                }
+                if (action === "Export Report") navigate("Reports");
                 if (action === "View Jobs") navigate("Analysis Jobs");
                 if (action === "Open AI Workspace") navigate("AI Workspace");
                 if (action === "Install Tools") navigate("Tool Manager");
@@ -555,6 +570,34 @@ function Workbench() {
             </div>
           ) : (
             <div className="page-view" key={page}>
+              {(["Evidence", "Findings", "Reports"] as const).map((name) =>
+                page === name ? (
+                  <RecordsPage
+                    key={name}
+                    page={name}
+                    data={data}
+                    projectId={selected ?? undefined}
+                    perform={perform}
+                    busy={busy}
+                    newFindingRequest={findingCreateRequest}
+                    onFindingRequestConsumed={() => setFindingCreateRequest(0)}
+                  />
+                ) : null,
+              )}
+              {page === "Reconnaissance" && (
+                <ReconPage
+                  data={data}
+                  projectId={selected ?? undefined}
+                  initialTarget={reconTarget}
+                  perform={perform}
+                  busy={busy}
+                  onAddTarget={() => addTarget("url")}
+                  navigate={(page, project) => {
+                    if (project) setSelected(project);
+                    navigate(page);
+                  }}
+                />
+              )}
               {page === "Dashboard" && (
                 <Dashboard
                   data={data}
@@ -607,6 +650,11 @@ function Workbench() {
               )}
               {page === "Targets & Scope" && (
                 <TargetsPage
+                  onRecon={(id, project) => {
+                    setReconTarget(id);
+                    setSelected(project);
+                    navigate("Reconnaissance");
+                  }}
                   data={data}
                   projectId={project?.id}
                   busy={busy}

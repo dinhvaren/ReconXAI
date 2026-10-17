@@ -1,6 +1,8 @@
 use reconx_core::{Core, SecurityMode, TargetExport, TargetInput, TargetKind};
 use reconx_storage::{Database, rusqlite::Connection};
 use std::fs;
+#[path = "../../../tests/e2e/native-sample.rs"]
+mod native_sample;
 fn input(project: &str, kind: TargetKind, value: &str) -> TargetInput {
     TargetInput {
         project_id: project.into(),
@@ -186,9 +188,8 @@ fn real_native_binary_import_analysis_jobs_restart_and_integrity() {
     let db = dir.path().join("db");
     let core = Core::open(Some(db.clone())).unwrap();
     let p = core.create_project("binary", "").unwrap();
-    let file = core
-        .import_file(&p.id, &std::env::current_exe().unwrap(), true)
-        .unwrap();
+    let sample = native_sample::owned_native(dir.path());
+    let file = core.import_file(&p.id, &sample, true).unwrap();
     assert!(matches!(file.format.as_str(), "Pe" | "Elf" | "MachO"));
     let record = core.analyze_file(&file.id).unwrap();
     assert!(!record.analysis.sections.is_empty());
@@ -395,7 +396,7 @@ fn migration_preserves_version_one_projects_settings_and_providers() {
             .unwrap()
             .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
             .unwrap(),
-        4
+        6
     );
     Database::open(&path).unwrap();
 }

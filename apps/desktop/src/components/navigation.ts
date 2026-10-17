@@ -15,7 +15,7 @@ export const navigation: { group: string; items: NavItem[] }[] = [
   {
     group: "Research",
     items: [
-      { name: "Reconnaissance", icon: "globe", implemented: false },
+      { name: "Reconnaissance", icon: "globe", implemented: true },
       { name: "Web Security", icon: "code", implemented: false },
       { name: "API Security", icon: "api", implemented: false },
       { name: "Network Security", icon: "network", implemented: false },
@@ -37,9 +37,9 @@ export const navigation: { group: string; items: NavItem[] }[] = [
   {
     group: "Records",
     items: [
-      { name: "Findings", icon: "flag", implemented: false },
-      { name: "Evidence", icon: "layers", implemented: false },
-      { name: "Reports", icon: "file", implemented: false },
+      { name: "Findings", icon: "flag", implemented: true },
+      { name: "Evidence", icon: "layers", implemented: true },
+      { name: "Reports", icon: "file", implemented: true },
       { name: "Settings", icon: "settings", implemented: true },
     ],
   },

@@ -129,6 +129,7 @@ impl Core {
             caps.push(json!({"id":id,"provider":"local","name":title,"available":available,"required_tool":requires,"target_types":["binary","shared_library","firmware","apk"],"permissions":["authorized-local-file","manual-plan-approval"],"input_schema":{"type":"object","properties":{"file_id":{"type":"string"}},"required":["file_id"],"additionalProperties":false},"timeout_ms":60000,"ai_plannable":true}));
         }
         caps.push(json!({"id":"local.scope_review","provider":"local","name":"Registration/scope review (no network requests)","available":true,"ai_plannable":false,"permissions":["local-metadata-only"]}));
+        caps.push(json!({"id":"local.http_head","provider":"local","name":"Manually approved loopback HTTP availability","available":self.settings()?.security_mode!=SecurityMode::PassiveAuto,"ai_plannable":false,"target_types":["url","rest_api","graphql"],"permissions":["loopback-only","declared-authorization","exact-manual-approval"],"timeout_ms":5000,"input_schema":{"type":"object","properties":{"target_id":{"type":"string"},"fingerprint":{"type":"string"},"approved":{"const":true}},"required":["target_id","fingerprint","approved"],"additionalProperties":false}}));
         for server in self.mcp_servers()? {
             for tool in &server.tools {
                 let name = tool["name"].as_str().unwrap_or("");

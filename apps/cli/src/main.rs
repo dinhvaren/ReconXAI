@@ -1,8 +1,8 @@
 use clap::{CommandFactory, Parser, Subcommand};
 use reconx_core::{
-    AppError, Core, JobEngine, JobInput, JobKind, JobReview, McpApproval, McpServerConfig,
-    PlanReview, ProjectExport, ProviderConfig, Result, SecurityMode, Settings, TargetExport,
-    TargetInput, TargetKind,
+    AppError, Core, EvidenceInput, FindingInput, JobEngine, JobInput, JobKind, JobReview,
+    McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig, ReportFormat,
+    ReportInput, Result, SecurityMode, Settings, TargetExport, TargetInput, TargetKind,
 };
 use serde_json::{Value, json};
 use std::{
@@ -27,6 +27,15 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    #[command(subcommand)]
+    Evidence(EvidenceCommand),
+    /// Manually approved loopback HTTP inventory; no public target scanning.
+    #[command(subcommand)]
+    Recon(ReconCommand),
+    #[command(subcommand)]
+    Findings(FindingCommand),
+    #[command(subcommand)]
+    Report(ReportCommand),
     Init,
     Doctor,
     #[command(subcommand)]
@@ -52,6 +61,136 @@ enum Command {
     Audit,
     Completions {
         shell: clap_complete::Shell,
+    },
+}
+#[derive(Subcommand)]
+enum ReconCommand {
+    /// Preview one HEAD request after checking target authorization and scope.
+    Preview { target: String },
+    /// Queue the exact approved plan. Desktop or `jobs run` executes the job.
+    Run {
+        target: String,
+        #[arg(long)]
+        fingerprint: String,
+        #[arg(long)]
+        approve: bool,
+    },
+    /// List actual persisted endpoint observations, including those from Desktop.
+    Assets {
+        #[arg(long)]
+        project: Option<String>,
+    },
+}
+#[derive(Subcommand)]
+enum EvidenceCommand {
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Show {
+        id: String,
+    },
+    Add {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        text: PathBuf,
+    },
+    Import {
+        file: PathBuf,
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+        #[arg(long, default_value = "attachment")]
+        kind: String,
+        #[arg(long)]
+        title: Option<String>,
+    },
+    FromJob {
+        job: String,
+    },
+    Review {
+        id: String,
+        #[arg(long)]
+        note: PathBuf,
+    },
+    Verify {
+        id: String,
+    },
+    Export {
+        id: String,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(
+            long,
+            help = "Export original sensitive bytes; images cannot be automatically redacted"
+        )]
+        raw_approved: bool,
+    },
+}
+#[derive(Subcommand)]
+enum FindingCommand {
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Show {
+        id: String,
+    },
+    Create {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        confirm_verified: bool,
+    },
+    Update {
+        id: String,
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        revision: u32,
+        #[arg(long)]
+        confirm_verified: bool,
+    },
+    Remove {
+        id: String,
+        #[arg(long)]
+        revision: u32,
+    },
+    Compare {
+        a: String,
+        b: String,
+    },
+    Merge {
+        primary: String,
+        duplicate: String,
+    },
+    Cvss {
+        vector: String,
+    },
+}
+#[derive(Subcommand)]
+enum ReportCommand {
+    List {
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Show {
+        id: String,
+    },
+    Prepare {
+        #[arg(long)]
+        input: PathBuf,
+    },
+    Export {
+        id: String,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long)]
+        format: String,
+        #[arg(long, help = "SHA-256 of the exact saved preview reviewed by the user")]
+        reviewed_sha256: String,
     },
 }
 #[derive(Subcommand)]
@@ -432,6 +571,105 @@ async fn execute(cli: &Cli) -> Result<Value> {
     }
     let core = Core::open(cli.database.clone())?;
     match &cli.command {
+        Command::Recon(command) => match command {
+            ReconCommand::Preview { target } => serialize(core.local_http_preview(target)?),
+            ReconCommand::Run {
+                target,
+                fingerprint,
+                approve,
+            } => serialize(core.local_http_enqueue(target, fingerprint, *approve)?),
+            ReconCommand::Assets { project } => serialize(core.assets(project.as_deref())?),
+        },
+        Command::Evidence(command) => match command {
+            EvidenceCommand::List { project } => serialize(core.evidence_list(project.as_deref())?),
+            EvidenceCommand::Show { id } => serialize(core.evidence_show(id)?),
+            EvidenceCommand::Add { input, text } => {
+                let input: EvidenceInput =
+                    serde_json::from_str(&read_file(input)?).map_err(|_| {
+                        AppError::new("INVALID_INPUT", "Invalid evidence metadata JSON")
+                    })?;
+                serialize(core.evidence_add(input, &read_file(text)?)?)
+            }
+            EvidenceCommand::Import {
+                file,
+                project,
+                target,
+                kind,
+                title,
+            } => serialize(core.evidence_import(
+                EvidenceInput {
+                    project_id: project.clone(),
+                    target_id: target.clone(),
+                    kind: enum_input(kind)?,
+                    title: title.clone().unwrap_or_else(|| {
+                        file.file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into_owned()
+                    }),
+                    source_tool: "manual import".into(),
+                    sensitivity: Default::default(),
+                },
+                file,
+            )?),
+            EvidenceCommand::FromJob { job } => serialize(core.evidence_from_job(job)?),
+            EvidenceCommand::Review { id, note } => {
+                serialize(core.evidence_review(id, &read_file(note)?)?)
+            }
+            EvidenceCommand::Verify { id } => core.evidence_verify(id),
+            EvidenceCommand::Export {
+                id,
+                output,
+                raw_approved,
+            } => core.evidence_export(id, output, *raw_approved),
+        },
+        Command::Findings(command) => match command {
+            FindingCommand::List { project } => serialize(core.findings(project.as_deref())?),
+            FindingCommand::Show { id } => serialize(core.finding(id)?),
+            FindingCommand::Create {
+                input,
+                confirm_verified,
+            } => {
+                let input: FindingInput = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| AppError::new("INVALID_INPUT", "Invalid finding JSON"))?;
+                serialize(core.finding_save(None, input, None, *confirm_verified)?)
+            }
+            FindingCommand::Update {
+                id,
+                input,
+                revision,
+                confirm_verified,
+            } => {
+                let input: FindingInput = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| AppError::new("INVALID_INPUT", "Invalid finding JSON"))?;
+                serialize(core.finding_save(Some(id), input, Some(*revision), *confirm_verified)?)
+            }
+            FindingCommand::Remove { id, revision } => {
+                core.finding_remove(id, *revision)?;
+                Ok(Value::Null)
+            }
+            FindingCommand::Compare { a, b } => core.finding_compare(a, b),
+            FindingCommand::Merge { primary, duplicate } => core.finding_merge(primary, duplicate),
+            FindingCommand::Cvss { vector } => serialize(reconx_core::calculate_cvss(vector)?),
+        },
+        Command::Report(command) => match command {
+            ReportCommand::List { project } => serialize(core.reports(project.as_deref())?),
+            ReportCommand::Show { id } => serialize(core.report_show(id)?),
+            ReportCommand::Prepare { input } => {
+                let input: ReportInput = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| AppError::new("INVALID_INPUT", "Invalid report JSON"))?;
+                serialize(core.report_prepare(input)?)
+            }
+            ReportCommand::Export {
+                id,
+                output,
+                format,
+                reviewed_sha256,
+            } => {
+                let format: ReportFormat = enum_input(format)?;
+                core.report_export(id, format, output, reviewed_sha256)
+            }
+        },
         Command::Target(command) => match command {
             TargetCommand::Add {
                 project,
@@ -948,9 +1186,16 @@ async fn main() {
                 eprintln!("{error}");
             }
             std::process::exit(match error.code.as_str() {
-                "INVALID_INPUT" | "INVALID_DATA" | "INVALID_GATEWAY" | "DUPLICATE_NAME" => 2,
+                "INVALID_INPUT" | "INVALID_DATA" | "INVALID_GATEWAY" | "DUPLICATE_NAME"
+                | "INVALID_CVSS" | "INVALID_IMAGE" | "INVALID_TEXT" | "INPUT_LIMIT"
+                | "REPORT_LIMIT" | "PROJECT_MISMATCH" | "STALE_RECORD" | "OUTPUT_EXISTS" => 2,
                 "NOT_FOUND" => 3,
-                "BLOCKED_BY_POLICY" => 4,
+                "BLOCKED_BY_POLICY"
+                | "PREVIEW_REQUIRED"
+                | "REPORT_REDACTION_REQUIRED"
+                | "VERIFICATION_REQUIRED"
+                | "RAW_APPROVAL_REQUIRED"
+                | "UNVERIFIED_AI" => 4,
                 _ => 1,
             });
         }

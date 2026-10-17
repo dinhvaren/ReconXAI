@@ -1,0 +1,110 @@
+.records-toolbar,
+.records-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+.records-toolbar {
+  margin-bottom: 20px;
+  padding: 18px;
+}
+.records-panel {
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.records-panel > h2 {
+  margin: 0 0 16px;
+}
+.records-panel > .records-form {
+  padding: 0;
+}
+.record-actions .text-button {
+  margin-right: 12px;
+  margin-bottom: 6px;
+}
+.records-toolbar label,
+.records-form label {
+  display: grid;
+  gap: 7px;
+}
+.records-form {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  min-width: 0;
+}
+.records-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.records-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--rx-border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.record-checklist {
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+}
+.record-checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 400;
+}
+.record-checklist input {
+  width: auto;
+  margin-top: 4px;
+}
+.record-checklist small {
+  display: block;
+  color: var(--rx-text-muted);
+  font-size: 13px;
+}
+.record-meta {
+  display: block;
+  color: var(--rx-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+.records-form .check {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+.records-form .check input {
+  width: auto;
+  margin-top: 4px;
+}
+.record-preview {
+  max-height: 380px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rx-border);
+}
+.record-warning {
+  border-left: 3px solid var(--rx-accent-gold);
+  padding-left: 12px;
+  line-height: 1.5;
+}
+.evidence-image {
+  max-width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}

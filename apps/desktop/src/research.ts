@@ -114,8 +114,16 @@ export interface AnalysisRecord {
   created_at: string;
   analysis: BinaryAnalysis;
 }
-export function selectPaths(folder = false, save = false): Promise<string[]> {
-  return invoke("select_local_paths", { folder, save });
+export function selectPaths(
+  folder = false,
+  save = false,
+  fileName?: string,
+): Promise<string[]> {
+  return invoke("select_local_paths", {
+    folder,
+    save,
+    fileName: fileName ?? null,
+  });
 }
 export const localFileKinds: TargetKind[] = [
   "binary",

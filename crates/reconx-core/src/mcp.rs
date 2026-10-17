@@ -606,7 +606,7 @@ impl Core {
             };
             if self.mcp_invocation_preview(&id,&tool,&input)?["fingerprint"]!=fp{return Err(AppError::new("APPROVAL_STALE","MCP permission changed during execution"));}
             update(90,"Received untrusted MCP result")?;
-            Ok(jobs::PreparedJob{result:serde_json::json!({"provider":"mcp","server_id":id,"tool":tool,"untrusted":true,"response":result}),analysis:None})
+            Ok(jobs::PreparedJob{result:serde_json::json!({"provider":"mcp","server_id":id,"tool":tool,"untrusted":true,"response":result}),analysis:None,http:None})
           }.await;
           isolated.mcp_disconnect(&id).await?;
           result
