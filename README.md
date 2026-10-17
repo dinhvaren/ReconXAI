@@ -1,5 +1,12 @@
 # ReconX AI
 
+Configure AI in **Settings → AI Providers → Add AI Provider**: select a provider
+and model, paste the API key, then save. Built-in profiles configure their API
+protocol and endpoint automatically; local servers can be keyless. **Test
+connection** performs a real selected-model inference check. Saved profiles are
+immediately available in AI Workspace. See [AI Provider Manager](docs/AI_PROVIDER_MANAGER.md)
+for supported presets, custom gateways, secure headers, routing, CLI and limits.
+
 The research-output pipeline now links actual jobs to integrity-checked evidence,
 manually reviewed findings and immutable redacted reports (Markdown/JSON/HTML/PDF).
 Desktop and CLI share these records. See [Research outputs](docs/RESEARCH_OUTPUTS.md)

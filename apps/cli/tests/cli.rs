@@ -1,5 +1,70 @@
 use serde_json::Value;
 use std::process::Command;
+#[test]
+fn ai_catalog_keyless_profiles_and_agent_routing_share_the_desktop_database() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("ai.db");
+    let catalog = run(&db, &["ai", "catalog"]);
+    assert!(catalog.status.success());
+    let catalog: Value = serde_json::from_slice(&catalog.stdout).unwrap();
+    assert_eq!(catalog.as_array().unwrap().len(), 24);
+    let result = run(
+        &db,
+        &[
+            "ai",
+            "providers",
+            "add",
+            "--vendor",
+            "lmstudio",
+            "--name",
+            "Private model",
+            "--model",
+            "installed-fixture",
+            "--default",
+        ],
+    );
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let config: Value = serde_json::from_slice(&result.stdout).unwrap();
+    let id = config["id"].as_str().unwrap();
+    let profiles = run(&db, &["ai", "profiles", "list"]);
+    let profiles: Value = serde_json::from_slice(&profiles.stdout).unwrap();
+    assert_eq!(profiles[0]["credential_state"], "not_required");
+    assert!(profiles[0]["connection"].is_null());
+    let core = reconx_core::Core::open(Some(db.clone())).unwrap();
+    assert_eq!(
+        core.settings().unwrap().default_provider_id.as_deref(),
+        Some(id)
+    );
+    assert_eq!(
+        core.ai_agent_provider("orchestrator").unwrap().model,
+        "installed-fixture"
+    );
+    let routes = dir.path().join("routes.json");
+    std::fs::write(
+        &routes,
+        serde_json::to_vec(&serde_json::json!([{"agent_id":"reverse","provider_id":id}])).unwrap(),
+    )
+    .unwrap();
+    let result = run(
+        &db,
+        &["ai", "routing", "configure", routes.to_str().unwrap()],
+    );
+    assert!(result.status.success());
+    let result = run(&db, &["ai", "routing", "resolve", "reverse"]);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&result.stdout).unwrap()["id"],
+        id
+    );
+    let result = run(&db, &["ai", "models", "select", id]);
+    assert!(result.status.success());
+    let result = run(&db, &["ai", "providers", "remove", id]);
+    assert!(result.status.success());
+    assert!(core.ai_routing().unwrap().is_empty());
+}
 #[path = "../../../tests/e2e/native-sample.rs"]
 mod native_sample;
 fn run(db: &std::path::Path, args: &[&str]) -> std::process::Output {

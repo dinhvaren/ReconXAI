@@ -1,3 +1,49 @@
+## AI Provider Manager - current verified source (2026-10-17)
+
+Implemented on HEAD `d6af47e`, as explicitly requested after the external working-tree
+replacement. No reset, checkout, remote inspection, commit or push. This section
+supersedes historical counts and next-task descriptions below; product version
+remains 0.1.0 and full v1.0 release acceptance is incomplete.
+
+- TESTED bounded AI settings slice: typed catalog of 24 providers with documented
+  defaults/presets, searchable setup dialog, model dropdown, secure key entry,
+  atomic save, enable/default/remove profiles, actual model inference tests,
+  bounded model discovery/cache, immediate AI Workspace selection and agent routes.
+- Custom protocols, authentication headers, private headers, explicit proxies,
+  discovery paths and streaming preferences use the shared Rust service. Stored
+  keys/header values remain in the OS secret store, never ordinary SQLite fields.
+- Saving does not initiate inference or mark Connected. Health records the last
+  explicit test, latency and error code. Key/config changes invalidate health;
+  concurrent changes cannot publish an obsolete successful test.
+- Additive migration `009_ai_provider_manager.sql` reserves interrupted 007/008
+  numbers, snapshots older databases and preserves existing/unknown tables. Existing
+  credential references, projects, settings, typography and three themes are retained.
+- Windows: formatting, Clippy with warnings denied, 99 Rust tests passed (one
+  explicit OS-store fixture ignored), frontend type/build and 17 tests passed.
+  Actual Tauri optimized build passed, plus 7 native suites / 54 checkpoints.
+- Linux Parrot/WSL: 99 shared Core/CLI Rust tests passed, one ignored. Linux Desktop,
+  Secret Service runtime, optimized packaging and installers remain UNVERIFIED.
+- Cloud account/model access is UNVERIFIED. Native inference used actual loopback
+  mock servers, synthetic OS-stored keys and the running Tauri/WebView2 app.
+  No personal evidence or provider credentials were uploaded. User DB was untouched.
+
+Verified portable Desktop/CLI: `artifacts/windows-ai-providers-20261017-185028/`.
+Machine-readable results/hashes: `artifacts/ai-manager-verification.json`.
+Settings screenshots: `artifacts/native-ai-providers-1792237828887/` (three themes).
+See `AI_PROVIDER_MANAGER.md` and `TEST_RESULTS.md` for setup, commands and evidence.
+
+Remaining AI work: account-specific capability validation, richer pricing/usage,
+rate/cost budgets, per-account discovery metadata, multi-hop data-sharing-aware
+fallback and live opt-in provider verification. Current agents use text-based
+plans; saved routes do not imply every future security agent is implemented.
+Selected-artifact review rejects configured proxies until its consent explicitly
+covers the intermediary. Existing destination-bound artifact consent stays enforced.
+
+Next exact product task: implement bounded OFFLINE HAR import/endpoint inventory on
+this current schema, followed by offline OpenAPI. Audit current assets/evidence/jobs
+first. Do not restore interrupted source or repeat completed settings work.
+No imported request replay, credentials upload or scanner automation is implied.
+
 # v1.0 continuation - 2026-10-17
 
 Read MASTER_EXECUTION_PROGRESS.md first. This section supersedes the historical

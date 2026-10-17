@@ -158,10 +158,108 @@ async fn provider_errors_omit_body_and_redirects_are_not_followed() {
             .chat("test", Some("fixture-secret"))
             .await
             .unwrap_err();
-        assert_eq!(error.code, "AI_HTTP_ERROR");
+        assert_eq!(
+            error.code,
+            if status.starts_with("401") {
+                "AI_AUTHENTICATION_FAILED"
+            } else {
+                "AI_HTTP_ERROR"
+            }
+        );
         assert!(!error.to_string().contains("fixture-secret"));
         worker.join().unwrap();
     }
+}
+#[tokio::test]
+async fn custom_authentication_headers_are_applied_and_redacted_from_replies() {
+    use reconx_ai::GatewayOptions;
+    let (url, worker) = server(
+        json!({"choices":[{"message":{"content":"echo fixture-api-key and fixture-header-secret"}}]}),
+        "200 OK",
+    );
+    let options = GatewayOptions {
+        auth_header: Some("x-private-key".into()),
+        auth_prefix: String::new(),
+        ..Default::default()
+    };
+    let headers = std::collections::BTreeMap::from([(
+        "X-Tenant".to_owned(),
+        "fixture-header-secret".to_owned(),
+    )]);
+    let reply = Gateway::with_options(config(ProviderKind::Compatible, url), options, headers)
+        .unwrap()
+        .chat("Check", Some("fixture-api-key"))
+        .await
+        .unwrap();
+    assert!(!reply.text.contains("fixture-api-key"));
+    assert!(!reply.text.contains("fixture-header-secret"));
+    let (headers, _) = worker.join().unwrap();
+    let headers = headers.to_lowercase();
+    assert!(headers.contains("x-private-key: fixture-api-key"));
+    assert!(headers.contains("x-tenant: fixture-header-secret"));
+    assert!(!headers.contains("authorization: bearer"));
+}
+#[test]
+fn gateway_options_reject_unsafe_headers_proxy_and_discovery_paths() {
+    use reconx_ai::{GatewayOptions, validate_header};
+    for name in ["Host", "Content-Length", "Cookie", "Transfer-Encoding"] {
+        assert!(validate_header(name, "synthetic").is_err());
+    }
+    assert!(validate_header("X-Tenant", "line\r\ninjection").is_err());
+    for path in [
+        "../keys",
+        "https://other.test/models",
+        "models?key=test",
+        "/models",
+    ] {
+        assert!(
+            GatewayOptions {
+                discovery_path: Some(path.into()),
+                ..Default::default()
+            }
+            .validate()
+            .is_err()
+        );
+    }
+    assert!(
+        GatewayOptions {
+            proxy_url: Some("https://user:password@proxy.test".into()),
+            ..Default::default()
+        }
+        .validate()
+        .is_err()
+    );
+    assert!(
+        GatewayOptions {
+            discovery_path: Some("api/models".into()),
+            ..Default::default()
+        }
+        .validate()
+        .is_ok()
+    );
+}
+#[tokio::test]
+async fn explicit_loopback_proxy_is_used_instead_of_contacting_the_origin() {
+    let (url, worker) = server(
+        json!({"choices":[{"message":{"content":"Proxy fixture OK"}}]}),
+        "200 OK",
+    );
+    let options = reconx_ai::GatewayOptions {
+        proxy_url: Some(url),
+        ..Default::default()
+    };
+    let reply = Gateway::with_options(
+        config(ProviderKind::Compatible, "http://127.0.0.1:1/v1".into()),
+        options,
+        Default::default(),
+    )
+    .unwrap()
+    .chat("Proxy test", Some("fixture-key"))
+    .await
+    .unwrap();
+    assert_eq!(reply.text, "Proxy fixture OK");
+    let (head, _) = worker.join().unwrap();
+    assert!(head.starts_with("POST http://127.0.0.1:1/v1/chat/completions "));
 }
 #[tokio::test]
 async fn echoed_credentials_are_redacted() {

@@ -121,16 +121,18 @@ try{
   await page.getByRole('button',{name:'Save preferences',exact:true}).click();
   await page.getByRole('status').filter({hasText:'Preferences saved'}).waitFor();
   assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).security_mode,'lab_research');
-  await page.getByRole('button',{name:'+ Add provider',exact:true}).click();
+  await page.getByRole('button',{name:'Add AI Provider',exact:true}).click();
+  await page.getByLabel('Select Provider',{exact:true}).selectOption('custom');
   await page.getByLabel('Configuration name',{exact:true}).fill('Local fixture gateway');
+  await page.getByLabel('Enter custom model ID',{exact:true}).check();
   await page.getByLabel('Provider protocol').selectOption('compatible');
   await page.getByLabel('Gateway base URL',{exact:true}).fill(gateway);
   await page.getByLabel('Model ID',{exact:true}).fill('fixture-model');
   await page.getByLabel('Requires secure API key',{exact:true}).uncheck();
   await page.getByRole('button',{name:'Save provider',exact:true}).click();
-  await page.getByRole('status').filter({hasText:'Provider configuration saved'}).waitFor();
+  await page.getByRole('status').filter({hasText:'AI provider saved securely'}).waitFor();
   await page.getByRole('button',{name:'Test connection',exact:true}).click();
-  await page.getByText(/Local fixture gateway: connected/).waitFor();
+  await page.getByText('Connected (last test)',{exact:false}).waitFor();
   const provider=JSON.parse((await exec(cli,['--json','ai','providers'],{env,windowsHide:true})).stdout)[0];
   await writeFile(path.join(artifact,'prompt.txt'),'Explain local evidence');
   const reply=JSON.parse((await exec(cli,['--json','ai','chat',provider.id,'--prompt-file',path.join(artifact,'prompt.txt')],{env,windowsHide:true})).stdout);
@@ -162,7 +164,7 @@ try{
   assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'light');
   await page.screenshot({path:path.join(artifact,'settings-light.png'),fullPage:true});
   assert.equal(await page.getByLabel('Security mode').inputValue(),'lab_research');
-  await page.getByText('Local fixture gateway',{exact:true}).waitFor();
+  await page.getByRole('heading',{name:/^Local fixture gateway/}).waitFor();
   results.push('Projects, provider configuration and settings survive a complete native application restart');
   await page.getByRole('button',{name:'Dashboard',exact:true}).click();
   await chooseTheme(page,'Dark');
@@ -212,11 +214,23 @@ try{
         await page.getByRole('tab',{name:'Evidence',exact:true}).click();await page.getByRole('tabpanel',{name:'Evidence',exact:true}).getByText(/Evidence attachments are not implemented/).waitFor();
       }
     }
-    await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('button',{name:'Credential',exact:true}).click();
-    const keyInput=page.getByLabel('API key',{exact:true});assert.equal(await keyInput.getAttribute('type'),'password');await keyInput.fill('reconx-owned-ephemeral-fixture');await page.getByRole('button',{name:'Store credential',exact:true}).click();
-    await page.getByRole('status').filter({hasText:'Credential stored securely'}).waitFor();
-    await page.getByRole('button',{name:'Credential',exact:true}).click();await page.getByRole('button',{name:'Check status',exact:true}).click();await page.getByText('Credential is configured',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Remove credential',exact:true}).click();await page.getByRole('status').filter({hasText:'Credential removed'}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();
+    await page.getByRole('button',{name:'Settings',exact:true}).click();
+    const providerRow=page.locator('article.provider-row').filter({has:page.getByRole('heading',{name:/^Local fixture gateway/})});
+    await providerRow.getByRole('button',{name:'Manage',exact:true}).click();
+    let providerDialog=page.getByRole('dialog',{name:'Manage AI Provider',exact:true});
+    const advanced=providerDialog.locator('details').filter({has:page.getByText('Advanced Settings',{exact:true})});
+    if(!await advanced.evaluate(el=>el.open))await advanced.locator('summary').click();
+    await providerDialog.getByLabel('Requires secure API key',{exact:true}).check();
+    const keyInput=providerDialog.getByLabel('API key',{exact:true});assert.equal(await keyInput.getAttribute('type'),'password');await keyInput.fill('reconx-owned-ephemeral-fixture');
+    await providerDialog.getByRole('button',{name:'Save provider',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'AI provider saved securely'}).waitFor();
+    assert.equal(JSON.parse((await exec(cli,['--json','ai','profiles','list'],{env,windowsHide:true})).stdout)[0].credential_state,'stored');
+    await providerRow.getByRole('button',{name:'Manage',exact:true}).click();
+    providerDialog=page.getByRole('dialog',{name:'Manage AI Provider',exact:true});
+    assert.equal(await providerDialog.getByLabel('API key',{exact:true}).inputValue(),'');
+    await providerDialog.getByRole('button',{name:'Remove stored API key',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Stored API key removed'}).waitFor();
+    assert.equal(JSON.parse((await exec(cli,['--json','ai','profiles','list'],{env,windowsHide:true})).stdout)[0].credential_state,'missing');
     await writeFile(path.join(artifact,'viewport-matrix.json'),JSON.stringify(matrix,null,2));
     results.push('Reference-inspired shell and nine pages render at five desktop viewports without horizontal clipping; search, panel collapse, notifications, context resize and masked credential controls work');
   }

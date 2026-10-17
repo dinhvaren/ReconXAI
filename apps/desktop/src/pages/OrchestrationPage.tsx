@@ -50,6 +50,17 @@ export function OrchestrationPage({
       provider: string;
     } | null>(null),
     [reply, setReply] = useState("");
+  useEffect(() => {
+    let active = true;
+    void request<{ id: string }>("ai_agent_provider", { agent: "orchestrator" })
+      .then((p) => {
+        if (active && p?.id) setProvider(p.id);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const config = data.providers.find((p) => p.id === provider);
   const load = useCallback(async () => {
     if (!project) {

@@ -1,0 +1,699 @@
+[
+  {
+    "base_url": "https://api.openai.com/v1",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://developers.openai.com/api/docs/models/gpt-5.4",
+    "id": "openai",
+    "kind": "openai",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": 1050000,
+          "reasoning": true,
+          "streaming": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "vision": true
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "gpt-5.4",
+        "name": "GPT-5.4"
+      }
+    ],
+    "name": "OpenAI",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.anthropic.com/v1",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://platform.claude.com/docs/en/models/overview",
+    "id": "anthropic",
+    "kind": "anthropic",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "claude-sonnet-5-5",
+        "name": "Claude Sonnet 5.5"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "claude-opus-5-5",
+        "name": "Claude Opus 5.5"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "claude-haiku-5-5",
+        "name": "Claude Haiku 5.5"
+      }
+    ],
+    "name": "Anthropic",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://generativelanguage.googleapis.com/v1beta",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://ai.google.dev/gemini-api/docs/models",
+    "id": "google",
+    "kind": "gemini",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": true,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official text-generation preset; account access must be tested.",
+        "id": "gemini-3.8-flash",
+        "name": "Gemini 3.8 Flash"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": true,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official text-generation preset; account access must be tested.",
+        "id": "gemini-3.1-pro-preview",
+        "name": "Gemini 3.1 Pro (Preview)"
+      }
+    ],
+    "name": "Google AI / Gemini",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.deepseek.com",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://api-docs.deepseek.com/quick_start/pricing/",
+    "id": "deepseek",
+    "kind": "deepseek",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "deepseek-flash",
+        "name": "DeepSeek Flash"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro"
+      }
+    ],
+    "name": "DeepSeek",
+    "requires_key": true,
+    "setup_note": "The current official catalog supersedes older Chat and Reasoner aliases.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.z.ai/api/paas/v4",
+    "category": "cloud",
+    "discovery": false,
+    "docs_url": "https://docs.z.ai/guides/llm/glm-5",
+    "id": "zai",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": true,
+          "streaming": true,
+          "structured_output": true,
+          "tool_calling": true,
+          "vision": false
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "glm-5",
+        "name": "GLM-5"
+      }
+    ],
+    "name": "Z.ai / Zhipu AI",
+    "requires_key": true,
+    "setup_note": "International Z.ai endpoint. Coding-plan and mainland Zhipu keys may require a separate custom gateway.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.x.ai/v1",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://docs.x.ai/developers/models",
+    "id": "xai",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "grok-4.7",
+        "name": "Grok 4.7"
+      }
+    ],
+    "name": "xAI / Grok",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "",
+    "category": "cloud",
+    "discovery": false,
+    "docs_url": "https://www.alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope",
+    "id": "dashscope",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "qwen-plus",
+        "name": "Qwen Plus"
+      }
+    ],
+    "name": "Alibaba Cloud / DashScope",
+    "requires_key": true,
+    "setup_note": "Enter your Singapore Model Studio workspace ID. ReconX constructs the official endpoint. Other regions require Advanced Settings; keys are region-specific.",
+    "verified_on": "2026-10-17",
+    "endpoint_template": "https://{workspace}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+  },
+  {
+    "base_url": "https://api.moonshot.ai/v1",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://platform.kimi.ai/docs/overview",
+    "id": "moonshot",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "kimi-k3",
+        "name": "Kimi K3"
+      }
+    ],
+    "name": "Moonshot AI / Kimi",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.minimax.io/v1",
+    "category": "cloud",
+    "discovery": false,
+    "docs_url": "https://platform.minimax.io/docs/api-reference/text-openai-api",
+    "id": "minimax",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "MiniMax-M3",
+        "name": "MiniMax M3"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "MiniMax-M2.7",
+        "name": "MiniMax M2.7"
+      }
+    ],
+    "name": "MiniMax",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.mistral.ai/v1",
+    "category": "cloud",
+    "discovery": true,
+    "docs_url": "https://docs.mistral.ai/api/endpoint/chat",
+    "id": "mistral",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official chat API alias; account access must be tested.",
+        "id": "mistral-large-latest",
+        "name": "Mistral Large (latest)"
+      }
+    ],
+    "name": "Mistral AI",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://openrouter.ai/api/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://openrouter.ai/docs/quickstart",
+    "id": "openrouter",
+    "kind": "openrouter",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "~openai/gpt-sol-latest",
+        "name": "GPT Sol (latest alias)"
+      }
+    ],
+    "name": "OpenRouter",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.groq.com/openai/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://console.groq.com/docs/models",
+    "id": "groq",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": 131072,
+          "reasoning": true,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official production model; account access must be tested.",
+        "id": "openai/gpt-oss-120b",
+        "name": "GPT OSS 120B"
+      },
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "llama-3.3-70b-versatile",
+        "name": "Llama 3.3 70B (Enterprise)"
+      }
+    ],
+    "name": "Groq",
+    "requires_key": true,
+    "setup_note": "Availability depends on your Groq account; refresh models to see access.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.together.ai/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://docs.together.ai/docs/inference/openai-compatibility",
+    "id": "together",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "MiniMaxAI/MiniMax-M3",
+        "name": "MiniMax M3"
+      }
+    ],
+    "name": "Together AI",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.fireworks.ai/inference/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://docs.fireworks.ai/getting-started/quickstart",
+    "id": "fireworks",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "accounts/fireworks/models/glm-5p3-flash",
+        "name": "GLM 5.3 Flash"
+      }
+    ],
+    "name": "Fireworks AI",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.cerebras.ai/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://inference-docs.cerebras.ai/resources/openai",
+    "id": "cerebras",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "gpt-oss-120b",
+        "name": "GPT OSS 120B"
+      }
+    ],
+    "name": "Cerebras",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.perplexity.ai/router/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://docs.perplexity.ai/docs/getting-started/quickstart",
+    "id": "perplexity",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "perplexity/kimi-k3",
+        "name": "Kimi K3 (Perplexity)"
+      }
+    ],
+    "name": "Perplexity",
+    "requires_key": true,
+    "setup_note": "Current Orchestrator endpoint. Legacy Sonar customers can retain their saved custom configuration.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://api.cohere.ai/compatibility/v1",
+    "category": "aggregator",
+    "discovery": false,
+    "docs_url": "https://docs.cohere.com/docs/compatibility-api",
+    "id": "cohere",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "command-a-plus-05-2026",
+        "name": "Command A+ May 2026"
+      }
+    ],
+    "name": "Cohere",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://integrate.api.nvidia.com/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://docs.api.nvidia.com/nim/reference/llm-apis",
+    "id": "nvidia",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "meta/llama-3.3-70b-instruct",
+        "name": "Llama 3.3 70B Instruct"
+      }
+    ],
+    "name": "NVIDIA NIM",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "https://router.huggingface.co/v1",
+    "category": "aggregator",
+    "discovery": true,
+    "docs_url": "https://huggingface.co/docs/inference-providers/en/tasks/chat-completion",
+    "id": "huggingface",
+    "kind": "compatible",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "zai-org/GLM-5.3:baseten",
+        "name": "GLM 5.3 (Baseten)"
+      }
+    ],
+    "name": "Hugging Face Inference Providers",
+    "requires_key": true,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "http://127.0.0.1:11434",
+    "category": "local",
+    "discovery": true,
+    "docs_url": "https://docs.ollama.com/api/tags",
+    "id": "ollama",
+    "kind": "ollama",
+    "models": [
+      {
+        "capabilities": {
+          "context_window": null,
+          "reasoning": null,
+          "streaming": null,
+          "structured_output": null,
+          "tool_calling": null,
+          "vision": null
+        },
+        "deprecated": null,
+        "description": "Official catalog preset. Account access must be tested.",
+        "id": "gemma4",
+        "name": "Gemma 4 (must be installed locally)"
+      }
+    ],
+    "name": "Ollama",
+    "requires_key": false,
+    "setup_note": "Refresh lists installed models only. ReconX does not download model weights.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "http://127.0.0.1:1234/v1",
+    "category": "local",
+    "discovery": true,
+    "docs_url": "https://lmstudio.ai/docs/developer/openai-compat",
+    "id": "lmstudio",
+    "kind": "lm_studio",
+    "models": [],
+    "name": "LM Studio",
+    "requires_key": false,
+    "setup_note": "Start the local server and Refresh Models. Model identifiers depend on your local installation.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "http://127.0.0.1:8000/v1",
+    "category": "local",
+    "discovery": true,
+    "docs_url": "https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/",
+    "id": "vllm",
+    "kind": "compatible",
+    "models": [],
+    "name": "vLLM",
+    "requires_key": false,
+    "setup_note": "Start your server and Refresh Models. Authenticated servers can enable API key authentication in Advanced Settings.",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "http://127.0.0.1:8080/v1",
+    "category": "local",
+    "discovery": true,
+    "docs_url": "https://lmstudio.ai/docs/developer/openai-compat",
+    "id": "local",
+    "kind": "compatible",
+    "models": [],
+    "name": "Compatible local server",
+    "requires_key": false,
+    "setup_note": "",
+    "verified_on": "2026-10-17"
+  },
+  {
+    "base_url": "",
+    "category": "custom",
+    "discovery": true,
+    "docs_url": "https://developers.openai.com/api/reference/resources/chat/methods/create",
+    "id": "custom",
+    "kind": "compatible",
+    "models": [],
+    "name": "Custom Gateway",
+    "requires_key": true,
+    "setup_note": "Explicitly configure a trusted HTTPS endpoint or loopback server. No automatic connection is made on Save.",
+    "verified_on": "2026-10-17"
+  }
+]

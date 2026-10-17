@@ -1,3 +1,15 @@
+## AI setup acceptance update - 2026-10-17
+
+The current-source AI Provider Manager slice is TESTED: 24-provider registry,
+secure setup/model profiles, real protocol fixtures, discovery, custom gateway
+options, saved health and agent routes. Windows release/native regression passed
+54 checkpoints; shared Rust tests passed 99 on Windows and 99 on Linux/WSL;
+frontend passed 17. See MASTER_EXECUTION_PROGRESS.md for current paths and scope.
+Live cloud accounts, capability/pricing refresh, advanced budget/fallback control,
+Linux Desktop and installers remain unverified or incomplete. Next implement
+bounded offline HAR/OpenAPI ingestion on schema 009 using existing evidence/jobs.
+Historical roadmap sections below remain for provenance, not current test totals.
+
 ## Current continuation - 2026-10-17
 
 Phase 1 has Windows native/debug/optimized acceptance for evidence, manual findings

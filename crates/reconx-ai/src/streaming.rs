@@ -213,6 +213,12 @@ impl Gateway {
     where
         F: FnMut(&str) + Send,
     {
+        if !self.options.streaming {
+            return Err(AppError::new(
+                "STREAMING_DISABLED",
+                "Streaming is disabled in this profile",
+            ));
+        }
         let prompt = validate_text(prompt, 32768, "Prompt")?;
         tokio::select! {
             biased;
@@ -247,13 +253,7 @@ impl Gateway {
                 )
             })?;
         if !response.status().is_success() {
-            return Err(AppError::new(
-                "AI_HTTP_ERROR",
-                &format!(
-                    "Gateway returned HTTP {}; response body omitted",
-                    response.status().as_u16()
-                ),
-            ));
+            return Err(super::http_error(response.status().as_u16()));
         }
         let mut frames = Frames {
             ndjson: self.config.kind == ProviderKind::Ollama,
@@ -289,7 +289,10 @@ impl Gateway {
                         "Streamed text exceeded 256 KiB",
                     ));
                 }
-                let safe = redact(&acc.text, key, false);
+                let mut safe = redact(&acc.text, key, false);
+                for value in &self.redactions {
+                    safe = redact(&safe, Some(value.as_str()), false);
+                }
                 if safe != last
                     && emitted < 256
                     && (emitted == 0 || last_emit.elapsed().as_millis() >= 25)
@@ -307,7 +310,10 @@ impl Gateway {
                 "Gateway stream ended without a complete final event",
             ));
         }
-        let text = redact(&acc.text, key, true);
+        let mut text = redact(&acc.text, key, true);
+        for value in &self.redactions {
+            text = redact(&text, Some(value.as_str()), true);
+        }
         if text.trim().is_empty() {
             return Err(AppError::new(
                 "AI_NO_TEXT",

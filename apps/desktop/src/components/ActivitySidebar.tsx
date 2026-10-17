@@ -1,4 +1,4 @@
-import { providerKinds, type Project, type Snapshot } from "../api";
+import { type Project, type Snapshot } from "../api";
 import { ActivityItem, Icon, StatusIndicator } from "./ui";
 export default function ActivitySidebar({
   data,
@@ -75,11 +75,7 @@ export default function ActivitySidebar({
               <Icon name="ai" size={23} />
             </div>
             <div>
-              <b>
-                {provider
-                  ? providerKinds[provider.kind].label
-                  : "Choose your model"}
-              </b>
+              <b>{provider ? provider.name : "Choose your model"}</b>
               <small>{provider?.model ?? "Cloud or local inference"}</small>
             </div>
           </button>

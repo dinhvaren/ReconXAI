@@ -61,6 +61,17 @@ export default function FileResearchPanel({
       active = false;
     };
   }, [file?.id, analysisId, section]);
+  useEffect(() => {
+    let active = true;
+    void request<{ id: string }>("ai_agent_provider", { agent: "reverse" })
+      .then((p) => {
+        if (active && p?.id) setProvider(p.id);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const selectedProvider = data.providers.find((p) => p.id === provider);
   return (
     <aside className="panel file-research-panel">

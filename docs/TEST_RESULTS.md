@@ -1,3 +1,96 @@
+# AI Provider Manager - verified 2026-10-17
+
+Current source: HEAD `d6af47e` plus preserved local changes. This section supersedes
+historical counts below. Full v1.0 is not complete; no live cloud account claim.
+
+| Check | Actual result | Local record |
+| --- | --- | --- |
+| `cargo fmt --all -- --check` | exit 0 | `artifacts/ai-manager-final-format.log` |
+| `cargo clippy --locked --workspace --all-targets -- -D warnings` | exit 0 | `artifacts/ai-manager-final-clippy.log` |
+| `cargo test --locked --workspace` | 99 passed, 0 failed, 1 ignored | `artifacts/ai-manager-final-rust.log` |
+| `npm run build` (Desktop) | TypeScript + Vite passed | `artifacts/ai-manager-verified-tauri.log` |
+| `npm test` (Desktop) | 17 passed, 0 failed, 2 files | final run at 18:53 local time |
+| `npm run tauri -- build --no-bundle` | optimized native Desktop built | `artifacts/ai-manager-verified-tauri.log` |
+| `cargo build --locked --release -p reconx` | exit 0, optimized CLI built | final incremental build: 51.33 seconds |
+| Linux `cargo test --locked --offline --workspace --exclude reconx-desktop -j2` | 99 passed, 0 failed, 1 ignored | `artifacts/ai-manager-final-linux.log` |
+
+The ignored Rust case is the explicit OS-store fixture. Native Windows tests
+separately save, replace, reopen and remove synthetic Credential Manager entries.
+All databases used by this acceptance are task-owned temporary/artifact workspaces;
+the normal user DB was not opened or migrated. No unrelated credential was read.
+
+## Actual Windows Tauri/WebView2 acceptance
+
+Matching optimized binaries: `artifacts/windows-ai-providers-20261017-185028/`.
+Their SHA-256 values and all result paths are saved in
+`artifacts/ai-manager-verification.json` and the binary directory's `checksums.json`.
+The two delivered binaries had zero matches for the limited known GitHub-token
+and private-key PEM patterns: `artifacts/ai-manager-binary-pattern-review.json`.
+This is a limited pattern check, not a complete credential/security release audit.
+Scripts use these exact binaries via `RECONX_DESKTOP_EXE` / `RECONX_CLI_EXE`, with
+isolated `RECONX_DATA_DIR` and WebView2 profile directories.
+
+| Native suite | Passed checkpoints | Result directory |
+| --- | --- | --- |
+| `tests/e2e/ai-providers.mjs` | 10 | `artifacts/native-ai-providers-1792237828887/` |
+| `tests/e2e/native.mjs` (visual enabled) | 8 | `artifacts/native-1792238059810/` |
+| `tests/e2e/inputs.mjs` | 9 | `artifacts/inputs-1792238103145/` |
+| `tests/e2e/jobs.mjs` | 8 | `artifacts/jobs-1792238116432/` |
+| `tests/e2e/integrations.mjs` | 6 | `artifacts/integrations-1792238145137/` |
+| `tests/e2e/outputs.mjs` | 6 | `artifacts/outputs-1792238163896/` |
+| `tests/e2e/recon-local.mjs` | 7 | `artifacts/recon-local-1792238177437/` |
+
+Total: **54 passed checkpoints**, all 7 suites exit 0. The integration suite also
+installed/verified actual pinned YARA-X, discovered/invoked benign stdio MCP tools,
+ran real local jobs and restarted the app. Network assessment used owned loopback
+fixtures only. AI responses came from deterministic loopback protocol mocks.
+
+AI-specific native checks cover six vendor Save flows with no automatic network
+calls, actual Responses/Messages/Gemini inference shapes, model discovery and
+selection reaching the backend, custom auth/private headers, failed authentication
+state/retry, Desktop/CLI routing parity, restart/secure keys, keyless local discovery,
+profile removal and missing-key model disabling. Other registry vendors share the
+validated compatible adapter where documented; no real cloud quota or model access
+has been verified for any vendor.
+
+Screenshots inspected visually:
+`artifacts/native-ai-providers-1792237828887/ai-settings-light.png`,
+`ai-settings-dark.png`, `ai-settings-reconx.png`, and
+`ai-workspace-selected-model.png`. Native visual regression also captures nine
+pages at 1920/1600/1440/1366/1280 widths, typography, dialogs and theme menus.
+
+## Additional deterministic coverage / corrections
+
+New service tests exercise atomic provider/key/header/default persistence, OS-store
+failure compensation, no plaintext secrets in SQLite/WAL or profile serialization,
+unchanged project data, credential destination binding/deletion, five protocol
+inference/discovery forms, invalid model IDs, duplicate removal, selected-model
+retention, safe 401/403/404/429 errors and stale concurrent key changes. Gateway
+fixtures test explicit proxy use, header authentication and echo/stream redaction.
+Artifact review refuses an unreviewed proxy. Migration tests preserve a simulated
+schema-8 workspace with unknown tables and a pre-upgrade backup. CLI tests reopen
+the same profile/default/routes through Core. Frontend tests exercise native-style
+setup, filtering, keyless models, recoverable save errors and workspace URLs.
+
+Earlier retained failures were corrected, not counted as passes: closed native
+select options required attached-state waits; Default badges changed exact heading
+selectors; old Credential-menu tests were migrated to Manage/API-key controls;
+a stale embedded frontend was detected and a fresh optimized build was retested.
+The final binary embeds `index-CFD9ZsHX.js`. Earlier intermediate artifacts are
+not the verified delivery. No production error was hidden by synthetic output.
+
+## Limits and next verification
+
+Linux tests ran in actual Parrot x86_64 on WSL with the task-local Rust 1.95.0
+installation. Linux Desktop lacks webkit2gtk-4.1 development SDK; Secret Service
+runtime, optimized Linux distribution and installers remain UNVERIFIED. Windows
+installer packaging was not run by this slice. Live cloud testing requires separate
+explicit opt-in; local mocks do not establish hosted-model availability. The saved
+agent slots are not a claim of fully implemented multi-domain agents. Advanced
+capability enforcement, pricing/account metadata and fallback budgets remain work.
+
+The prior verification record follows for historical provenance.
+
 # Current verified checkpoint - 2026-10-17
 
 Product version remains 0.1.0. This is not full v1.0 release acceptance.

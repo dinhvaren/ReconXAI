@@ -1,4 +1,4 @@
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser, Subcommand};
 use reconx_core::{
     AppError, Core, EvidenceInput, FindingInput, JobEngine, JobInput, JobKind, JobReview,
     McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig, ReportFormat,
@@ -499,7 +499,31 @@ enum WorkflowCommand {
 }
 #[derive(Subcommand)]
 enum AiCommand {
-    Providers,
+    Catalog {
+        vendor: Option<String>,
+    },
+    Providers {
+        #[command(subcommand)]
+        command: Option<AiProfilesCommand>,
+    },
+    #[command(subcommand)]
+    Profiles(AiProfilesCommand),
+    #[command(subcommand)]
+    Routing(AiRoutingCommand),
+    RefreshModels {
+        provider: String,
+    },
+    /// Update secret-free gateway options; custom header values use `ai headers`.
+    Gateway {
+        provider: String,
+        input: PathBuf,
+    },
+    /// Read custom header JSON through hidden input or stdin; never arguments.
+    Headers {
+        provider: String,
+        #[arg(long)]
+        stdin: bool,
+    },
     /// Add or update a secret-free provider JSON configuration.
     Configure {
         input: PathBuf,
@@ -519,8 +543,10 @@ enum AiCommand {
     KeyStatus {
         provider: String,
     },
+    /// List model IDs for a profile, or use list / refresh <profile> / select <profile>.
     Models {
         provider: String,
+        profile: Option<String>,
     },
     Test {
         provider: String,
@@ -536,6 +562,159 @@ enum AiCommand {
         )]
         stream: bool,
     },
+}
+#[derive(Args)]
+struct ProfileCreateArgs {
+    #[arg(long)]
+    vendor: String,
+    #[arg(long)]
+    name: Option<String>,
+    #[arg(long)]
+    model: Option<String>,
+    #[arg(long)]
+    base_url: Option<String>,
+    /// Alibaba Model Studio Singapore workspace ID.
+    #[arg(long)]
+    workspace: Option<String>,
+    #[arg(long)]
+    default: bool,
+    #[arg(long)]
+    key_stdin: bool,
+    /// Enable API key auth for an otherwise keyless local server.
+    #[arg(long)]
+    with_key: bool,
+}
+#[derive(Subcommand)]
+enum AiProfilesCommand {
+    List,
+    #[command(alias = "add")]
+    Create(ProfileCreateArgs),
+    SetDefault {
+        provider: String,
+    },
+    Remove {
+        provider: String,
+    },
+    Test {
+        provider: String,
+    },
+}
+#[derive(Subcommand)]
+enum AiRoutingCommand {
+    Show,
+    Configure { input: PathBuf },
+    Resolve { agent: String },
+}
+fn read_ai_secret(stdin: bool, prompt: &str) -> Result<Zeroizing<String>> {
+    if stdin {
+        let mut value = Zeroizing::new(String::new());
+        std::io::stdin()
+            .take(8193)
+            .read_to_string(&mut value)
+            .map_err(|_| AppError::new("SECRET_INPUT", "Cannot read secret from stdin"))?;
+        Ok(value)
+    } else {
+        Ok(Zeroizing::new(rpassword::prompt_password(prompt).map_err(
+            |_| AppError::new("SECRET_INPUT", "Use an interactive terminal or --key-stdin"),
+        )?))
+    }
+}
+fn select_ai_default(core: &Core, id: &str) -> Result<Value> {
+    let config = core.provider(id)?;
+    if !config.enabled || (config.requires_key && !core.credential_status(id)?) {
+        return Err(AppError::new(
+            "MODEL_UNAVAILABLE",
+            "Enable this model and configure its key first",
+        ));
+    }
+    let mut settings = core.settings()?;
+    settings.default_provider_id = Some(id.into());
+    if settings.fallback_provider_id.as_deref() == Some(id) {
+        settings.fallback_provider_id = None;
+    }
+    core.save_settings(&settings)?;
+    serialize(settings)
+}
+async fn ai_connection_test(core: &Core, id: &str) -> Result<Value> {
+    let health = core.test_ai_connection(id).await?;
+    if health.state == "failed" {
+        return Err(AppError::new(
+            health.error_code.as_deref().unwrap_or("AI_TEST_FAILED"),
+            &health.message,
+        ));
+    }
+    serialize(health)
+}
+async fn ai_profiles(core: &Core, command: &AiProfilesCommand) -> Result<Value> {
+    match command {
+        AiProfilesCommand::List => serialize(core.ai_manager()?.profiles),
+        AiProfilesCommand::Remove { provider } => {
+            core.delete_provider(provider)?;
+            Ok(json!({"status":"deleted"}))
+        }
+        AiProfilesCommand::Test { provider } => ai_connection_test(core, provider).await,
+        AiProfilesCommand::SetDefault { provider } => select_ai_default(core, provider),
+        AiProfilesCommand::Create(args) => {
+            let preset = core
+                .ai_catalog()
+                .into_iter()
+                .find(|p| p.id == args.vendor)
+                .ok_or_else(|| {
+                    AppError::new("UNKNOWN_PROVIDER", "Provider is not in the catalog")
+                })?;
+            let model = args
+                .model
+                .clone()
+                .or(preset.models.first().map(|m| m.id.clone()))
+                .ok_or_else(|| {
+                    AppError::new(
+                        "MODEL_REQUIRED",
+                        "Local and custom profiles require --model",
+                    )
+                })?;
+            let name = args.name.clone().unwrap_or_else(|| {
+                format!("{} - {}", preset.name, model)
+                    .chars()
+                    .take(90)
+                    .collect()
+            });
+            let mut config = preset.configuration(&name, &model);
+            if let Some(template) = &preset.endpoint_template {
+                let workspace = args.workspace.as_deref().ok_or_else(|| {
+                    AppError::new(
+                        "WORKSPACE_REQUIRED",
+                        "Model Studio requires --workspace (Singapore)",
+                    )
+                })?;
+                if workspace.is_empty()
+                    || workspace.len() > 100
+                    || !workspace
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+                {
+                    return Err(AppError::new("INVALID_INPUT", "Invalid workspace ID"));
+                }
+                config.base_url = template.replace("{workspace}", workspace);
+            }
+            if let Some(url) = &args.base_url {
+                config.base_url = url.clone();
+            }
+            config.requires_key |= args.with_key;
+            config.validate()?;
+            let key = if config.requires_key {
+                Some(read_ai_secret(args.key_stdin, "API key (hidden): ")?)
+            } else {
+                None
+            };
+            core.save_ai_profile(
+                &config,
+                &args.vendor,
+                key.as_ref().map(|k| k.trim_end_matches(['\r', '\n'])),
+                args.default,
+            )?;
+            serialize(config)
+        }
+    }
 }
 fn read_file(path: &PathBuf) -> Result<String> {
     let metadata =
@@ -892,7 +1071,88 @@ async fn execute(cli: &Cli) -> Result<Value> {
             }
         },
         Command::Ai(command) => match command {
-            AiCommand::Providers => serialize(core.providers()?),
+            AiCommand::Catalog { vendor } => {
+                if let Some(id) = vendor {
+                    serialize(
+                        core.ai_catalog()
+                            .into_iter()
+                            .find(|p| p.id == *id)
+                            .ok_or_else(|| AppError::new("UNKNOWN_PROVIDER", "Unknown provider"))?,
+                    )
+                } else {
+                    serialize(core.ai_catalog())
+                }
+            }
+            AiCommand::Providers { command: None } => serialize(core.providers()?),
+            AiCommand::Providers {
+                command: Some(command),
+            }
+            | AiCommand::Profiles(command) => ai_profiles(&core, command).await,
+            AiCommand::RefreshModels { provider } => {
+                serialize(core.refresh_ai_models(provider).await?)
+            }
+            AiCommand::Routing(command) => match command {
+                AiRoutingCommand::Show => serialize(core.ai_routing()?),
+                AiRoutingCommand::Configure { input } => {
+                    let routes: Vec<reconx_core::AgentRoute> =
+                        serde_json::from_str(&read_file(input)?).map_err(|_| {
+                            AppError::new(
+                                "INVALID_ROUTING",
+                                "Expected an array of agent/provider routes",
+                            )
+                        })?;
+                    core.save_ai_routing(&routes)?;
+                    serialize(core.ai_routing()?)
+                }
+                AiRoutingCommand::Resolve { agent } => serialize(core.ai_agent_provider(agent)?),
+            },
+            AiCommand::Gateway { provider, input } => {
+                let options: reconx_core::GatewayOptions = serde_json::from_str(&read_file(input)?)
+                    .map_err(|_| {
+                        AppError::new("INVALID_OPTIONS", "Expected secret-free gateway options")
+                    })?;
+                let state = core.ai_manager()?;
+                let profile = state
+                    .profiles
+                    .into_iter()
+                    .find(|p| p.provider.id == *provider)
+                    .ok_or_else(|| AppError::new("NOT_FOUND", "Provider not found"))?;
+                core.save_ai_setup(
+                    reconx_core::AiProfileInput {
+                        provider: profile.provider,
+                        vendor_id: profile.vendor_id,
+                        make_default: false,
+                        options,
+                    },
+                    None,
+                    None,
+                )?;
+                Ok(json!({"status":"saved"}))
+            }
+            AiCommand::Headers { provider, stdin } => {
+                let raw = read_ai_secret(*stdin, "Custom header JSON (hidden): ")?;
+                let headers: std::collections::BTreeMap<String, String> =
+                    serde_json::from_str(&raw).map_err(|_| {
+                        AppError::new("INVALID_HEADER", "Expected JSON object with string values")
+                    })?;
+                let profile = core
+                    .ai_manager()?
+                    .profiles
+                    .into_iter()
+                    .find(|p| p.provider.id == *provider)
+                    .ok_or_else(|| AppError::new("NOT_FOUND", "Provider not found"))?;
+                core.save_ai_setup(
+                    reconx_core::AiProfileInput {
+                        provider: profile.provider,
+                        vendor_id: profile.vendor_id,
+                        make_default: false,
+                        options: profile.options,
+                    },
+                    None,
+                    Some(&headers),
+                )?;
+                Ok(json!({"status":"headers_stored"}))
+            }
             AiCommand::Configure { input } => {
                 let config: ProviderConfig =
                     serde_json::from_str(&read_file(input)?).map_err(|_| {
@@ -928,9 +1188,23 @@ async fn execute(cli: &Cli) -> Result<Value> {
             AiCommand::KeyStatus { provider } => {
                 Ok(json!({"configured":core.credential_status(provider)?}))
             }
-            AiCommand::Models { provider } | AiCommand::Test { provider } => {
-                serialize(core.models(provider).await?)
-            }
+            AiCommand::Models { provider, profile } => match provider.as_str() {
+                "list" => serialize(core.ai_manager()?.profiles),
+                "refresh" => serialize(
+                    core.refresh_ai_models(profile.as_deref().ok_or_else(|| {
+                        AppError::new("PROFILE_REQUIRED", "Specify a configured profile ID")
+                    })?)
+                    .await?,
+                ),
+                "select" => select_ai_default(
+                    &core,
+                    profile.as_deref().ok_or_else(|| {
+                        AppError::new("PROFILE_REQUIRED", "Specify a configured profile ID")
+                    })?,
+                ),
+                _ => serialize(core.models(provider).await?),
+            },
+            AiCommand::Test { provider } => ai_connection_test(&core, provider).await,
             AiCommand::Chat {
                 provider,
                 prompt_file,

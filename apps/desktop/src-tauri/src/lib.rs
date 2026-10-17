@@ -379,6 +379,35 @@ enum Request {
     SaveSettings {
         settings: Settings,
     },
+    AiCatalog,
+    AiManager,
+    AiRoutingSave {
+        routes: Vec<reconx_core::AgentRoute>,
+    },
+    AiAgentProvider {
+        agent: String,
+    },
+    AiProfileSave {
+        provider: ProviderConfig,
+        vendor_id: String,
+        key: Option<String>,
+        make_default: bool,
+        #[serde(default)]
+        options: reconx_core::GatewayOptions,
+        headers: Option<std::collections::BTreeMap<String, String>>,
+    },
+    AiConnectionTest {
+        id: String,
+    },
+    AiModelsRefresh {
+        id: String,
+    },
+    AiModelsDiscover {
+        provider: ProviderConfig,
+        key: Option<String>,
+        #[serde(default)]
+        options: reconx_core::GatewayOptions,
+    },
     SaveProvider {
         provider: ProviderConfig,
     },
@@ -409,6 +438,34 @@ fn value(item: impl serde::Serialize) -> Result<Value> {
 }
 fn local(core: Core, request: Request) -> Result<Value> {
     match request {
+        Request::AiCatalog => value(core.ai_catalog()),
+        Request::AiManager => value(core.ai_manager()?),
+        Request::AiRoutingSave { routes } => {
+            core.save_ai_routing(&routes)?;
+            Ok(Value::Null)
+        }
+        Request::AiAgentProvider { agent } => value(core.ai_agent_provider(&agent)?),
+        Request::AiProfileSave {
+            provider,
+            vendor_id,
+            key,
+            make_default,
+            options,
+            headers,
+        } => {
+            let key = key.map(Zeroizing::new);
+            core.save_ai_setup(
+                reconx_core::AiProfileInput {
+                    provider,
+                    vendor_id,
+                    make_default,
+                    options,
+                },
+                key.as_ref().map(|s| s.as_str()),
+                headers.as_ref(),
+            )?;
+            Ok(Value::Null)
+        }
         Request::ReconPreview { id } => value(core.local_http_preview(&id)?),
         Request::ReconEnqueue {
             id,
@@ -668,6 +725,19 @@ async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value
         Request::JobInterpret { review } => value(core.interpret_job(review).await?),
         Request::PlanCreate { review } => value(core.plan_local_tools(review).await?),
         Request::FileExplain { review } => value(core.explain_file_artifact(review).await?),
+        Request::AiConnectionTest { id } => value(core.test_ai_connection(&id).await?),
+        Request::AiModelsRefresh { id } => value(core.refresh_ai_models(&id).await?),
+        Request::AiModelsDiscover {
+            provider,
+            key,
+            options,
+        } => {
+            let key = key.map(Zeroizing::new);
+            value(
+                core.discover_ai_models(provider, key.as_ref().map(|s| s.as_str()), options)
+                    .await?,
+            )
+        }
         Request::Models { id } => value(core.models(&id).await?),
         Request::ToolsDoctor { id } => value(core.tool_doctor(&id).await?),
         Request::Chat { id, prompt } => value(core.chat(&id, &prompt).await?),

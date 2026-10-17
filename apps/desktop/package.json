@@ -14,7 +14,8 @@
     "test:typography": "node ../../tests/e2e/typography.mjs after",
     "test:integrations": "node ../../tests/e2e/integrations.mjs",
     "test:outputs": "node ../../tests/e2e/outputs.mjs",
-    "test:local-inventory": "node ../../tests/e2e/recon-local.mjs"
+    "test:local-inventory": "node ../../tests/e2e/recon-local.mjs",
+    "test:ai-providers": "node ../../tests/e2e/ai-providers.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.3",

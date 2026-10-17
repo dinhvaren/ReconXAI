@@ -23,10 +23,11 @@
       "id": "ai_integration",
       "status": "IN_PROGRESS",
       "remaining": [
-        "live providers",
-        "advanced configuration",
+        "opt-in live provider accounts",
+        "account-specific capability/pricing metadata",
         "cost/rate/budget accounting",
-        "per-agent routing"
+        "advanced data-sharing-aware fallback",
+        "future multi-domain agent implementations"
       ]
     },
     {
@@ -109,6 +110,18 @@
     {
       "id": "extended_modules",
       "status": "NOT_STARTED"
+    },
+    {
+      "id": "ai_provider_manager",
+      "status": "TESTED",
+      "verification": "Windows optimized Tauri/CLI: 10 AI-provider native checkpoints plus 44 regression checkpoints; 99 Rust tests on Windows and Linux Core/CLI, 17 frontend tests. See artifacts/ai-manager-verification.json.",
+      "limitations": [
+        "UNVERIFIED - no personal credentials or inference calls",
+        "UNVERIFIED - webkit2gtk-4.1 SDK unavailable",
+        "Local protocol fixtures do not install inference engines or model weights",
+        "Account-specific capability/pricing enforcement, advanced budgets/fallback and general multi-domain agents remain incomplete",
+        "Selected-artifact review blocks configured proxies pending explicit proxy-aware consent"
+      ]
     }
   ],
   "modules": [
@@ -160,21 +173,23 @@
     },
     {
       "id": "provider_configuration",
-      "status": "TESTED"
+      "status": "TESTED",
+      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified."
     },
     {
       "id": "ai_protocol_adapters",
       "status": "TESTED",
-      "verification": "local fixture protocols; cloud accounts unverified"
+      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified."
     },
     {
       "id": "os_credentials",
       "status": "TESTED",
-      "verification": "Windows ephemeral round trip"
+      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified."
     },
     {
       "id": "credential_binding",
-      "status": "TESTED"
+      "status": "TESTED",
+      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified."
     },
     {
       "id": "ai_streaming",
@@ -350,16 +365,26 @@
     {
       "id": "linux_core_cli",
       "status": "TESTED",
-      "verification": "Parrot WSL2: 86 Rust tests and actual CLI ELF/hash/evidence/finding/four-format report smoke; Desktop and optimized packaging unverified",
+      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified.",
       "evidence": "artifacts/linux-verify-1792217270990/acceptance.json"
+    },
+    {
+      "id": "ai_provider_manager",
+      "status": "TESTED",
+      "verification": "Settings/model/key/discovery/routing/CLI/native restart slice; artifacts/ai-manager-verification.json",
+      "remaining": [
+        "live cloud opt-in",
+        "account capability/pricing metadata",
+        "advanced fallback/budgets"
+      ]
     }
   ],
   "verification": {
-    "rust_passed": 86,
+    "rust_passed": 99,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 13,
+    "frontend_passed": 17,
     "frontend_failed": 0,
     "native_scenarios_passed": 6,
     "ui_page_viewport_observations": 50,
@@ -397,6 +422,7 @@
     ],
     "legacy_native_checkpoints_per_scenario": 6,
     "native_checkpoints": {
+      "ai_providers": 10,
       "regression": 8,
       "inputs": 9,
       "local_jobs": 8,
@@ -416,23 +442,27 @@
     "integrations_release_record": "artifacts/integrations-1792217614199/results.json",
     "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
     "release_sha256": {
-      "reconx.exe": "289545e950353dc48f62b3c2c62f306a361133d7a0a558901383ea84315ece37",
-      "reconx-desktop.exe": "b79c574d4828c21bec38fca35eb0c00602657933ee790f8f16138096d19d37a4"
+      "reconx.exe": "1893446896a19b715378061a971573946aa0d21e856865075e960452c555ebd0",
+      "reconx-desktop.exe": "88b5f5e15d3874b696a20d8d0e25014af78891aa989cac1817926a0e37c2f7f1"
     },
     "outputs_release_record": "artifacts/outputs-1792217631931/results.json",
     "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
     "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
     "local_inventory_release_record": "artifacts/recon-local-1792217644790/results.json",
     "linux_core_cli_record": "artifacts/linux-verify-1792217270990/acceptance.json",
-    "release_native_checkpoints_total": 44,
+    "release_native_checkpoints_total": 54,
     "release_records": {
-      "regression": "artifacts/native-1792217533338/results.json",
-      "inputs": "artifacts/inputs-1792217578167/results.json",
-      "local_jobs": "artifacts/jobs-1792217588488/results.json",
-      "tools_mcp_ai": "artifacts/integrations-1792217614199/results.json",
-      "research_outputs": "artifacts/outputs-1792217631931/results.json",
-      "local_inventory": "artifacts/recon-local-1792217644790/results.json"
-    }
+      "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
+      "regression": "artifacts/native-1792238059810/results.json",
+      "inputs": "artifacts/inputs-1792238103145/results.json",
+      "local_jobs": "artifacts/jobs-1792238116432/results.json",
+      "tools_mcp_ai": "artifacts/integrations-1792238145137/results.json",
+      "research_outputs": "artifacts/outputs-1792238163896/results.json",
+      "local_inventory": "artifacts/recon-local-1792238177437/results.json"
+    },
+    "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
+    "linux_current_rust_passed": 99,
+    "linux_current_record": "artifacts/ai-manager-final-linux.log"
   },
   "v1_release": {
     "ready": false,
@@ -445,7 +475,7 @@
       "Live cloud providers and security integration profiles unverified"
     ]
   },
-  "database_schema_version": 6,
+  "database_schema_version": 9,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",

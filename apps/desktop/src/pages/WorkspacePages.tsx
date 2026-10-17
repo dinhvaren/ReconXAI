@@ -1,3 +1,5 @@
+import AiProviderManager from "../components/AiProviderManager";
+import type { AiManagerState } from "../ai";
 import {
   useCallback,
   useEffect,
@@ -11,13 +13,10 @@ import {
   cancelStream,
   installTool,
   errorText,
-  providerKinds,
   type ToolInventory,
   type ToolManifest,
   type ToolProgress,
   type Snapshot,
-  type Provider,
-  type Kind,
   type Reply,
   type Settings,
 } from "../api";
@@ -297,28 +296,23 @@ export function SettingsPage({
       data.settings.fallback_provider_id,
     ],
   );
-  const [editor, setEditor] = useState<Provider | null>(null);
-  const [keyId, setKeyId] = useState<string | null>(null);
-  const [key, setKey] = useState("");
-  const [result, setResult] = useState("");
-  function addProvider() {
-    setEditor({
-      id: crypto.randomUUID(),
-      name: "",
-      kind: "openai",
-      base_url: providerKinds.openai.url,
-      model: "",
-      enabled: true,
-      timeout_secs: 60,
-      max_output_tokens: 2048,
-      requires_key: true,
-    });
-  }
   return (
     <>
       <Heading
         eyebrow="WORKSPACE CONFIGURATION"
         title="Settings"
+        action={
+          <button
+            className="button secondary"
+            onClick={() =>
+              document
+                .getElementById("ai-providers")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            AI Providers
+          </button>
+        }
         description="Choose your models and manage your shared desktop and CLI configuration."
       />
       <div className="settings-grid">
@@ -453,334 +447,8 @@ export function SettingsPage({
           </div>
         </section>
       </div>
-      <section className="panel provider-panel">
-        <div className="panel-heading">
-          <div>
-            <h2>AI provider configurations</h2>
-            <p className="helper">
-              Name configurations for reasoning, local private analysis, or
-              report writing.
-            </p>
-          </div>
-          <button className="button secondary" onClick={addProvider}>
-            + Add provider
-          </button>
-        </div>
-        {data.providers.length ? (
-          <div className="provider-list">
-            {data.providers.map((p) => (
-              <article className="provider-row" key={p.id}>
-                <div className="project-avatar">
-                  <Glyph name="ai" />
-                </div>
-                <div className="provider-info">
-                  <b>{p.name}</b>
-                  <small>
-                    {providerKinds[p.kind].label} · {p.model}
-                  </small>
-                  <code>{p.base_url}</code>
-                </div>
-                <span className={p.enabled ? "badge" : "badge muted"}>
-                  {p.enabled ? "Enabled" : "Disabled"}
-                </span>
-                <div className="card-actions">
-                  <button
-                    className="text-button"
-                    disabled={busy}
-                    onClick={() => {
-                      setEditor(p);
-                      setResult("");
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-button"
-                    disabled={busy}
-                    onClick={() => {
-                      setKeyId(p.id);
-                      setKey("");
-                      setResult("");
-                    }}
-                  >
-                    Credential
-                  </button>
-                  <button
-                    className="text-button"
-                    disabled={busy || !p.enabled}
-                    onClick={() =>
-                      void perform(async () => {
-                        const models = await request<string[]>("models", {
-                          id: p.id,
-                        });
-                        setResult(
-                          `${p.name}: connected · ${models.length} models · ${models.slice(0, 12).join(", ")}`,
-                        );
-                      }, "Connection test completed")
-                    }
-                  >
-                    Test connection
-                  </button>
-                  <button
-                    className="text-button danger"
-                    disabled={busy}
-                    onClick={() =>
-                      void perform(
-                        () => request("delete_provider", { id: p.id }),
-                        "Provider deleted",
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="empty">
-            <Glyph name="ai" />
-            <h3>Connect your preferred model</h3>
-            <p>
-              Add a cloud provider, Ollama, LM Studio, or a compatible gateway.
-            </p>
-            <button className="button secondary" onClick={addProvider}>
-              Add your first provider
-            </button>
-          </div>
-        )}
-        {result && (
-          <div className="connection-result" role="status">
-            {result}
-          </div>
-        )}
-      </section>
-      {editor && (
-        <ProviderEditor
-          initial={editor}
-          busy={busy}
-          perform={perform}
-          close={() => setEditor(null)}
-        />
-      )}
-      {keyId && (
-        <section className="panel credential-panel">
-          <div className="panel-heading">
-            <h2>Secure credential</h2>
-            <button
-              className="text-button"
-              onClick={() => {
-                setKeyId(null);
-                setKey("");
-              }}
-            >
-              Close
-            </button>
-          </div>
-          <form
-            className="form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void perform(async () => {
-                await request("set_key", { id: keyId, key });
-                setKey("");
-                setKeyId(null);
-              }, "Credential stored securely");
-            }}
-          >
-            <label>
-              API key
-              <input
-                type="password"
-                autoComplete="new-password"
-                required
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-              />
-            </label>
-            <p className="helper">
-              The credential is sent only to the saved gateway. Remove it before
-              changing the gateway destination or protocol.
-            </p>
-            <div className="form-actions">
-              <button className="button primary" disabled={busy}>
-                Store credential
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                disabled={busy}
-                onClick={() =>
-                  void perform(async () => {
-                    setResult(
-                      (await request<boolean>("credential_status", {
-                        id: keyId,
-                      }))
-                        ? "Credential is configured"
-                        : "No credential configured",
-                    );
-                  })
-                }
-              >
-                Check status
-              </button>
-              <button
-                type="button"
-                className="button ghost danger"
-                disabled={busy}
-                onClick={() =>
-                  void perform(async () => {
-                    await request("remove_key", { id: keyId });
-                    setKey("");
-                  }, "Credential removed")
-                }
-              >
-                Remove credential
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
+      <AiProviderManager data={data} busy={busy} perform={perform} />
     </>
-  );
-}
-export function ProviderEditor({
-  initial,
-  busy,
-  perform,
-  close,
-}: {
-  initial: Provider;
-  busy: boolean;
-  perform: Perform;
-  close: () => void;
-}) {
-  const [provider, setProvider] = useState(initial);
-  useEffect(() => setProvider(initial), [initial]);
-  const update = (patch: Partial<Provider>) =>
-    setProvider({ ...provider, ...patch });
-  return (
-    <section className="panel provider-editor">
-      <div className="panel-heading">
-        <h2>Provider configuration</h2>
-        <button className="text-button" onClick={close}>
-          Close editor
-        </button>
-      </div>
-      <form
-        className="form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void perform(async () => {
-            await request("save_provider", { provider });
-            close();
-          }, "Provider configuration saved");
-        }}
-      >
-        <div className="form-grid">
-          <label>
-            Configuration name
-            <input
-              required
-              maxLength={100}
-              value={provider.name}
-              onChange={(e) => update({ name: e.target.value })}
-              placeholder="e.g. Local Private Model"
-            />
-          </label>
-          <label>
-            Provider protocol
-            <select
-              value={provider.kind}
-              onChange={(e) => {
-                const kind = e.target.value as Kind;
-                update({
-                  kind,
-                  base_url: providerKinds[kind].url,
-                  requires_key: providerKinds[kind].key,
-                });
-              }}
-            >
-              {Object.entries(providerKinds).map(([kind, p]) => (
-                <option key={kind} value={kind}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Gateway base URL
-            <input
-              required
-              type="url"
-              value={provider.base_url}
-              onChange={(e) => update({ base_url: e.target.value })}
-            />
-          </label>
-          <label>
-            Model ID
-            <input
-              required
-              maxLength={200}
-              value={provider.model}
-              onChange={(e) => update({ model: e.target.value })}
-              placeholder="Enter an available model ID"
-            />
-          </label>
-          <label>
-            Timeout in seconds
-            <input
-              type="number"
-              required
-              min={1}
-              max={300}
-              value={provider.timeout_secs}
-              onChange={(e) => update({ timeout_secs: Number(e.target.value) })}
-            />
-          </label>
-          <label>
-            Maximum output tokens
-            <input
-              type="number"
-              required
-              min={1}
-              max={32768}
-              value={provider.max_output_tokens}
-              onChange={(e) =>
-                update({ max_output_tokens: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div className="form-actions">
-          <label className="inline-check">
-            <input
-              type="checkbox"
-              checked={provider.enabled}
-              onChange={(e) => update({ enabled: e.target.checked })}
-            />
-            Enabled
-          </label>
-          <label className="inline-check">
-            <input
-              type="checkbox"
-              checked={provider.requires_key}
-              onChange={(e) => update({ requires_key: e.target.checked })}
-            />
-            Requires secure API key
-          </label>
-        </div>
-        <p className="helper">
-          Saving a gateway authorizes AI requests to that destination when you
-          select Test or Send. HTTPS is required except for loopback addresses.
-          Streaming is available in AI Workspace. Proxies and automatic retries
-          are not implemented.
-        </p>
-        <button className="button primary" disabled={busy}>
-          Save provider
-        </button>
-      </form>
-    </section>
   );
 }
 export function AiWorkspace({
@@ -813,9 +481,37 @@ export function AiWorkspace({
   const [messages, setMessages] = useState<
     { role: string; text: string; meta?: string }[]
   >([]);
+  const [availability, setAvailability] = useState<AiManagerState | null>(null);
+  useEffect(() => {
+    let active = true;
+    void request<AiManagerState>("ai_manager")
+      .then((next) => {
+        if (active && next?.profiles) setAvailability(next);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [data.providers]);
+  useEffect(() => {
+    if (!data.providers.some((p) => p.id === id && p.enabled))
+      setId(
+        data.providers.find(
+          (p) => p.enabled && p.id === data.settings.default_provider_id,
+        )?.id ??
+          data.providers.find((p) => p.enabled)?.id ??
+          "",
+      );
+  }, [data.providers, data.settings.default_provider_id, id]);
   const enabled = data.providers.filter((p) => p.enabled);
   const [contextWidth, setContextWidth] = useState(210);
   const [contextTab, setContextTab] = useState("History");
+  const profile = availability?.profiles.find((p) => p.provider.id === id);
+  const missingCredential =
+    profile && !["stored", "not_required"].includes(profile.credential_state);
+  useEffect(() => {
+    if (profile?.options && !profile.options.streaming) setStream(false);
+  }, [profile?.options.streaming]);
   const selectedProvider = data.providers.find((p) => p.id === id);
   const history = data.audit
     .filter(
@@ -849,12 +545,28 @@ export function AiWorkspace({
             >
               <option value="">Select a provider</option>
               {enabled.map((p) => (
-                <option value={p.id} key={p.id}>
+                <option
+                  value={p.id}
+                  key={p.id}
+                  disabled={availability?.profiles.some(
+                    (profile) =>
+                      profile.provider.id === p.id &&
+                      !["stored", "not_required"].includes(
+                        profile.credential_state,
+                      ),
+                  )}
+                >
                   {p.name} · {p.model}
                 </option>
               ))}
             </select>
           </div>
+          {missingCredential && (
+            <p className="helper" role="status">
+              Configure this model credential in Settings before sending a
+              request.
+            </p>
+          )}
           <div className="chat-messages" aria-live="polite">
             {messages.length ? (
               messages.map((m, i) => (
@@ -1002,7 +714,7 @@ export function AiWorkspace({
                 <input
                   type="checkbox"
                   checked={stream}
-                  disabled={busy}
+                  disabled={busy || profile?.options.streaming === false}
                   onChange={(e) => setStream(e.target.checked)}
                 />
                 Stream output
@@ -1023,7 +735,10 @@ export function AiWorkspace({
               <button
                 className="button primary"
                 disabled={
-                  busy || !enabled.some((p) => p.id === id) || !prompt.trim()
+                  busy ||
+                  !!missingCredential ||
+                  !enabled.some((p) => p.id === id) ||
+                  !prompt.trim()
                 }
               >
                 {busy ? "Waiting for model…" : "Send message ↗"}
@@ -1079,7 +794,19 @@ export function AiWorkspace({
             <p>
               {running
                 ? "Text request in progress"
-                : "Ready for a text request"}
+                : !selectedProvider
+                  ? "Select a configured model"
+                  : !selectedProvider.enabled
+                    ? "Model profile is disabled"
+                    : !profile
+                      ? "Checking model configuration?"
+                      : missingCredential
+                        ? "API key or custom headers unavailable"
+                        : profile.connection?.state === "connected"
+                          ? "Last connection test succeeded"
+                          : profile.connection?.state === "failed"
+                            ? "Connection test failed; review Settings"
+                            : "Configured; connection not tested"}
             </p>
           </div>
           <div className="tabs" role="tablist" aria-label="Context views">

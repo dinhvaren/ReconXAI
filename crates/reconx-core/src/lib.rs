@@ -13,6 +13,8 @@ use sha2::{Digest, Sha256};
 use std::{path::PathBuf, sync::Arc};
 use uuid::Uuid;
 use zeroize::Zeroizing;
+mod ai_manager;
+pub use ai_manager::*;
 mod capabilities;
 mod evidence;
 mod findings;
@@ -376,7 +378,11 @@ impl Core {
         config.validate()?;
         if let Ok(old) = self.provider(&config.id)
             && (old.base_url != config.base_url || old.kind != config.kind)
-            && self.secrets.get(&credential_reference(&old))?.is_some()
+            && (self.secrets.get(&credential_reference(&old))?.is_some()
+                || self
+                    .secrets
+                    .get(&format!("{}:headers", credential_reference(&old)))?
+                    .is_some())
         {
             return Err(AppError::new(
                 "GATEWAY_CREDENTIAL_BOUND",
@@ -388,12 +394,15 @@ impl Core {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
         tx.execute("INSERT INTO providers(id,name,json) VALUES (?1,?2,?3) ON CONFLICT(id) DO UPDATE SET name=excluded.name,json=excluded.json",params![config.id,config.name,serde_json::to_string(config).map_err(json_error)?]).map_err(duplicate_error)?;
+        tx.execute("UPDATE ai_profile_metadata SET connection_json=NULL,revision=revision+1 WHERE provider_id=?1",[&config.id]).map_err(db_error)?;
         Self::audit(&tx, "provider.saved", &config.id, "completed")?;
         tx.commit().map_err(db_error)
     }
     pub fn delete_provider(&self, id: &str) -> Result<()> {
         let config = self.provider(id)?;
         self.secrets.delete(&credential_reference(&config))?;
+        self.secrets
+            .delete(&format!("{}:headers", credential_reference(&config)))?;
         let mut conn = self.db.connect()?;
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -414,11 +423,13 @@ impl Core {
     pub fn set_key(&self, id: &str, secret: &str) -> Result<()> {
         let config = self.provider(id)?;
         self.secrets.set(&credential_reference(&config), secret)?;
+        self.invalidate_ai_connection(id)?;
         Self::audit(&self.db.connect()?, "credential.updated", id, "completed")
     }
     pub fn remove_key(&self, id: &str) -> Result<()> {
         let config = self.provider(id)?;
         self.secrets.delete(&credential_reference(&config))?;
+        self.invalidate_ai_connection(id)?;
         Self::audit(&self.db.connect()?, "credential.removed", id, "completed")
     }
     pub fn credential_status(&self, id: &str) -> Result<bool> {
@@ -432,7 +443,7 @@ impl Core {
         } else {
             None
         };
-        let gateway = reconx_ai::Gateway::new(config)?;
+        let gateway = self.ai_gateway(config)?;
         let result = gateway.models(key.as_ref().map(|k| k.as_str())).await;
         Self::audit(
             &self.db.connect()?,
@@ -453,7 +464,7 @@ impl Core {
         } else {
             None
         };
-        let gateway = reconx_ai::Gateway::new(config)?;
+        let gateway = self.ai_gateway(config)?;
         let result = gateway.chat(prompt, key.as_ref().map(|k| k.as_str())).await;
         Self::audit(
             &self.db.connect()?,
@@ -472,7 +483,8 @@ impl Core {
             } else {
                 None
             };
-            let mut result = reconx_ai::Gateway::new(config)?
+            let mut result = self
+                .ai_gateway(config)?
                 .chat(prompt, key.as_ref().map(|k| k.as_str()))
                 .await;
             Self::audit(
@@ -500,12 +512,19 @@ impl Core {
         prompt: &str,
     ) -> Result<AiReply> {
         let id = config.id.clone();
+        if self.ai_options(&id)?.proxy_url.is_some() {
+            return Err(AppError::new(
+                "ARTIFACT_PROXY_APPROVAL_REQUIRED",
+                "Artifact review does not yet support a proxy destination. Disable the gateway proxy before approving evidence transmission.",
+            ));
+        }
         let key = if config.requires_key {
             self.secrets.get(&credential_reference(&config))?
         } else {
             None
         };
-        let result = reconx_ai::Gateway::new(config)?
+        let result = self
+            .ai_gateway(config)?
             .chat(prompt, key.as_ref().map(|k| k.as_str()))
             .await;
         Self::audit(
@@ -545,7 +564,7 @@ impl Core {
         } else {
             None
         };
-        let gateway = reconx_ai::Gateway::new(config)?;
+        let gateway = self.ai_gateway(config)?;
         let result = gateway
             .stream_chat(
                 prompt,
@@ -567,7 +586,8 @@ impl Core {
             } else {
                 None
             };
-            let mut result = reconx_ai::Gateway::new(config)?
+            let mut result = self
+                .ai_gateway(config)?
                 .stream_chat(
                     prompt,
                     key.as_ref().map(|k| k.as_str()),

@@ -27,3 +27,5 @@ tests/
 !/tests/e2e/native-sample.rs
 !/tests/e2e/requirements.txt
 !/crates/reconx-core/tests/
+
+!/tests/e2e/ai-providers.mjs

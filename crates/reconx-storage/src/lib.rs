@@ -31,14 +31,14 @@ impl Database {
         let previous: i64 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if (1..6).contains(&previous) {
+        if (1..9).contains(&previous) {
             // VACUUM INTO takes a consistent SQLite snapshot, including committed WAL data.
             // It refuses to overwrite a file. Backups live beside the private database.
             let stamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_err(|_| AppError::new("BACKUP_FAILED", "System clock is invalid"))?
                 .as_nanos();
-            let backup = path.with_extension(format!("pre-v6-{stamp}.bak"));
+            let backup = path.with_extension(format!("pre-v9-{stamp}.bak"));
             conn.execute("VACUUM INTO ?1", [backup.to_string_lossy().as_ref()])
                 .map_err(|_| {
                     AppError::new(
@@ -60,7 +60,7 @@ impl Database {
         let version: i64 = tx
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if version > 6 {
+        if version > 9 {
             return Err(AppError::new(
                 "SCHEMA_TOO_NEW",
                 "Database was created by a newer ReconX version; no migration was performed",
@@ -102,6 +102,34 @@ impl Database {
             tx.pragma_update(None, "user_version", 6)
                 .map_err(db_error)?;
         }
+        if version < 9 {
+            tx.execute_batch(include_str!("../migrations/009_ai_provider_manager.sql"))
+                .map_err(db_error)?;
+            // Earlier interrupted snapshots may contain the first metadata table.
+            let columns: Vec<String> = {
+                let mut q = tx
+                    .prepare("PRAGMA table_info(ai_profile_metadata)")
+                    .map_err(db_error)?;
+                q.query_map([], |r| r.get(1))
+                    .map_err(db_error)?
+                    .collect::<std::result::Result<_, _>>()
+                    .map_err(db_error)?
+            };
+            for (name, definition) in [
+                ("revision", "INTEGER NOT NULL DEFAULT 0"),
+                ("options_json", "TEXT NOT NULL DEFAULT '{}'"),
+                ("header_names_json", "TEXT NOT NULL DEFAULT '[]'"),
+            ] {
+                if !columns.iter().any(|c| c == name) {
+                    tx.execute_batch(&format!(
+                        "ALTER TABLE ai_profile_metadata ADD COLUMN {name} {definition}"
+                    ))
+                    .map_err(db_error)?;
+                }
+            }
+            tx.pragma_update(None, "user_version", 9)
+                .map_err(db_error)?;
+        }
         tx.commit().map_err(db_error)?;
         Ok(database)
     }
@@ -123,6 +151,45 @@ impl Database {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn additive_ai_upgrade_preserves_interrupted_snapshot_tables_and_creates_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("snapshot.db");
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute_batch("CREATE TABLE retained_http_artifact(id TEXT PRIMARY KEY,sha256 TEXT);INSERT INTO retained_http_artifact VALUES('retained','unchanged');DROP TABLE ai_agent_routing;DROP TABLE ai_profile_metadata;CREATE TABLE ai_profile_metadata(provider_id TEXT PRIMARY KEY REFERENCES providers(id),vendor_id TEXT NOT NULL DEFAULT 'custom',models_json TEXT NOT NULL DEFAULT '[]',models_fingerprint TEXT,models_refreshed_at TEXT,connection_json TEXT);").unwrap();
+        conn.pragma_update(None, "user_version", 8).unwrap();
+        drop(conn);
+        drop(db);
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        assert_eq!(
+            conn.query_row(
+                "SELECT sha256 FROM retained_http_artifact WHERE id='retained'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "unchanged"
+        );
+        assert_eq!(
+            conn.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
+                .unwrap(),
+            9
+        );
+        for column in ["options_json", "header_names_json", "revision"] {
+            assert!(
+                conn.prepare(&format!("SELECT {column} FROM ai_profile_metadata"))
+                    .is_ok()
+            );
+        }
+        assert!(
+            std::fs::read_dir(dir.path())
+                .unwrap()
+                .flatten()
+                .any(|p| p.file_name().to_string_lossy().contains("pre-v9"))
+        );
+    }
     #[test]
     fn version_five_outputs_survive_local_inventory_migration_and_backup() {
         let dir = tempfile::tempdir().unwrap();
@@ -188,7 +255,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            6
+            9
         );
     }
     #[test]
@@ -224,12 +291,12 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            6
+            9
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|e| e.ok())
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v6"))
+            .find(|e| e.file_name().to_string_lossy().contains("pre-v9"))
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -262,7 +329,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
                 .unwrap(),
-            6
+            9
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()

@@ -58,6 +58,7 @@ function operation(args: unknown) {
 async function mockService(command: string, args: unknown) {
   if (command !== "service") return null;
   const request = operation(args)!;
+  if(request.op==="ai_manager")return {catalog:[],profiles:[],routing:[],agents:[]};
   if (request.op === "set_theme") {
     current.settings.theme = request.theme;
     return structuredClone(current.settings);

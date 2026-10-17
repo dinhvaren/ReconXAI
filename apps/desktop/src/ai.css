@@ -1,0 +1,71 @@
+.ai-provider-manager {
+  margin-top: 22px;
+}
+.ai-provider-manager > h3 {
+  margin: 22px 0 12px;
+}
+.ai-provider-manager .provider-row {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.ai-provider-manager .provider-info {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.ai-provider-manager .provider-info h3 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ai-provider-manager .provider-info p {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.ai-provider-manager .provider-info small {
+  display: block;
+}
+.ai-provider-manager .provider-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ai-provider-manager summary,
+.provider-setup summary {
+  cursor: pointer;
+  font-weight: 500;
+  padding: 12px 0;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.catalog-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--rx-border);
+  border-radius: 10px;
+  background: var(--rx-surface);
+  color: var(--rx-text);
+  cursor: pointer;
+}
+.catalog-choice:hover {
+  background: var(--rx-surface-raised);
+}
+.catalog-choice span,
+.catalog-choice small {
+  color: var(--rx-text-muted);
+  font-size: var(--text-sm, 13px);
+}
+.provider-setup {
+  max-width: 740px;
+}
+.provider-setup details {
+  border-top: 1px solid var(--rx-border);
+}
+.agent-routing .form-grid {
+  margin: 12px 0;
+}

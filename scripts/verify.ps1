@@ -1,4 +1,4 @@
-param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory)
+param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory, [switch]$AiProviders)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 function Invoke-Checked([string]$Program, [string[]]$Arguments) {
@@ -15,7 +15,7 @@ try {
         Invoke-Checked npm @('run','build')
         Invoke-Checked npm @('test')
     } finally { Pop-Location }
-    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory) {
+    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory -or $AiProviders) {
         Invoke-Checked cargo @('build','--locked','-p','reconx','-p','reconx-desktop','--features','reconx-desktop/custom-protocol')
         $previousToolFlag = $env:RECONX_E2E_TOOL_INSTALL
         $previousVisualFlag = $env:RECONX_E2E_VISUAL
@@ -28,6 +28,7 @@ try {
             if($Integrations){Invoke-Checked node @('tests/e2e/integrations.mjs')}
             if($Outputs){Invoke-Checked node @('tests/e2e/outputs.mjs')}
             if($LocalInventory){Invoke-Checked node @('tests/e2e/recon-local.mjs')}
+            if($AiProviders){Invoke-Checked node @('tests/e2e/ai-providers.mjs')}
         } finally {
             $env:RECONX_E2E_TOOL_INSTALL=$previousToolFlag
             $env:RECONX_E2E_VISUAL=$previousVisualFlag
