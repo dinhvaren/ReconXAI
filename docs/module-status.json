@@ -740,5 +740,21 @@
     "native_checkpoints": 77,
     "dependency_gate": "BLOCKED",
     "schema_version": 12
+  },
+  "documentation": {
+    "status": "RUNTIME_VERIFIED",
+    "scope": "64-page local DOCX; Times New Roman, all-black text; Word-rendered and inspected",
+    "source": "docs/PROJECT_DOCUMENTATION.vi.md",
+    "generator": "scripts/build_project_document.py",
+    "evidence": "artifacts/project-document-delivery.json"
+  },
+  "current_ci_followup": {
+    "production_changed": false,
+    "windows_rust": 143,
+    "linux_core_cli_rust": 143,
+    "frontend": 26,
+    "document_tests": 3,
+    "proof": "artifacts/documentation-current-verification.json",
+    "remote_ci": "New source verification pending; known glib gate remains blocked"
   }
 }

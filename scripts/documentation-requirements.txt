@@ -1,0 +1,2 @@
+# Local DOCX generation only; not part of the application runtime.
+python-docx==1.2.0

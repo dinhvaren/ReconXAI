@@ -1,5 +1,22 @@
 # ReconX AI
 
+## Complete project documentation (Vietnamese / DOCX)
+
+The current, source-backed project manual is [PROJECT_DOCUMENTATION.vi.md](docs/PROJECT_DOCUMENTATION.vi.md).
+It distinguishes verified local workflows from missing features, live-cloud checks,
+Linux GUI and release blockers. Generate an editable all-black Times New Roman
+Word document locally (no cloud service or user database access):
+
+```powershell
+python -m pip install -r scripts/documentation-requirements.txt
+python scripts/build_project_document.py --output NEW_DOCUMENT.docx --binary target/release/reconx.exe
+```
+
+The optional binary is used only for `--help` appendices. Existing output files
+are never replaced. Word can populate the document's TOC/page fields; generation
+and structural checks do not require Word. The delivered local document was
+separately opened, paginated and visually inspected in Microsoft Word.
+
 **Web Security / API Security** now import HAR 1.2 and OpenAPI 3.0/3.1 JSON/YAML
 through native file dialogs or drag-and-drop review. Inspect real offline traffic,
 documented endpoints, captured identity/role observations and comparison evidence;

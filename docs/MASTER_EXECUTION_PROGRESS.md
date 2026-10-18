@@ -1,3 +1,60 @@
+## Current followup: CI fixture reliability and complete project DOCX — 2026-10-18
+
+Preserved the tested production source, schema 012, user DBs, credentials, typography
+and exactly Light/Dark/ReconX. No new production adapter or migration. v1.0 is NOT
+COMPLETE; glib remains a blocking unsound advisory. Eight High pypdf alerts remain
+confirmed fixed; no warning or policy has been suppressed.
+
+Actual GitHub CI for c22f44c: CodeQL Advanced succeeded (run 39125535750), but
+verification failed (39125535775). Bounded downloaded job logs reproduced two test
+assumptions: Linux keyless-provider removal correctly fails closed without Secret
+Service (optional headers may still exist), and a Windows MCP cancellation test
+reused a 500ms timeout and could terminate before the call started. CLI regression
+now asserts retained configuration/default/routing on SECRET_STORE_UNAVAILABLE,
+while native Windows still covers successful OS-backed deletion. Cancellation
+gets a separate long-running benign echo budget and waits for actual progress,
+failing immediately with the job state if terminal early. Production timeout,
+permissions and credential-deletion behavior are unchanged.
+
+Fresh tests: Windows Rust 143 passed/0 failed/1 ignored; Parrot/WSL Core+CLI
+143/0/1 with an explicitly absent DBUS session bus; format, warning-denied Clippy,
+26 frontend tests and TypeScript/Vite pass. DOCX generator tests 3 pass and
+dependency-readiness tests 4 pass. Current evidence:
+artifacts/documentation-current-verification.json, documentation-windows-rust.log,
+documentation-linux-{stdout,stderr}.log, documentation-clippy.log and
+documentation-frontend-{tests,build}.log. Earlier failed document-format checks
+are retained separately; subsequent final structural and Word rendering checks pass.
+Native 9 suites/77 checkpoints and optimized binaries remain the unchanged
+production pair in artifacts/security-current-verification.json; they were not
+unnecessarily rebuilt/retested for test/docs-only changes. Remote CI fixes require
+the subsequent source revision's actual run; the glib gate remains expected red.
+
+Delivered ReconX_AI_Tai_lieu_du_an_day_du.docx in the user's requested Desktop/report
+directory: 64 pages, populated TOC/page numbers, 25 chapters plus source-derived
+provider/migration/module/CLI appendices. Every text style/run including table,
+heading, technical examples, header/footer and TOC is Times New Roman/black.
+Microsoft Word pagination and local PDF inspection verified only TimesNewRoman
+font variants, all text color 0, Vietnamese, no replacement glyphs, blank pages or
+page-edge overflow. Internal PDF/screenshots are verification artifacts, not a
+substitute for the requested editable DOCX. Proof: project-document-delivery.json,
+project-document-word-validation.json, project-document-pdf-inspection.json under
+artifacts/. No user data or credentials embedded; no cloud document service used.
+
+Reusable source: docs/PROJECT_DOCUMENTATION.vi.md and scripts/build_project_document.py;
+optional dependency scripts/documentation-requirements.txt; tests in
+scripts/test_project_document.py. The generator refuses an existing destination,
+uses no remote template/network/normal DB and invokes an optional CLI only with
+--help. README records generation. Existing Word files were not overwritten.
+
+Next: inspect the new remote CI run after authorized push; keep glib/GTK and Linux
+GUI/Secret Service/clean installers blocked until independently resolved/tested.
+Continue the safe offline/data-integrity backlog, not placeholder modules or
+claims of general external replay/active authorization/scanner automation. Latest
+source push proof remains artifacts/source-push-result.json. No force-push,
+release publication, privileged install or user-workspace migration performed.
+
+---
+
 ## Verified remote-security / CI / Linux CLI followup — 2026-10-18
 
 GitHub confirmed all eight pypdf High alerts (#2-#9) FIXED after authorized push

@@ -173,10 +173,27 @@ async fn mcp_trust_schema_stale_permissions_timeout_and_cancel() {
     let timeout = approve(&core, &project, json!({"text":"delay","delay_ms":3000}));
     let engine = JobEngine::start(core.clone(), 1, |_| {}).unwrap();
     assert_eq!(done(&core, &timeout.id).status, "failed");
-    let cancel = approve(&core, &project, json!({"text":"cancel","delay_ms":3000}));
-    let until = Instant::now() + Duration::from_secs(3);
-    while core.job(&cancel.id).unwrap().progress < 30 {
-        assert!(Instant::now() < until);
+    // Cancellation tests need enough time to observe a real in-flight call.
+    // Reusing the 500 ms timeout could fail during process startup on loaded
+    // CI, before the tool was ever called; that tests timeout, not cancellation.
+    drop(engine);
+    let mut cancel_config = config("fixture");
+    cancel_config.timeout_ms = 15_000;
+    core.mcp_save(cancel_config).await.unwrap();
+    core.mcp_connect("fixture").await.unwrap();
+    let cancel = approve(&core, &project, json!({"text":"cancel","delay_ms":10000}));
+    let engine = JobEngine::start(core.clone(), 1, |_| {}).unwrap();
+    let until = Instant::now() + Duration::from_secs(10);
+    loop {
+        let current = core.job(&cancel.id).unwrap();
+        assert!(
+            matches!(current.status.as_str(), "queued" | "running"),
+            "Cancellation fixture ended before reaching the tool call: {current:?}"
+        );
+        if current.progress >= 30 {
+            break;
+        }
+        assert!(Instant::now() < until, "No in-flight MCP call: {current:?}");
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
     core.cancel_job(&cancel.id).unwrap();

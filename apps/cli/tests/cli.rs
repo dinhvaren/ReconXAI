@@ -170,8 +170,24 @@ fn ai_catalog_keyless_profiles_and_agent_routing_share_the_desktop_database() {
     let result = run(&db, &["ai", "models", "select", id]);
     assert!(result.status.success());
     let result = run(&db, &["ai", "providers", "remove", id]);
-    assert!(result.status.success());
-    assert!(core.ai_routing().unwrap().is_empty());
+    if result.status.success() {
+        assert!(core.ai_routing().unwrap().is_empty());
+        assert!(core.settings().unwrap().default_provider_id.is_none());
+        assert!(core.provider(id).is_err());
+    } else {
+        // A headless Linux runner has no Secret Service. Even a keyless
+        // profile may have optional stored headers, so deletion must fail
+        // closed rather than silently orphaning credentials. Native tests
+        // separately cover successful removal with an actual OS store.
+        let error: Value = serde_json::from_slice(&result.stderr).unwrap();
+        assert_eq!(error["error"]["code"], "SECRET_STORE_UNAVAILABLE");
+        assert_eq!(core.provider(id).unwrap().model, "installed-fixture");
+        assert_eq!(core.ai_routing().unwrap()[0].provider_id, id);
+        assert_eq!(
+            core.settings().unwrap().default_provider_id.as_deref(),
+            Some(id)
+        );
+    }
 }
 #[path = "../../../tests/e2e/native-sample.rs"]
 mod native_sample;
