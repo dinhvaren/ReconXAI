@@ -1,4 +1,39 @@
-## AI Provider Manager - current verified source (2026-10-17)
+## Current continuation checklist - 2026-10-18
+
+- [x] HAR/OpenAPI migration 010, shared services and native import/inspection.
+- [x] Source integrity, origin/port and target partitioning, bounded correlation, complete bounded project export.
+- [x] Captured identity matrix, offline jobs, explicit selected-result AI review and review-only finding/report flow.
+- [x] Reproduce/fix stale Recon job display; run Windows/Linux Rust 112 each, frontend 22 and optimized builds.
+- [x] Pass 8 current native suites/64 checkpoints, inspect screenshots/PDF and record matching hashes at `artifacts/http-current-verification.json`.
+- [x] Add offline HTTP and AI setup to the existing CI configuration; remote CI was not executed or published.
+- [ ] Next: bounded offline documented-response/schema observations with actual evidence and reference provenance.
+- [ ] Complete the remaining request editor/identity/replay acceptance separately; current captures are never automatically replayed.
+- [ ] Continue incomplete research domains, process isolation/ACL hardening and independent Desktop/installer release acceptance.
+
+Do not redo AI provider setup or the output engine. Preserve the existing files, schema 010, three themes and user data. Keep v1.0 blocked until its actual criteria pass. The prior Node runner abort is retained with an unknown cause; current native checks passed. Current Linux Core/CLI passed after toolchain restoration; Linux Desktop is still unverified.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
+## Current continuation - 2026-10-18
+
+- [x] Preserve schema 010 offline HAR/OpenAPI and the existing outputs/AI services.
+- [x] Recheck 111 Windows Rust tests, 21 frontend tests, types/build and lint.
+- [x] Correct origin/port correlation, bound server-template work and preserve source hashes.
+- [x] Implement all-page captured identity matrix and complete bounded redacted exports.
+- [ ] Finish optimized Tauri/CLI build and all eight native regression suites.
+- [ ] Inspect clean Web/API screenshots in all three themes at 1920/1366 widths.
+- [ ] Record matching artifact hashes and update every status registry.
+- [ ] Restore or provision an isolated Linux toolchain before claiming current Linux tests.
+
+Do not repeat the AI setup or prior output milestones. Continue the safe offline
+Web/API acceptance slice; full replay/authenticated testing and remaining product
+domains are still PARTIAL/NOT_STARTED. Signing, Linux Desktop and installers are
+not verified. Heavy verification scripts disable Rust incremental cache and restore
+the invoking environment afterward. No cache cleanup or user-data deletion occurred.
+
+## Historical AI Provider Manager - current verified source (2026-10-17)
 
 Implemented on HEAD `d6af47e`, as explicitly requested after the external working-tree
 replacement. No reset, checkout, remote inspection, commit or push. This section

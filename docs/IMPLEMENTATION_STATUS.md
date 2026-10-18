@@ -1,3 +1,37 @@
+## Current Web/API verification - 2026-10-18
+
+The offline HAR/OpenAPI workspace is RUNTIME_VERIFIED as a bounded slice. The overall Web/API product remains PARTIAL. Native file picker/drop review, normalized traffic, target-aware endpoint inventory, captured role/identity matrix, real offline jobs, explicitly approved AI result review, integrity-linked comparison evidence, Needs Verification findings and four report formats share the existing Rust Core/SQLite services. Schema 010 is additive and snapshots older databases; no project/key/settings reset.
+
+Current verification: 112 Windows Rust tests and 112 Linux Core/CLI tests passed (one ignored per platform); 22 frontend tests; format/Clippy/types; optimized Tauri/CLI; 8 native suites/64 checkpoints. Exact binaries: `artifacts/windows-web-api-20261018-105742`; `artifacts/http-current-verification.json` records source/binary hashes and actual result paths. Source-level async load races and wrong origin/target correlation were fixed with regression evidence.
+
+The existing typography and exactly Light/Dark/ReconX are retained. No imported request is replayed; labels are captured contexts, not credential-backed test accounts. Request replay, authenticated comparisons, full schema validation, scanner automation, many research domains, Windows installer/signing, Linux Desktop/packages and live cloud verification remain incomplete. See WEB_API_WORKSPACE.md, TEST_RESULTS.md and the active master checkpoint. Older Linux-toolchain blocker notes below are historical: the isolated toolchain was restored and current Core/CLI tests passed.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
+## Web/API continuation - 2026-10-18
+
+Schema 010 and the shared offline HTTP service are implemented in the existing
+working tree: HAR/base64 import, OpenAPI JSON/YAML/local references, endpoint
+correlation, persistent traffic/notes, captured identity matrix, offline header
+jobs, separately approved AI result interpretation, comparison evidence, review-only
+findings and four-format reports. Desktop native picker/drop review and CLI reuse
+the same backend. Original traffic is Restricted hashed evidence; normalized
+records/default exports redact credentials. No request is automatically replayed.
+
+Current Windows checks: 111 Rust passed, zero failed, one ignored; 21 frontend
+passed; formatting, warnings-denied Clippy and TypeScript/Vite passed. Optimized
+build/native regression are in progress. Linux recheck is currently BLOCKED:
+the prior task-local Cargo toolchain no longer exists in Parrot WSL. Do not reuse
+historical Linux counts as verification of this change.
+
+The complete Web/API module remains PARTIAL: no active request editor/replay,
+credential-backed identity execution, full JSON Schema validator or scanner adapter.
+See WEB_API_WORKSPACE.md for limits/commands and MASTER_EXECUTION_PROGRESS.md for
+the exact active checkpoint. Existing fonts, three themes and SECURITY.md edits
+are preserved. Historical records below do not supersede this checkpoint.
+
 ## AI Provider Manager - current verified source (2026-10-17)
 
 Implemented on HEAD `d6af47e`, as explicitly requested after the external working-tree

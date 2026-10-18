@@ -1,6 +1,9 @@
-param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory, [switch]$AiProviders)
+param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory, [switch]$AiProviders, [switch]$HttpWorkspace)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+# Large Tauri debug builds otherwise retain tens of GiB of incremental objects.
+$previousIncremental = $env:CARGO_INCREMENTAL
+$env:CARGO_INCREMENTAL = '0'
 function Invoke-Checked([string]$Program, [string[]]$Arguments) {
     & $Program @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
@@ -15,7 +18,7 @@ try {
         Invoke-Checked npm @('run','build')
         Invoke-Checked npm @('test')
     } finally { Pop-Location }
-    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory -or $AiProviders) {
+    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory -or $AiProviders -or $HttpWorkspace) {
         Invoke-Checked cargo @('build','--locked','-p','reconx','-p','reconx-desktop','--features','reconx-desktop/custom-protocol')
         $previousToolFlag = $env:RECONX_E2E_TOOL_INSTALL
         $previousVisualFlag = $env:RECONX_E2E_VISUAL
@@ -29,9 +32,10 @@ try {
             if($Outputs){Invoke-Checked node @('tests/e2e/outputs.mjs')}
             if($LocalInventory){Invoke-Checked node @('tests/e2e/recon-local.mjs')}
             if($AiProviders){Invoke-Checked node @('tests/e2e/ai-providers.mjs')}
+            if($HttpWorkspace){Invoke-Checked node @('tests/e2e/http-workspace.mjs')}
         } finally {
             $env:RECONX_E2E_TOOL_INSTALL=$previousToolFlag
             $env:RECONX_E2E_VISUAL=$previousVisualFlag
         }
     }
-} finally { Pop-Location }
+} finally { Pop-Location; $env:CARGO_INCREMENTAL = $previousIncremental }

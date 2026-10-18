@@ -16,8 +16,8 @@ export const navigation: { group: string; items: NavItem[] }[] = [
     group: "Research",
     items: [
       { name: "Reconnaissance", icon: "globe", implemented: true },
-      { name: "Web Security", icon: "code", implemented: false },
-      { name: "API Security", icon: "api", implemented: false },
+      { name: "Web Security", icon: "code", implemented: true },
+      { name: "API Security", icon: "api", implemented: true },
       { name: "Network Security", icon: "network", implemented: false },
       { name: "Reverse Engineering", icon: "binary", implemented: true },
       { name: "Mobile Security", icon: "phone", implemented: false },

@@ -105,6 +105,42 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    HttpReviewEnqueue {
+        id: String,
+    },
+    HttpImport {
+        kind: String,
+        input: reconx_core::HttpImportInput,
+        path: std::path::PathBuf,
+    },
+    HttpWorkspace {
+        project: String,
+        target: Option<String>,
+        #[serde(default)]
+        search: String,
+        #[serde(default)]
+        offset: usize,
+    },
+    HttpExchange {
+        id: String,
+    },
+    ApiOperation {
+        id: String,
+    },
+    HttpNote {
+        id: String,
+        note: Option<String>,
+    },
+    HttpCompare {
+        input: reconx_core::HttpComparisonInput,
+    },
+    HttpComparisonFinding {
+        id: String,
+    },
+    HttpExport {
+        project: String,
+        path: std::path::PathBuf,
+    },
     ToolsCatalog,
     ToolsHistory {
         id: String,
@@ -466,6 +502,20 @@ fn local(core: Core, request: Request) -> Result<Value> {
             )?;
             Ok(Value::Null)
         }
+        Request::HttpReviewEnqueue { id } => value(core.http_review_enqueue(&id)?),
+        Request::HttpImport { kind, input, path } => value(core.http_import(&kind, input, &path)?),
+        Request::HttpWorkspace {
+            project,
+            target,
+            search,
+            offset,
+        } => value(core.http_workspace(&project, target.as_deref(), &search, offset)?),
+        Request::HttpExchange { id } => value(core.http_exchange(&id)?),
+        Request::ApiOperation { id } => value(core.api_operation(&id)?),
+        Request::HttpNote { id, note } => value(core.http_note(&id, note.as_deref())?),
+        Request::HttpCompare { input } => core.http_compare(input),
+        Request::HttpComparisonFinding { id } => value(core.http_comparison_finding(&id)?),
+        Request::HttpExport { project, path } => core.http_export(&project, &path),
         Request::ReconPreview { id } => value(core.local_http_preview(&id)?),
         Request::ReconEnqueue {
             id,

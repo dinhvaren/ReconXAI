@@ -1,0 +1,148 @@
+.http-controls,
+.http-toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+.http-controls label,
+.http-toolbar label {
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  min-width: 160px;
+}
+.http-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 12px 0;
+}
+.http-tabs button {
+  padding: 8px 10px;
+  border: 1px solid var(--rx-border);
+  border-radius: 7px;
+  background: var(--rx-surface);
+  color: var(--rx-text-muted);
+}
+.http-tabs button[aria-selected="true"] {
+  background: var(--rx-surface-raised);
+  color: var(--rx-text);
+}
+.http-panes {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+.http-explorer,
+.http-inspector {
+  padding: 16px;
+  min-width: 0;
+  overflow: auto;
+  max-height: calc(100vh - 315px);
+}
+.http-inspector h2 {
+  overflow-wrap: anywhere;
+}
+.http-inspector label {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+}
+.http-inspector .inline-check {
+  display: flex;
+}
+.http-item {
+  display: grid;
+  text-align: left;
+  gap: 7px;
+  width: 100%;
+  padding: 12px 9px;
+  margin-bottom: 7px;
+  background: var(--rx-surface);
+  color: var(--rx-text);
+  border: 1px solid var(--rx-border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.http-item.active {
+  background: var(--rx-surface-raised);
+  border-color: var(--rx-accent);
+}
+.http-item small {
+  color: var(--rx-text-muted);
+}
+.http-item code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.http-item h3,
+.http-item p {
+  margin: 0;
+}
+.http-pre {
+  font-family: var(--font-code);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--rx-bg);
+  padding: 12px;
+  border-radius: 7px;
+  max-height: 440px;
+  overflow: auto;
+}
+.http-diff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.http-json-tree {
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+.http-json-tree li {
+  margin: 7px 0;
+}
+.http-inspector textarea {
+  min-height: 140px;
+  width: 100%;
+}
+.http-inspector .data-table {
+  table-layout: fixed;
+}
+.http-inspector td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.http-matrix {
+  table-layout: fixed;
+  width: 100%;
+}
+.http-matrix td {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.http-matrix td div {
+  margin-top: 6px;
+}
+.http-matrix td > small {
+  display: block;
+  margin-bottom: 6px;
+}
+@media (max-width: 1100px) {
+  .http-panes {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .http-explorer {
+    max-height: 300px;
+  }
+  .http-inspector {
+    max-height: none;
+  }
+}

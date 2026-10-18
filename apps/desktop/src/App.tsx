@@ -19,6 +19,7 @@ import { OrchestrationPage } from "./pages/OrchestrationPage";
 import JobsPage from "./pages/JobsPage";
 import RecordsPage from "./pages/RecordsPage";
 import ReconPage from "./pages/ReconPage";
+import HttpPage from "./pages/HttpPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
 import { useJobEvents, type Target, type TargetKind } from "./research";
@@ -583,6 +584,9 @@ function Workbench() {
                     onFindingRequestConsumed={() => setFindingCreateRequest(0)}
                   />
                 ) : null,
+              )}
+              {(page === "Web Security" || page === "API Security") && (
+                <HttpPage page={page} data={data} projectId={selected??undefined} perform={perform} busy={busy} navigate={navigate}/>
               )}
               {page === "Reconnaissance" && (
                 <ReconPage

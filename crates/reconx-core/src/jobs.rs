@@ -393,6 +393,7 @@ impl Core {
                     PreparedJob{result,analysis:None,http:None}
                 },
                 "local_http_inventory"=>self.prepare_local_http(&job,&mut update)?,
+                "offline_http_review"=>self.prepare_http_review(&job,&mut update)?,
                 "mcp_tool"=>self.prepare_mcp_job(&job,&mut update)?,
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;

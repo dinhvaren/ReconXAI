@@ -1,6 +1,8 @@
 param([switch]$Installer)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
+$previousIncremental=$env:CARGO_INCREMENTAL
+$env:CARGO_INCREMENTAL='0'
 function Invoke-Checked([string]$Program,[string[]]$Arguments) {
     & $Program @Arguments
     if($LASTEXITCODE -ne 0){throw "$Program failed with exit code $LASTEXITCODE"}
@@ -28,4 +30,4 @@ try {
         try { Invoke-Checked npm @('run','tauri','--','build','--config','../../packaging/tauri.windows.json') } finally { Pop-Location }
     }
     Write-Output "Artifacts: $destination"
-} finally { Pop-Location }
+} finally { Pop-Location; $env:CARGO_INCREMENTAL=$previousIncremental }

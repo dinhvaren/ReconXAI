@@ -31,14 +31,14 @@ impl Database {
         let previous: i64 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if (1..9).contains(&previous) {
+        if (1..10).contains(&previous) {
             // VACUUM INTO takes a consistent SQLite snapshot, including committed WAL data.
             // It refuses to overwrite a file. Backups live beside the private database.
             let stamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_err(|_| AppError::new("BACKUP_FAILED", "System clock is invalid"))?
                 .as_nanos();
-            let backup = path.with_extension(format!("pre-v9-{stamp}.bak"));
+            let backup = path.with_extension(format!("pre-v10-{stamp}.bak"));
             conn.execute("VACUUM INTO ?1", [backup.to_string_lossy().as_ref()])
                 .map_err(|_| {
                     AppError::new(
@@ -60,7 +60,7 @@ impl Database {
         let version: i64 = tx
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if version > 9 {
+        if version > 10 {
             return Err(AppError::new(
                 "SCHEMA_TOO_NEW",
                 "Database was created by a newer ReconX version; no migration was performed",
@@ -130,6 +130,12 @@ impl Database {
             tx.pragma_update(None, "user_version", 9)
                 .map_err(db_error)?;
         }
+        if version < 10 {
+            tx.execute_batch(include_str!("../migrations/010_http_workspace.sql"))
+                .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 10)
+                .map_err(db_error)?;
+        }
         tx.commit().map_err(db_error)?;
         Ok(database)
     }
@@ -152,12 +158,72 @@ impl Database {
 mod tests {
     use super::*;
     #[test]
+    fn version_nine_http_migration_preserves_projects_providers_and_agent_routes() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("v9.db");
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute_batch("DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('retained','Retained project','Notes stay intact','before','before'); INSERT INTO providers(id,name,json) VALUES('profile','Retained model','{\"model\":\"fixture\"}'); INSERT INTO ai_profile_metadata(provider_id,vendor_id,options_json) VALUES('profile','custom','{\"streaming\":false}'); INSERT INTO ai_agent_routing VALUES('web','profile');").unwrap();
+        conn.pragma_update(None, "user_version", 9).unwrap();
+        drop(conn);
+        drop(db);
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        assert_eq!(
+            conn.query_row(
+                "SELECT description FROM projects WHERE id='retained'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "Notes stay intact"
+        );
+        assert_eq!(
+            conn.query_row(
+                "SELECT options_json FROM ai_profile_metadata WHERE provider_id='profile'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "{\"streaming\":false}"
+        );
+        assert_eq!(
+            conn.query_row(
+                "SELECT provider_id FROM ai_agent_routing WHERE agent_id='web'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "profile"
+        );
+        assert_eq!(
+            conn.pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
+                .unwrap(),
+            10
+        );
+        assert_eq!(
+            conn.query_row("SELECT count(*) FROM pragma_foreign_key_check", [], |r| r
+                .get::<_, i64>(
+                0
+            ))
+            .unwrap(),
+            0
+        );
+        assert!(
+            std::fs::read_dir(dir.path())
+                .unwrap()
+                .flatten()
+                .any(|e| e.file_name().to_string_lossy().contains("pre-v10"))
+        );
+    }
+    #[test]
     fn additive_ai_upgrade_preserves_interrupted_snapshot_tables_and_creates_backup() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("snapshot.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
         conn.execute_batch("CREATE TABLE retained_http_artifact(id TEXT PRIMARY KEY,sha256 TEXT);INSERT INTO retained_http_artifact VALUES('retained','unchanged');DROP TABLE ai_agent_routing;DROP TABLE ai_profile_metadata;CREATE TABLE ai_profile_metadata(provider_id TEXT PRIMARY KEY REFERENCES providers(id),vendor_id TEXT NOT NULL DEFAULT 'custom',models_json TEXT NOT NULL DEFAULT '[]',models_fingerprint TEXT,models_refreshed_at TEXT,connection_json TEXT);").unwrap();
+        conn.execute_batch("DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports;").unwrap();
         conn.pragma_update(None, "user_version", 8).unwrap();
         drop(conn);
         drop(db);
@@ -175,7 +241,7 @@ mod tests {
         assert_eq!(
             conn.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            9
+            10
         );
         for column in ["options_json", "header_names_json", "revision"] {
             assert!(
@@ -187,7 +253,7 @@ mod tests {
             std::fs::read_dir(dir.path())
                 .unwrap()
                 .flatten()
-                .any(|p| p.file_name().to_string_lossy().contains("pre-v9"))
+                .any(|p| p.file_name().to_string_lossy().contains("pre-v10"))
         );
     }
     #[test]
@@ -255,7 +321,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            9
+            10
         );
     }
     #[test]
@@ -291,12 +357,12 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            9
+            10
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|e| e.ok())
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v9"))
+            .find(|e| e.file_name().to_string_lossy().contains("pre-v10"))
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -329,7 +395,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
                 .unwrap(),
-            9
+            10
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()

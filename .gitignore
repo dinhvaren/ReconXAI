@@ -29,3 +29,4 @@ tests/
 !/crates/reconx-core/tests/
 
 !/tests/e2e/ai-providers.mjs
+!/tests/e2e/http-workspace.mjs

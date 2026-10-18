@@ -1,4 +1,56 @@
-# Current feature inventory - 2026-10-17
+# Current verified feature audit - 2026-10-18
+
+The shared Rust services, typed IPC, CLI, migrations and actual native fixtures were rechecked. `artifacts/http-current-verification.json` identifies the matching binaries/source hashes. A page is not a complete product domain.
+
+| Area | Current state | Actual scope / remaining work |
+| --- | --- | --- |
+| Projects / targets / scope | RUNTIME_VERIFIED | Current native/CLI fixtures, restart and migration preservation |
+| Fonts / three themes | RUNTIME_VERIFIED | Preserved native visual/interaction acceptance |
+| Shared jobs | RUNTIME_VERIFIED | Bounded real jobs, cancel/timeout/lease recovery; no general DAG/pause |
+| Offline Web/API slice | RUNTIME_VERIFIED | HAR/OpenAPI, traffic, matrix, offline reviews, evidence and reports |
+| Full Web/API module | PARTIAL | No authenticated replay/full schema or scanner adapter |
+| Binary workspace | PARTIAL | Tested native static inspection; no full decompiler/debugger |
+| Evidence / manual findings | RUNTIME_VERIFIED | Hashes, review gates, revisions/links and supplied CVSS vectors |
+| Reports | PARTIAL | Four actual formats; richer dedicated layouts remain incomplete |
+| Reconnaissance | PARTIAL | Actual manually approved loopback HEAD only |
+| Tool Manager | PARTIAL | Verified ripgrep/YARA-X; other adapters pending |
+| MCP Hub | PARTIAL | Actual benign stdio/HTTP fixtures; no full sandbox/OAuth/security profiles |
+| AI providers / plans | PARTIAL | 24-provider setup and local protocol/plan fixtures; live accounts/budgets/general agents open |
+| Network / cloud / container / CI/CD / lab modules | NOT_STARTED | No dedicated operational modules claimed |
+| Mobile security workspace | NOT_STARTED | Basic APK/Mach-O identification belongs to existing binary parser only |
+| Windows portable app/CLI | RUNTIME_VERIFIED | Exact optimized source, 8 suites/64 checkpoints |
+| Windows installer / signing | BLOCKED | Acceptance/infrastructure not established |
+| Linux shared Core/CLI | RUNTIME_VERIFIED | 112 tests in actual Parrot/WSL after isolated toolchain restoration |
+| Linux Desktop / packages | BLOCKED | Separate SDK/GUI/credential/package acceptance absent |
+| Full v1.0 | BLOCKED | Remaining domains, active acceptance, isolation and packaging open |
+
+Current Windows and Linux Rust totals are 112 passed each, one ignored each; frontend 22 pass. The stale Recon load race is fixed; a prior unexplained native Node abort is retained even though the fresh full suite passes. No user data was removed or Git content pushed. See WEB_API_WORKSPACE.md for precise parser/privacy limits and the master ledger for the next offline task.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
+# Web/API audit update - 2026-10-18
+
+Source inspection confirms shared HAR/OpenAPI import, migration 010, Desktop
+traffic inspection/native review, a real all-page captured identity matrix and
+offline header jobs. Captured comparison creates integrity-linked evidence and a
+Needs Verification finding using the existing output pipeline. CLI uses those
+same services. This supersedes the older NOT_STARTED import/matrix rows below.
+
+The complete Web/API module is PARTIAL. Imported identity labels are not credential
+profiles; no active replay, authenticated role execution, full schema validation,
+Burp/ZAP security adapter or automatic vulnerability verification is implemented.
+Current checks: 111 Windows Rust tests, 21 frontend tests, format/types/Clippy pass;
+optimized/native checks are in progress. Current Linux verification is BLOCKED
+because the old task-local Cargo installation no longer exists in WSL.
+
+CI now includes native AI-provider and offline HTTP suites and disables Rust
+incremental cache. This is configured only: no push or remote CI run occurred.
+Full v1.0 and the remaining domain/installer/security criteria remain open.
+See WEB_API_WORKSPACE.md and the active master checkpoint for exact scope.
+
+# Historical feature inventory - 2026-10-17
 
 Inspected shared Rust Core, typed Tauri requests, React routes, CLI, migrations
 and actual Windows fixtures. This table supersedes the historical audit below.

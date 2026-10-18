@@ -27,6 +27,12 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Offline HAR traffic and HTTP capture analysis. Never replays requests.
+    #[command(subcommand)]
+    Web(WebCommand),
+    /// Offline OpenAPI inventory and imported-response comparison.
+    #[command(subcommand)]
+    Api(ApiCommand),
     #[command(subcommand)]
     Evidence(EvidenceCommand),
     /// Manually approved loopback HTTP inventory; no public target scanning.
@@ -62,6 +68,99 @@ enum Command {
     Completions {
         shell: clap_complete::Shell,
     },
+}
+#[derive(Args)]
+struct HttpImportArgs {
+    file: PathBuf,
+    #[arg(long)]
+    project: String,
+    #[arg(long)]
+    target: Option<String>,
+    #[arg(long)]
+    title: Option<String>,
+    #[arg(long, default_value = "")]
+    identity: String,
+    #[arg(long, default_value = "")]
+    role: String,
+}
+#[derive(Subcommand)]
+enum WebCommand {
+    /// Queue a local captured-header observation job. Desktop or jobs run executes it.
+    Analyze {
+        id: String,
+    },
+    ImportHar(HttpImportArgs),
+    Traffic {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+        #[arg(long, default_value = "")]
+        search: String,
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+    },
+    Inspect {
+        id: String,
+    },
+    Note {
+        id: String,
+        #[arg(long)]
+        text: Option<String>,
+    },
+    Export {
+        #[arg(long)]
+        project: String,
+        output: PathBuf,
+    },
+}
+#[derive(Subcommand)]
+enum ApiCommand {
+    ImportOpenapi(HttpImportArgs),
+    Endpoints {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Inspect {
+        id: String,
+    },
+    /// Compare existing captures only. This sends no requests.
+    Diff {
+        left: String,
+        right: String,
+        #[arg(long, default_value = "")]
+        owner_field: String,
+    },
+    /// Show captured identity/role labels; not an active authorization test.
+    AuthzMatrix {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Finding {
+        comparison: String,
+    },
+}
+fn http_import_cli(core: &Core, kind: &str, args: &HttpImportArgs) -> Result<Value> {
+    serialize(
+        core.http_import(
+            kind,
+            reconx_core::HttpImportInput {
+                project_id: args.project.clone(),
+                target_id: args.target.clone(),
+                title: args
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| format!("Offline {kind} import")),
+                identity: args.identity.clone(),
+                role: args.role.clone(),
+            },
+            &args.file,
+        )?,
+    )
 }
 #[derive(Subcommand)]
 enum ReconCommand {
@@ -750,6 +849,42 @@ async fn execute(cli: &Cli) -> Result<Value> {
     }
     let core = Core::open(cli.database.clone())?;
     match &cli.command {
+        Command::Web(command) => match command {
+            WebCommand::Analyze { id } => serialize(core.http_review_enqueue(id)?),
+            WebCommand::ImportHar(args) => http_import_cli(&core, "har", args),
+            WebCommand::Traffic {
+                project,
+                target,
+                search,
+                offset,
+            } => serialize(core.http_workspace(project, target.as_deref(), search, *offset)?),
+            WebCommand::Inspect { id } => serialize(core.http_exchange(id)?),
+            WebCommand::Note { id, text } => serialize(core.http_note(id, text.as_deref())?),
+            WebCommand::Export { project, output } => core.http_export(project, output),
+        },
+        Command::Api(command) => match command {
+            ApiCommand::ImportOpenapi(args) => http_import_cli(&core, "openapi", args),
+            ApiCommand::Endpoints { project, target } => serialize(
+                core.http_workspace(project, target.as_deref(), "", 0)?
+                    .operations,
+            ),
+            ApiCommand::Inspect { id } => serialize(core.api_operation(id)?),
+            ApiCommand::Diff {
+                left,
+                right,
+                owner_field,
+            } => core.http_compare(reconx_core::HttpComparisonInput {
+                left: left.clone(),
+                right: right.clone(),
+                owner_field: owner_field.clone(),
+            }),
+            ApiCommand::AuthzMatrix { project, target } => {
+                serialize(core.http_workspace(project, target.as_deref(), "", 0)?)
+            }
+            ApiCommand::Finding { comparison } => {
+                serialize(core.http_comparison_finding(comparison)?)
+            }
+        },
         Command::Recon(command) => match command {
             ReconCommand::Preview { target } => serialize(core.local_http_preview(target)?),
             ReconCommand::Run {

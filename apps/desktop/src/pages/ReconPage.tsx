@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { useJobEvents, type AnalysisJob } from "../research";
 import { Heading, Modal, type Perform } from "../components/ui";
@@ -54,7 +54,9 @@ export default function ReconPage({
     [plan, setPlan] = useState<Plan | null>(null),
     [approved, setApproved] = useState(false),
     [error, setError] = useState("");
+  const loadVersion = useRef(0);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     if (!project) {
       setAssets([]);
       setJobs([]);
@@ -64,8 +66,18 @@ export default function ReconPage({
       request<Asset[]>("assets_list", { project }),
       request<AnalysisJob[]>("jobs_list", { project }),
     ]);
+    if (version !== loadVersion.current) return;
     setAssets(a);
     setJobs(j.filter((j) => j.kind === "local_http_inventory"));
+  }, [project]);
+  useEffect(() => {
+    setAssets([]);
+    setJobs([]);
+    setPlan(null);
+    setApproved(false);
+    return () => {
+      loadVersion.current += 1;
+    };
   }, [project]);
   useEffect(() => {
     void load().catch((e) => setError(errorText(e)));

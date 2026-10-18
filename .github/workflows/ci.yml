@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  CARGO_INCREMENTAL: '0'
 jobs:
   verify:
     strategy:
@@ -83,6 +85,18 @@ jobs:
         env:
           RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
           RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+      - name: Windows native secure AI provider setup with local fixtures
+        if: runner.os == 'Windows'
+        run: node tests/e2e/ai-providers.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+      - name: Windows native offline HAR OpenAPI and evidence workflow
+        if: runner.os == 'Windows'
+        run: node tests/e2e/http-workspace.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -109,4 +123,8 @@ jobs:
             artifacts/outputs-*/reviewed-report.pdf
             artifacts/recon-local-*/results.json
             artifacts/recon-local-*/*.png
+            artifacts/native-ai-providers-*/results.json
+            artifacts/native-ai-providers-*/*.png
+            artifacts/http-workspace-*/results.json
+            artifacts/http-workspace-*/*.png
           if-no-files-found: warn

@@ -1,4 +1,26 @@
-## AI setup acceptance update - 2026-10-17
+## Current roadmap checkpoint - 2026-10-18
+
+Delivered and tested the offline Web/API vertical slice on schema 010 through Desktop and CLI. HAR/OpenAPI -> actual captured inspection/identity comparison -> persistent evidence -> Needs Verification finding -> reviewed Markdown/JSON/HTML/PDF works. Current proof: 112 Rust tests per Windows/Linux Core-CLI, 22 frontend tests and 64 native checkpoints; see `artifacts/http-current-verification.json`.
+
+Next deepen bounded offline response/documentation validation, followed by hardening and the remaining approved local research capabilities. Full request replay/authenticated identity execution, broader recon/scanner integrations, multi-domain agents, external debugger/mobile/cloud/network/lab modules, installers/signing and Linux Desktop remain incomplete. A catalog entry, parser field or route is not completion of a whole research domain. Keep product 0.1.0 and release.ready=false until independent acceptance.
+
+CI now includes native HTTP and provider suites and disables incremental cache; it has not been pushed or run remotely. Existing historical checkpoints below remain evidence of their stated versions, not proof of current whole-product readiness.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
+## Current Web/API checkpoint - 2026-10-18
+
+Offline HAR/OpenAPI import and traffic inventory now exist on schema 010. Preserve
+them and complete current optimized/native verification before extending modules.
+The captured identity matrix, integrity-linked comparisons and review-only output
+pipeline are implemented; request replay, authenticated identity tests and general
+scanner automation are not. WEB_API_WORKSPACE.md states exact support and limits.
+The product remains 0.1.0, with v1.0 release criteria open. Linux re-verification is
+blocked by a missing task-local toolchain; Linux Desktop and installers are unverified.
+
+## Historical AI setup acceptance update - 2026-10-17
 
 The current-source AI Provider Manager slice is TESTED: 24-provider registry,
 secure setup/model profiles, real protocol fixtures, discovery, custom gateway

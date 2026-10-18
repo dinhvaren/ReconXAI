@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-17",
+  "updated": "2026-10-18",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -74,15 +74,15 @@
       "verification": "Windows actual manually approved loopback HEAD only; full passive/active recon remains incomplete",
       "remaining": [
         "DNS/RDAP/CT/history",
-        "offline traffic imports",
-        "broader normalized observations and safe adapters"
+        "broader safe normalized observations",
+        "validated external adapters"
       ]
     },
     {
       "id": "security_analysis",
       "status": "IN_PROGRESS",
       "remaining": [
-        "web/API imports and analysis",
+        "full Web/API assessment beyond offline captured analysis",
         "advanced reverse integrations",
         "additional normalized observations"
       ]
@@ -121,6 +121,24 @@
         "Local protocol fixtures do not install inference engines or model weights",
         "Account-specific capability/pricing enforcement, advanced budgets/fallback and general multi-domain agents remain incomplete",
         "Selected-artifact review blocks configured proxies pending explicit proxy-aware consent"
+      ]
+    },
+    {
+      "id": "web_api_offline",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-workspace-1792296085396/results.json",
+      "remaining": [
+        "active editor/replay and protected authenticated identities",
+        "full JSON Schema and multi-file reference support",
+        "project-export filtering and large workspace improvements"
+      ],
+      "runtime_verified_capabilities": [
+        "HAR/OpenAPI native and CLI import",
+        "origin/port/target correlation",
+        "captured identity matrix",
+        "offline job and approved mock AI interpretation",
+        "integrity-linked comparison and review-only finding",
+        "four-format reports and restart"
       ]
     }
   ],
@@ -377,26 +395,32 @@
         "account capability/pricing metadata",
         "advanced fallback/budgets"
       ]
+    },
+    {
+      "id": "offline_http_workspace",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-workspace-1792296085396/results.json",
+      "scope": "Bounded offline slice only; full Web/API module remains PARTIAL"
     }
   ],
   "verification": {
-    "rust_passed": 99,
+    "rust_passed": 112,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 17,
+    "frontend_passed": 22,
     "frontend_failed": 0,
-    "native_scenarios_passed": 6,
+    "native_scenarios_passed": 8,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
     "debug_record": "artifacts/native-1792081858453/results.json",
-    "release_record": "artifacts/native-1792217533338/results.json",
+    "release_record": "artifacts/http-current-verification.json",
     "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
     "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
     "inputs_release_record": "artifacts/inputs-1792217578167/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Windows: 86 Rust / 13 frontend, all six optimized native suites (44 checkpoints). Linux: 86 Rust / one ignored and actual CLI ELF/output workflow. Linux Desktop, optimized CLI/installer, live cloud and remaining research domains unverified or incomplete.",
+    "note": "Current optimized offline Web/API slice: Windows native and Linux Core/CLI. Older debug/preservation/typography fields are historical. Full v1.0 remains blocked.",
     "typography_before_record": "artifacts/typography-refinement/before/results.json",
     "typography_after_record": "artifacts/typography-refinement/after/results.json",
     "typography_observations_per_phase": 57,
@@ -442,16 +466,29 @@
     "integrations_release_record": "artifacts/integrations-1792217614199/results.json",
     "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
     "release_sha256": {
-      "reconx.exe": "1893446896a19b715378061a971573946aa0d21e856865075e960452c555ebd0",
-      "reconx-desktop.exe": "88b5f5e15d3874b696a20d8d0e25014af78891aa989cac1817926a0e37c2f7f1"
+      "reconx.exe": "c02cb202b052e157657c203f5eda68b3b3b14241675c7e70e85c12607cf549e2",
+      "reconx-desktop.exe": "7d8658f278c7d4c5c2f2a5b322f569daec64bdb0362bc819ded07a97e3d25df3"
     },
     "outputs_release_record": "artifacts/outputs-1792217631931/results.json",
     "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
     "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
     "local_inventory_release_record": "artifacts/recon-local-1792217644790/results.json",
     "linux_core_cli_record": "artifacts/linux-verify-1792217270990/acceptance.json",
-    "release_native_checkpoints_total": 54,
+    "release_native_checkpoints_total": 64,
     "release_records": {
+      "native": "artifacts/native-1792295863172/results.json",
+      "http-workspace": "artifacts/http-workspace-1792296085396/results.json",
+      "recon-local": "artifacts/recon-local-1792295916549/results.json",
+      "ai-providers": "artifacts/native-ai-providers-1792295928577/results.json",
+      "inputs": "artifacts/inputs-1792295937679/results.json",
+      "jobs": "artifacts/jobs-1792295947866/results.json",
+      "integrations": "artifacts/integrations-1792295974285/results.json",
+      "outputs": "artifacts/outputs-1792295992032/results.json"
+    },
+    "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
+    "linux_current_rust_passed": 112,
+    "linux_current_record": "artifacts/http-current-linux.log",
+    "previous_release_records": {
       "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
       "regression": "artifacts/native-1792238059810/results.json",
       "inputs": "artifacts/inputs-1792238103145/results.json",
@@ -460,9 +497,7 @@
       "research_outputs": "artifacts/outputs-1792238163896/results.json",
       "local_inventory": "artifacts/recon-local-1792238177437/results.json"
     },
-    "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
-    "linux_current_rust_passed": 99,
-    "linux_current_record": "artifacts/ai-manager-final-linux.log"
+    "http_workspace_record": "artifacts/http-workspace-1792296085396/results.json"
   },
   "v1_release": {
     "ready": false,
@@ -475,7 +510,7 @@
       "Live cloud providers and security integration profiles unverified"
     ]
   },
-  "database_schema_version": 9,
+  "database_schema_version": 10,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -489,7 +524,120 @@
       "optimized_cli": "UNVERIFIED",
       "packaging": "UNVERIFIED",
       "distribution": "Parrot on WSL2",
-      "desktop_blocker": "webkit2gtk-4.1 SDK absent; no privileged system packages installed"
+      "desktop_blocker": "webkit2gtk-4.1 SDK absent; no privileged system packages installed",
+      "current_core_cli_tests": {
+        "passed": 112,
+        "ignored": 1,
+        "record": "artifacts/http-current-linux.log"
+      }
     }
-  }
+  },
+  "page_inventory": [
+    {
+      "page": "Dashboard",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Projects",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Targets & Scope",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Reconnaissance",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Web Security",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "API Security",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Network Security",
+      "status": "NOT_STARTED",
+      "verification": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "page": "Reverse Engineering",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Mobile Security",
+      "status": "NOT_STARTED",
+      "verification": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "page": "Cloud & Containers",
+      "status": "NOT_STARTED",
+      "verification": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "page": "CI/CD Security",
+      "status": "NOT_STARTED",
+      "verification": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "page": "AI Workspace",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Agent Workflows",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "MCP Hub",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Tool Manager",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Findings",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Evidence",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Reports",
+      "status": "PARTIAL",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Settings",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-current-verification.json"
+    },
+    {
+      "page": "Job Center",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/jobs-1792295947866/results.json"
+    },
+    {
+      "page": "Red Team Lab",
+      "status": "NOT_STARTED",
+      "verification": "No dedicated workspace implemented"
+    }
+  ],
+  "current_web_api_verification": "artifacts/http-current-verification.json"
 }

@@ -1,3 +1,144 @@
+## Verified Web/API checkpoint - 2026-10-18
+
+Product version remains 0.1.0. Full v1.0 is NOT release-ready. The bounded offline Web/API slice is RUNTIME_VERIFIED on Windows; the complete Web/API module is PARTIAL.
+
+Completed: bounded HAR 1.2/base64 and OpenAPI 3.0/3.1 JSON/YAML ingestion; native picker/drop review; persistent redacted traffic and notes; origin/port/target-aware endpoint correlation; all-page captured identity/role matrix; original-source integrity/provenance; offline header jobs using the existing worker/evidence; separately consented mock AI interpretation; Needs Verification findings; reviewed Markdown/JSON/HTML/PDF output. Original traffic stays Restricted evidence and no imported request is replayed.
+
+The latest hardening fixes concrete-path precedence, bounded one-pass server expansion, total correlation budgets, foreign-target documentation matches, overlapping-target grouping and incomplete first-page exports. A real stale Recon UI failure was reproduced by a deterministic test and fixed by discarding superseded async loads. Build/verify scripts disable incremental compilation for their duration and restore the caller setting; no cache/data deletion was performed.
+
+Verified current source:
+
+- Windows format and warnings-denied Clippy pass; 112 Rust tests pass, zero fail, one explicit OS-store fixture ignored.
+- Frontend TypeScript/Vite and 22 tests pass. Actual optimized Tauri and CLI builds pass.
+- All 8 native suites pass, totaling 64 checkpoints, including the extended 10-checkpoint HTTP suite. Actual file dialogs, job states/cancellation/failure/recovery, secure synthetic keys, YARA-X, benign MCP, local mock AI, target partitioning, reports and restart are exercised.
+- Linux Parrot/WSL shared Core/CLI: 112 pass, zero fail, one ignored. Rust 1.95.0 was restored in a task-local /var/tmp directory from the official checksum-verified rustup installer, without sudo/profile changes. Linux Desktop, Secret Service runtime and Linux packaging are not established by these tests.
+
+Exact matching portable artifacts: `artifacts/windows-web-api-20261018-105742/` (two executables, SHA256SUMS.txt and font notices). Manifest/source hashes: `artifacts/http-current-verification.json`. Current HTTP native record: `artifacts/http-workspace-1792296085396/results.json`. Main logs: artifacts/http-verified-{format,clippy,rust,tauri,cli-release}.log; artifacts/http-verified-frontend-tests.log; artifacts/http-current-linux.log and its separate stderr log. The embedded frontend is index-BNYH02oQ.js.
+
+Actual screenshots were viewed: `artifacts/http-workspace-1792296085396/http-reconx-1920.png`, light-1920, dark-1366 and http-target-partition-matrix.png. HTTP workspace captures cover all three themes at 1920/1366. An independent pypdf parse verified the actual 4-page HTTP report and absence of synthetic credentials: `artifacts/http-workspace-1792296085396/pdf-inspection.json`.
+
+Retained failures: stale Recon UI at artifacts/recon-local-1792294752360/results.json (fixed and retested); a prior Node native-runner abort 3221226505 at artifacts/http-release-verification.json (cause unestablished, fresh current suite passes); initial Linux staging/toolchain failures in http-final-linux*.log. Mixed WSL stdout/stderr capture was corrected; final logs use separate streams. A passing rerun does not establish the abort's root cause.
+
+Source changes: crates/reconx-core/src/http.rs, jobs.rs, lib.rs; storage migration 010/storage lib; CLI main/tests; Tauri typed request bridge; HttpPage/http models/styles/tests; ReconPage async-load guard/regression; App/navigation; fixtures and native HTTP suite; Cargo lock/dependency; build/verify/CI and documentation. Existing SECURITY.md edits are preserved. No user DB, project, credential, sample or evidence was deleted; no Git remote inspection, commit or push occurred.
+
+Migration: 010_http_workspace.sql only; no 011 is needed for derived matrix/correlation fields. Schemas before 10 receive a consistent pre-v10 backup. Preservation/recovery tests are part of the current full suite. Stop older clients before an actual user-workspace upgrade.
+
+Current task is complete for the offline acceptance slice. Exact next safe task: extend offline documented-response/schema consistency observations, using actual captures and local references with bounded validation; expose evidence-linked observations, never automatic Verified findings. Start in crates/reconx-core/src/http.rs and tests/http_workspace.rs. Do not repeat provider setup, evidence/report foundations or this import milestone.
+
+Remaining Phase 1 acceptance: full JSON Schema/reference compatibility, request editing/replay and protected authenticated test-identity execution. The current captured matrix does not execute accounts or prove BOLA/BFLA. Project export currently covers the full project rather than the active target/search filter. Later scanner/agent, debugger/mobile/cloud/network/lab modules remain PARTIAL/NOT_STARTED. Windows installer/signing, Linux Desktop/packages, live cloud access and hard OS process isolation remain open. Keep release.ready=false.
+
+Resume: read this checkpoint, inspect git status --short (no remotes), then use the current portable binaries and tests/e2e/http-workspace.mjs for targeted acceptance. scripts/verify.ps1 -Native -Visual -Inputs -Jobs -Integrations -Outputs -LocalInventory -AiProviders -HttpWorkspace runs the full Windows verification. Linux task paths are in artifacts/http-final-linux-{toolchain,stage}.txt; reuse isolated source/build caches, capture stdout/stderr separately, and never claim Desktop support from CLI tests.
+
+Prepared commit summary only (no commit created): feat(web): persist offline HAR/OpenAPI workspaces and evidence-linked capture reviews.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
+## Final verification in progress - 2026-10-18
+
+The source additionally partitions HTTP inventory/matrix/documentation matches by
+target association (including the all-project view). New HTTP service tests total
+11; latest Windows full suite is running toward 112 passed, one ignored. Frontend
+now has 22 passing tests. A new deterministic ReconPage test first reproduced an
+older queued load overwriting a completed job; a request-version guard and project
+cleanup fixed it. Actual native loopback acceptance then passed all 7 checkpoints.
+
+Keep both earlier records: artifacts/recon-local-1792294752360/results.json is the
+reproduced stale UI failure; artifacts/http-release-verification.json records a
+later Node native-runner abort (3221226505, no diagnostic) after recon/http/AI passed.
+The abort cause is not established. Do not hide either failure or claim the current
+new target-partition source passed native acceptance until it is rebuilt/retested.
+
+Linux Rust 1.95.0 was restored in an isolated /var/tmp task directory using the
+official rustup-init binary and its verified SHA-256; no sudo or profile edits.
+The full Core/CLI suite then passed 111 tests, one ignored. Initial staging missed
+manifests and native-sample.rs; those omissions were corrected and failed logs kept.
+Do not report the former missing-toolchain blocker as unresolved after restoration.
+Capture Linux stdout/stderr inside WSL separately to prevent Windows handle overlap.
+
+Next: finish artifacts/http-verified-{format,clippy,rust,tauri,cli-release}.log;
+refresh the current source in the isolated Linux stage and rerun its full suite;
+copy exact optimized binaries to a new artifact folder and run all 8 native suites;
+inspect current screenshots/PDF, then consolidate all status documents/registry.
+The full product and active replay/authenticated execution remain incomplete.
+
+## Earlier continuation - 2026-10-18
+
+The existing schema-010 offline Web/API slice is preserved. On resumption the
+working tree still contained all HTTP changes and the earlier SECURITY.md edit.
+Baseline HTTP tests passed 6/6 and frontend 20/20. D: now has about 78 GiB free;
+no cache deletion was performed by this session. Build/verify scripts now disable
+incremental compilation for their duration and restore the caller's preference.
+
+Implemented next: origin-aware OpenAPI correlation (scheme/port, concrete-path
+precedence), one-pass bounded server variable expansion and a total pattern-match
+budget; a real captured identity/role matrix across all pages; complete bounded
+redacted capture export; source-hash provenance and integrity checks on comparisons;
+target-filtered imports/history. No migration beyond additive 010 is needed.
+HAR import, comparison and analysis remain offline. Replay, identity credential
+execution, general scanner automation and the full product remain PARTIAL.
+
+Current verification: 10 HTTP service tests passed, TypeScript/Vite build passed,
+21 frontend tests passed, formatting and Clippy passed. Full Rust tests, optimized
+Tauri/CLI, native regression and Linux shared Core/CLI are running or next.
+Logs use artifacts/http-final-*.log. Exact next action: finish these checks,
+inspect clean three-theme screenshots, update every status document and record
+the matching binary hashes. Never substitute historical native results for the
+current source. No Git remote access, user DB opening, push or cloud test.
+
+## Historical runtime and disk-space checkpoint
+
+Current Web/API source passed 107 Rust tests on Windows and 107 on Linux shared
+Core/CLI (one ignored each), frontend 20 tests, TypeScript/Vite, formatting and
+Clippy. Debug native acceptance passed 8 actual checkpoints:
+`artifacts/http-workspace-1792241586062/results.json`. HAR/native picker, OpenAPI
+JSON/YAML, actual offline jobs/evidence, separately consented mock AI, capture
+comparison, unverified finding, four CLI report exports and restart are verified.
+No production release or full Phase 1/v1.0 completion is claimed.
+
+User next requested a disk-usage diagnosis. Read-only measurement found ~69.7 GiB
+logical project size: target ~64.0 GiB (debug incremental ~25.6 GiB, debug deps
+~29.8 GiB) and artifacts ~5.5 GiB. D: has ~24.9 GiB free of 238.5 GiB. NTFS hard
+links can cause logical sums to exceed unique allocation. No cleanup was performed.
+See artifacts/disk-usage-latest.json. Avoid more large builds until cache growth is
+addressed. Preserve source, SECURITY.md changes, raw evidence and source snapshots.
+
+Next: agree/perform appropriate generated-cache cleanup, reduce future debug/test
+cache growth, finish optimized Windows build/native regression, inspect clean
+workspace screenshots (existing ones include the deliberately tested error banner),
+harden large server-template correlation budgets, then update all status docs.
+Active replay/authenticated identity execution and remaining product phases are
+still incomplete. Linux Desktop/signing/installers/live cloud remain unverified.
+
+## Web/API offline workspace - current work (2026-10-17)
+
+Base HEAD: `70bc08d`. The pre-existing SECURITY.md edit is preserved. No Git remote
+configuration, credentials, user DB, imported samples or evidence were inspected
+or reset. Baseline current-source Rust tests (99 passed, one ignored) and frontend
+17 tests passed again before implementation.
+
+Implemented in source (native acceptance IN PROGRESS): HAR 1.2 bounded import,
+base64 content decoding, redacted request/response inventory, native picker/drop
+review, OpenAPI 3.0/3.1 JSON/YAML with same-document pointers and parser budgets,
+endpoint correlation, captured-role diff/ownership indicators, notes, restricted
+original evidence, review-only findings and exports. A fixed offline captured-header
+handler uses the existing Job Engine, evidence and explicit selected-result AI
+consent. CLI shares every backend service. Schema 010 is additive and snapshots
+older databases to pre-v10 backups. Existing AI routes and schema 009 remain intact.
+
+This is an OFFLINE analysis slice, not full Phase 1 or v1.0 acceptance. Active
+replay/request editing, authenticated test identities, automatic BOLA/BFLA testing,
+full JSON Schema validation and external/multi-file references remain unavailable.
+No imported request is sent to any endpoint. AI review is a separate explicit
+preview/destination approval and is tested only against an owned loopback mock.
+
+Current tasks: finish Rust/Clippy/frontend checks; build actual Tauri/CLI; run
+`tests/e2e/http-workspace.mjs` through the native file picker and restart; inspect
+screenshots; run native regression; test Linux shared Core/CLI if WSL is available.
+Source before changes: artifacts/web-api-source-1792240236/before.tar.gz.
+Do not mark the new slice RUNTIME_VERIFIED until the native result exists.
+
 ## AI Provider Manager - current verified source (2026-10-17)
 
 Implemented on HEAD `d6af47e`, as explicitly requested after the external working-tree

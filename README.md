@@ -1,5 +1,12 @@
 # ReconX AI
 
+**Web Security / API Security** now import HAR 1.2 and OpenAPI 3.0/3.1 JSON/YAML
+through native file dialogs or drag-and-drop review. Inspect real offline traffic,
+documented endpoints, captured identity/role observations and comparison evidence;
+queue header review through the existing jobs and export reviewable findings/reports.
+Imports never replay requests. See [Web/API workspace](docs/WEB_API_WORKSPACE.md)
+for CLI commands, redaction, parser limits and remaining functionality.
+
 Configure AI in **Settings → AI Providers → Add AI Provider**: select a provider
 and model, paste the API key, then save. Built-in profiles configure their API
 protocol and endpoint automatically; local servers can be keyless. **Test
@@ -100,6 +107,11 @@ npm run test:native
 ```
 
 scripts/verify.ps1 -Native performs these checks and the real WebView2 test. Add -ToolInstall to exercise official tool download/verification/health/uninstall in isolated test data. Native tests require a custom-protocol desktop/CLI build and use a loopback mock AI server. Screenshots/results live in ignored artifacts. scripts/dev.ps1 starts normal development; scripts/toolchain.json records the tested compiler/runtime versions. Dependency resolution is locked; CI fixes Rust 1.95.0 and Node 24.15.0.
+
+Add `-HttpWorkspace` for native offline HAR/OpenAPI, captured comparison, report
+and restart acceptance, and `-AiProviders` for provider setup/model fixtures.
+Build and verification scripts disable Rust incremental cache during execution
+to avoid retaining tens of GiB, then restore the invoking environment's setting.
 
 Add -Visual to capture the dashboard and nine secondary pages at 1920x1080, 1600x900, 1440x900, 1366x768 and 1280x720, check horizontal overflow, and exercise search, panel collapse, notifications, AI pane resizing and masked credential controls. This option also enables the native build/test. Native screenshots emulate content viewports in the actual WebView2.
 

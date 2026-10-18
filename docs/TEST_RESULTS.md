@@ -1,3 +1,64 @@
+# Current Web/API verification - 2026-10-18
+
+Current source is the preserved working tree on HEAD 70bc08d; product 0.1.0. This is an offline Web/API acceptance milestone, not full v1.0. All native suites below used the exact optimized binaries in `artifacts/windows-web-api-20261018-105742`; hashes and source fingerprints are in `artifacts/http-current-verification.json`.
+
+| Command/check | Actual result | Record |
+| --- | --- | --- |
+| cargo fmt --all -- --check | exit 0 | artifacts/http-verified-format.log |
+| cargo clippy --locked --workspace --all-targets -j2 -- -D warnings | exit 0 | artifacts/http-verified-clippy.log |
+| cargo test --locked --workspace -j2 | 112 passed, 0 failed, 1 ignored | artifacts/http-verified-rust.log |
+| npm run build / Tauri frontend prebuild | TypeScript/Vite passed | artifacts/http-verified-tauri.log |
+| npm test | 22 passed, 0 failed, 4 files | artifacts/http-verified-frontend-tests.log |
+| npm run tauri -- build --no-bundle | optimized Windows Desktop built | artifacts/http-verified-tauri.log |
+| cargo build --locked --release -p reconx -j2 | optimized Windows CLI built | artifacts/http-verified-cli-release.log |
+| Linux cargo test --locked --offline --workspace --exclude reconx-desktop -j2 | 112 passed, 0 failed, 1 ignored | artifacts/http-current-linux.log; separate stderr log |
+| PowerShell build/verify AST parse | no syntax errors | actual console check; scripts restore the caller incremental setting |
+
+The ignored case is the explicit OS-secret-store fixture. Native provider acceptance separately exercises synthetic Credential Manager values. All test DBs/workspaces and sample accounts are task-owned. No normal user DB or real cloud account was used.
+
+## Current Windows native execution
+
+| Suite | Passed checkpoints | Result |
+| --- | --- | --- |
+| native | 8 | `artifacts/native-1792295863172/results.json` |
+| http-workspace | 10 | `artifacts/http-workspace-1792296085396/results.json` |
+| recon-local | 7 | `artifacts/recon-local-1792295916549/results.json` |
+| ai-providers | 10 | `artifacts/native-ai-providers-1792295928577/results.json` |
+| inputs | 9 | `artifacts/inputs-1792295937679/results.json` |
+| jobs | 8 | `artifacts/jobs-1792295947866/results.json` |
+| integrations | 6 | `artifacts/integrations-1792295974285/results.json` |
+| outputs | 6 | `artifacts/outputs-1792295992032/results.json` |
+
+Total **64 passed checkpoints**, 8 suites. The extra HTTP pass extends the same matched binaries to overlapping-target partitioning; its previous 9-checkpoint record is retained in the manifest, not double-counted.
+
+Actual HTTP coverage: native HAR/JSON/YAML dialogs, redacted decoded bodies, independent SHA-256, original integrity, local existing-worker job/evidence, destination-approved mock AI review, captured ownership/status comparison, Needs Verification finding, all four report formats, malformed-input retry, persistent notes, restart, Desktop/CLI parity and cross-target documentation/inventory isolation. No imported request was replayed. A model's interpretation never verifies a finding.
+
+The broader suites recheck real PE import/analysis, target/scope, jobs and actual cancellation/timeout/termination recovery, three themes, chat streaming/cancel, secure synthetic provider setup, verified official YARA-X lifecycle, real benign MCP calls, explicit local AI plans, evidence/finding/CVSS/report gates and manually approved owned-loopback HEAD inventory.
+
+## Visual and independent output inspection
+
+Actual current screenshots were viewed in `artifacts/http-workspace-1792296085396`: http-reconx-1920.png, http-light-1920.png, http-dark-1366.png and http-target-partition-matrix.png. The suite captures both 1920 and 1366 in all three themes; no document horizontal overflow. These are real WebView2 captures, not generated mockups. Narrow layouts require vertical scrolling; no native high-DPI or Linux Desktop claim is added.
+
+Independent pypdf parsing read 4 actual report pages, found the comparison finding and none of the six synthetic credential markers: `artifacts/http-workspace-1792296085396/pdf-inspection.json`. This is separate from checking the PDF magic bytes. Existing outputs acceptance also independently verifies Vietnamese text/redaction. A limited known GitHub-token/private-key pattern scan found zero matches in both delivered executables: artifacts/http-current-binary-pattern-review.json. It is not a complete secret/security audit.
+
+## Retained failures and corrections
+
+- Native Recon showed a completed DB job with a stale UI: artifacts/recon-local-1792294752360/results.json. A deterministic frontend test failed before the request-version guard and passed after; final native recon passes.
+- A prior native Node process exited 3221226505 without a diagnostic: artifacts/http-release-verification.json / http-release-native-native.log. Cause remains unestablished. The fresh current full suite passed; the earlier abort is not erased or explained away.
+- Linux initially lacked its former /tmp toolchain; checksum-verified official rustup restored Rust 1.95.0 into a task-local /var/tmp directory, with no sudo or profile changes. Staging initially omitted manifests and native-sample.rs, then was corrected. Earlier failed logs remain http-final-linux*.log.
+- Mixed WSL stdout/stderr handles produced overlapping log text. Final verification captures inside Linux and forwards streams separately; complete final counts are from the clean log.
+- TypeScript caught an incorrect origin field and an incomplete typed test fixture; Clippy caught a complex grouping tuple. Both were fixed; final checks pass with no warning suppression.
+
+## Source changes and remaining acceptance
+
+Implemented core service/models in crates/reconx-core/src/http.rs, existing jobs/lib bindings, storage migration 010/storage lib, shared CLI dispatch/tests and Tauri request handlers. Desktop adds HttpPage/http.ts/http.css/tests and wires existing routes; ReconPage gains the stale-load guard/test. Deterministic fixtures and native HTTP acceptance, Cargo dependency/lock, scripts/build.ps1, scripts/verify.ps1, CI, README and status docs are updated. Pre-existing SECURITY.md changes are preserved. No commit/push occurred.
+
+The complete Web/API module remains PARTIAL: no live identity replay engine, full schema validation, general scanners or verified external Burp/ZAP adapter. Captured labels do not establish authorization. Redacted HTTP export covers the entire project. Original Restricted attachments remain sensitive; redaction is heuristic and sharing needs review. Custom-workspace Windows ACLs and strong OS sandboxing remain open. Linux results cover actual Parrot/WSL Core/CLI, not Desktop/Secret Service/installers. Live cloud accounts, signing and Windows/Linux installer acceptance remain unverified. Full v1.0 release remains blocked.
+
+---
+
+Older checkpoint sections below are retained for provenance. The current checkpoint above takes precedence.
+
 # AI Provider Manager - verified 2026-10-17
 
 Current source: HEAD `d6af47e` plus preserved local changes. This section supersedes

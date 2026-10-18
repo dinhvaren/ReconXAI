@@ -1,6 +1,90 @@
 use serde_json::Value;
 use std::process::Command;
 #[test]
+fn offline_http_import_inventory_and_compare_use_the_same_core_records() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("http.db");
+    let core = reconx_core::Core::open(Some(db.clone())).unwrap();
+    let project = core.create_project("CLI traffic fixture", "").unwrap().id;
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/reconx-core/tests/fixtures/http");
+    for name in ["alice.har", "bob.har"] {
+        let file = fixture.join(name);
+        let r = run(
+            &db,
+            &[
+                "web",
+                "import-har",
+                file.to_str().unwrap(),
+                "--project",
+                &project,
+                "--identity",
+                name,
+            ],
+        );
+        assert!(r.status.success(), "{}", String::from_utf8_lossy(&r.stderr));
+    }
+    let spec = fixture.join("openapi31.yaml");
+    let r = run(
+        &db,
+        &[
+            "api",
+            "import-openapi",
+            spec.to_str().unwrap(),
+            "--project",
+            &project,
+        ],
+    );
+    assert!(r.status.success(), "{}", String::from_utf8_lossy(&r.stderr));
+    let out = run(&db, &["web", "traffic", "--project", &project]);
+    assert!(out.status.success());
+    let ws: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(ws["total"], 3);
+    assert_eq!(ws["endpoints"][0]["documented"], true);
+    let matrix = run(&db, &["api", "authz-matrix", "--project", &project]);
+    assert!(matrix.status.success());
+    let matrix: Value = serde_json::from_slice(&matrix.stdout).unwrap();
+    assert_eq!(matrix["authorization_matrix"].as_array().unwrap().len(), 2);
+    assert_eq!(matrix["authorization_matrix"][0]["capture_count"], 2);
+    let first = ws["traffic"][0]["id"].as_str().unwrap();
+    let second = ws["traffic"][1]["id"].as_str().unwrap();
+    let out = run(
+        &db,
+        &["api", "diff", first, second, "--owner-field", "owner"],
+    );
+    assert!(out.status.success());
+    let comparison: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(comparison["network_requests"], 0);
+    assert_eq!(core.http_exchange(first).unwrap().id, first);
+    assert_eq!(
+        core.http_workspace(&project, None, "", 0)
+            .unwrap()
+            .comparisons
+            .len(),
+        1
+    );
+    let out = run(&db, &["api", "finding", comparison["id"].as_str().unwrap()]);
+    assert!(out.status.success());
+    assert_eq!(
+        core.findings(Some(&project)).unwrap()[0].input.status,
+        reconx_core::FindingStatus::NeedsVerification
+    );
+    let malformed = dir.path().join("malformed.har");
+    std::fs::write(&malformed, "not JSON").unwrap();
+    let out = run(
+        &db,
+        &[
+            "web",
+            "import-har",
+            malformed.to_str().unwrap(),
+            "--project",
+            &project,
+        ],
+    );
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("INVALID_HTTP_IMPORT"));
+}
+#[test]
 fn ai_catalog_keyless_profiles_and_agent_routing_share_the_desktop_database() {
     let dir = tempfile::tempdir().unwrap();
     let db = dir.path().join("ai.db");
