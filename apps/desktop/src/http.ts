@@ -46,6 +46,7 @@ export interface HttpExchange {
 export interface ApiOperation {
   id: string;
   import_id: string;
+  target_id?: string | null;
   method: string;
   path: string;
   summary: string;
@@ -54,6 +55,22 @@ export interface ApiOperation {
   security: unknown;
   request_body: unknown;
   responses: unknown;
+}
+export interface SchemaObservation {
+  classification: string;
+  rule: string;
+  message: string;
+  capture_pointer: string;
+  instance_pointer: string;
+  openapi_pointer: string;
+  capture_evidence_id: string;
+  openapi_evidence_id: string;
+}
+export interface SchemaReview {
+  observations: SchemaObservation[];
+  checks: number;
+  coverage: string;
+  network_requests: number;
 }
 export interface HttpComparison {
   id: string;

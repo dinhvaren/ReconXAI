@@ -1,3 +1,33 @@
+## Current roadmap checkpoint - manual HTTP slice, 2026-10-18
+
+Delivered the manually approved owned-loopback request/identity vertical slice on migration012 through the same Desktop/CLI services, worker, traffic, evidence and report pipeline. Current proof: artifacts/replay-current-verification.json; Windows/Linux Core+CLI Rust 133 each, frontend 26, nine Windows native suites/77 checkpoints. This is not the full active Web/API milestone.
+
+Next: deepen bounded offline schema observations and evidence-linked manual authorization expectations/ownership review, then address remaining trusted-CA TLS/termination/credential-store acceptance gaps. Keep raw evidence separate from interpretation and all local sends individually reviewed. Automatic authorization testing, stateful request sequences, arbitrary-target scanner orchestration and future domains remain incomplete. Linux Desktop, packaging/installers/signing and live cloud interoperability require independent proof. Preserve the existing UI/three themes/fonts, user data and 0.1.0 version; v1_release.ready remains false.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current roadmap checkpoint - manual HTTP slice, 2026-10-18
+
+Delivered the manually approved owned-loopback request/identity vertical slice on migration012 through the same Desktop/CLI services, worker, traffic, evidence and report pipeline. Current proof: artifacts/replay-current-verification.json; Windows/Linux Core+CLI Rust 133 each, frontend 26, nine Windows native suites/76 checkpoints. This is not the full active Web/API milestone.
+
+Next: deepen bounded offline schema observations and evidence-linked manual authorization expectations/ownership review, then address dedicated TLS/termination/credential-store acceptance gaps. Keep raw evidence separate from interpretation and all local sends individually reviewed. Automatic authorization testing, stateful request sequences, arbitrary-target scanner orchestration and future domains remain incomplete. Linux Desktop, packaging/installers/signing and live cloud interoperability require independent proof. Preserve the existing UI/three themes/fonts, user data and 0.1.0 version; v1_release.ready remains false.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current roadmap checkpoint - offline schema slice, 2026-10-18
+
+Implemented and verified bounded offline schema observations, migration 011, shared existing jobs/evidence, Desktop operation selection and CLI parity. Windows/Linux Core+CLI Rust 124 each; frontend 23; eight native suites/66 checkpoints; optimized Desktop/CLI. artifacts/schema-current-verification.json contains exact proof. This is partial schema coverage, with explicit unsupported/inconclusive outcomes rather than automatic vulnerability findings.
+
+Next deliver reviewed request drafts and manually approved owned-loopback fixture replay, then secure synthetic auth profiles and evidence-backed local authorization comparisons. General scanner automation, full JSON Schema, broader agents/research domains, Linux Desktop and release installers/signing remain incomplete. Preserve existing fonts/themes/layout/data; keep product 0.1.0 and v1_release.ready=false.
+
+---
+
+Older checkpoint sections below are retained for provenance. The checkpoint above takes precedence.
+
 ## Current roadmap checkpoint - 2026-10-18
 
 Delivered and tested the offline Web/API vertical slice on schema 010 through Desktop and CLI. HAR/OpenAPI -> actual captured inspection/identity comparison -> persistent evidence -> Needs Verification finding -> reviewed Markdown/JSON/HTML/PDF works. Current proof: 112 Rust tests per Windows/Linux Core-CLI, 22 frontend tests and 64 native checkpoints; see `artifacts/http-current-verification.json`.

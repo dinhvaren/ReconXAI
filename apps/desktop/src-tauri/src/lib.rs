@@ -105,6 +105,50 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    HttpDraftSeed {
+        exchange: String,
+        target: Option<String>,
+    },
+    HttpDrafts {
+        project: String,
+        target: Option<String>,
+    },
+    HttpDraftSave {
+        id: Option<String>,
+        input: reconx_core::HttpDraftInput,
+        revision: Option<i64>,
+    },
+    HttpReplayPreview {
+        id: String,
+    },
+    HttpReplayEnqueue {
+        approval: reconx_core::HttpReplayApproval,
+    },
+    HttpReplayHistory {
+        id: String,
+    },
+    HttpAuthProfiles {
+        project: String,
+        target: Option<String>,
+    },
+    HttpAuthSave {
+        id: Option<String>,
+        input: reconx_core::HttpAuthInput,
+        revision: Option<i64>,
+        secret: Option<String>,
+    },
+    HttpAuthExpire {
+        id: String,
+        revision: i64,
+    },
+    HttpAuthRemove {
+        id: String,
+        revision: i64,
+    },
+    HttpSchemaEnqueue {
+        exchange: String,
+        operation: String,
+    },
     HttpReviewEnqueue {
         id: String,
     },
@@ -502,6 +546,40 @@ fn local(core: Core, request: Request) -> Result<Value> {
             )?;
             Ok(Value::Null)
         }
+        Request::HttpDraftSeed { exchange, target } => {
+            value(core.http_draft_seed(&exchange, target.as_deref())?)
+        }
+        Request::HttpDrafts { project, target } => {
+            value(core.http_drafts(&project, target.as_deref())?)
+        }
+        Request::HttpDraftSave {
+            id,
+            input,
+            revision,
+        } => value(core.http_draft_save(id.as_deref(), input, revision)?),
+        Request::HttpReplayPreview { id } => value(core.http_replay_preview(&id)?),
+        Request::HttpReplayEnqueue { approval } => value(core.http_replay_enqueue(approval)?),
+        Request::HttpReplayHistory { id } => value(core.http_replay_history(&id)?),
+        Request::HttpAuthProfiles { project, target } => {
+            value(core.http_auth_profiles(&project, target.as_deref())?)
+        }
+        Request::HttpAuthSave {
+            id,
+            input,
+            revision,
+            secret,
+        } => value(core.http_auth_save(
+            id.as_deref(),
+            input,
+            revision,
+            secret.map(zeroize::Zeroizing::new),
+        )?),
+        Request::HttpAuthExpire { id, revision } => value(core.http_auth_expire(&id, revision)?),
+        Request::HttpAuthRemove { id, revision } => value(core.http_auth_remove(&id, revision)?),
+        Request::HttpSchemaEnqueue {
+            exchange,
+            operation,
+        } => value(core.http_schema_enqueue(&exchange, &operation)?),
         Request::HttpReviewEnqueue { id } => value(core.http_review_enqueue(&id)?),
         Request::HttpImport { kind, input, path } => value(core.http_import(&kind, input, &path)?),
         Request::HttpWorkspace {

@@ -27,6 +27,12 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Saved requests and individually approved loopback replay.
+    #[command(subcommand)]
+    Http(HttpCommand),
+    /// Secure project/target-bound HTTP identities. No plaintext credential output.
+    #[command(subcommand)]
+    Auth(AuthCommand),
     /// Offline HAR traffic and HTTP capture analysis. Never replays requests.
     #[command(subcommand)]
     Web(WebCommand),
@@ -68,6 +74,96 @@ enum Command {
     Completions {
         shell: clap_complete::Shell,
     },
+}
+#[derive(Subcommand)]
+enum HttpCommand {
+    Requests {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Inspect {
+        id: String,
+    },
+    Seed {
+        exchange: String,
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Save {
+        input: PathBuf,
+        #[arg(long)]
+        id: Option<String>,
+        #[arg(long)]
+        revision: Option<i64>,
+    },
+    Preview {
+        id: String,
+    },
+    /// Queue one exact reviewed request; jobs run executes the durable queue.
+    Replay {
+        id: String,
+        #[arg(long)]
+        fingerprint: String,
+        #[arg(long)]
+        approve: bool,
+    },
+    History {
+        id: String,
+    },
+    /// Compare actual capture IDs, including results of manual requests.
+    Compare {
+        first: String,
+        second: String,
+    },
+}
+#[derive(Subcommand)]
+enum AuthCommand {
+    Profiles {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Add {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        target: String,
+        #[arg(long)]
+        name: String,
+        #[arg(long)]
+        role: String,
+        #[arg(long)]
+        kind: String,
+        #[arg(long, default_value = "")]
+        header: String,
+        #[arg(long)]
+        key_stdin: bool,
+    },
+    /// Replace credentials and/or metadata. The input file contains metadata only.
+    Update {
+        id: String,
+        input: PathBuf,
+        #[arg(long)]
+        revision: i64,
+        #[arg(long)]
+        replace_key: bool,
+        #[arg(long)]
+        key_stdin: bool,
+    },
+    Expire {
+        id: String,
+        #[arg(long)]
+        revision: i64,
+    },
+    Remove {
+        id: String,
+        #[arg(long)]
+        revision: i64,
+    },
+    Cleanup,
 }
 #[derive(Args)]
 struct HttpImportArgs {
@@ -116,6 +212,11 @@ enum WebCommand {
 }
 #[derive(Subcommand)]
 enum ApiCommand {
+    /// Queue offline schema consistency observations for a capture/operation pair.
+    SchemaCheck {
+        exchange: String,
+        operation: String,
+    },
     ImportOpenapi(HttpImportArgs),
     Endpoints {
         #[arg(long)]
@@ -718,6 +819,15 @@ fn read_ai_secret(stdin: bool, prompt: &str) -> Result<Zeroizing<String>> {
         )?))
     }
 }
+fn read_http_secret(stdin: bool) -> Result<Zeroizing<String>> {
+    let mut secret = read_ai_secret(
+        stdin,
+        "HTTP credential (hidden; Basic uses username:password): ",
+    )?;
+    let length = secret.trim_end_matches(['\r', '\n']).len();
+    secret.truncate(length);
+    Ok(secret)
+}
 fn select_ai_default(core: &Core, id: &str) -> Result<Value> {
     let config = core.provider(id)?;
     if !config.enabled || (config.requires_key && !core.credential_status(id)?) {
@@ -849,6 +959,112 @@ async fn execute(cli: &Cli) -> Result<Value> {
     }
     let core = Core::open(cli.database.clone())?;
     match &cli.command {
+        Command::Http(command) => match command {
+            HttpCommand::Requests { project, target } => {
+                serialize(core.http_drafts(project, target.as_deref())?)
+            }
+            HttpCommand::Inspect { id } => serialize(core.http_draft(id)?),
+            HttpCommand::Seed { exchange, target } => {
+                serialize(core.http_draft_seed(exchange, target.as_deref())?)
+            }
+            HttpCommand::Save {
+                input,
+                id,
+                revision,
+            } => {
+                let input = serde_json::from_str(&read_file(input)?).map_err(|_| {
+                    AppError::new("INVALID_INPUT", "Invalid HTTP request metadata file")
+                })?;
+                serialize(core.http_draft_save(id.as_deref(), input, *revision)?)
+            }
+            HttpCommand::Preview { id } => serialize(core.http_replay_preview(id)?),
+            HttpCommand::Replay {
+                id,
+                fingerprint,
+                approve,
+            } => serialize(core.http_replay_enqueue(reconx_core::HttpReplayApproval {
+                draft_id: id.clone(),
+                fingerprint: fingerprint.clone(),
+                approved: *approve,
+            })?),
+            HttpCommand::History { id } => serialize(core.http_replay_history(id)?),
+            HttpCommand::Compare { first, second } => {
+                core.http_compare(reconx_core::HttpComparisonInput {
+                    left: first.clone(),
+                    right: second.clone(),
+                    owner_field: String::new(),
+                })
+            }
+        },
+        Command::Auth(command) => match command {
+            AuthCommand::Profiles { project, target } => {
+                serialize(core.http_auth_profiles(project, target.as_deref())?)
+            }
+            AuthCommand::Add {
+                project,
+                target,
+                name,
+                role,
+                kind,
+                header,
+                key_stdin,
+            } => {
+                let kind: reconx_core::HttpAuthKind =
+                    serde_json::from_value(json!(kind)).map_err(|_| {
+                        AppError::new(
+                            "INVALID_INPUT",
+                            "Use anonymous, cookie, bearer, api_key, basic or custom_header",
+                        )
+                    })?;
+                let secret = if kind == reconx_core::HttpAuthKind::Anonymous {
+                    None
+                } else {
+                    Some(read_http_secret(*key_stdin)?)
+                };
+                serialize(core.http_auth_save(
+                    None,
+                    reconx_core::HttpAuthInput {
+                        project_id: project.clone(),
+                        target_id: target.clone(),
+                        name: name.clone(),
+                        role: role.clone(),
+                        kind,
+                        header_name: header.clone(),
+                    },
+                    None,
+                    secret,
+                )?)
+            }
+            AuthCommand::Update {
+                id,
+                input,
+                revision,
+                replace_key,
+                key_stdin,
+            } => {
+                let input = serde_json::from_str(&read_file(input)?).map_err(|_| {
+                    AppError::new("INVALID_INPUT", "Invalid HTTP identity metadata file")
+                })?;
+                let secret = if *replace_key {
+                    Some(read_http_secret(*key_stdin)?)
+                } else {
+                    None
+                };
+                serialize(core.http_auth_save(Some(id), input, Some(*revision), secret)?)
+            }
+            AuthCommand::Expire { id, revision } => {
+                core.http_auth_expire(id, *revision)?;
+                Ok(Value::Null)
+            }
+            AuthCommand::Remove { id, revision } => {
+                core.http_auth_remove(id, *revision)?;
+                Ok(Value::Null)
+            }
+            AuthCommand::Cleanup => {
+                core.http_auth_cleanup()?;
+                Ok(Value::Null)
+            }
+        },
         Command::Web(command) => match command {
             WebCommand::Analyze { id } => serialize(core.http_review_enqueue(id)?),
             WebCommand::ImportHar(args) => http_import_cli(&core, "har", args),
@@ -863,6 +1079,10 @@ async fn execute(cli: &Cli) -> Result<Value> {
             WebCommand::Export { project, output } => core.http_export(project, output),
         },
         Command::Api(command) => match command {
+            ApiCommand::SchemaCheck {
+                exchange,
+                operation,
+            } => serialize(core.http_schema_enqueue(exchange, operation)?),
             ApiCommand::ImportOpenapi(args) => http_import_cli(&core, "openapi", args),
             ApiCommand::Endpoints { project, target } => serialize(
                 core.http_workspace(project, target.as_deref(), "", 0)?

@@ -41,6 +41,30 @@ fn offline_http_import_inventory_and_compare_use_the_same_core_records() {
     let ws: Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(ws["total"], 3);
     assert_eq!(ws["endpoints"][0]["documented"], true);
+    let schema = run(
+        &db,
+        &[
+            "api",
+            "schema-check",
+            ws["traffic"][0]["id"].as_str().unwrap(),
+            ws["operations"][0]["id"].as_str().unwrap(),
+        ],
+    );
+    assert!(
+        schema.status.success(),
+        "{}",
+        String::from_utf8_lossy(&schema.stderr)
+    );
+    let schema: Value = serde_json::from_slice(&schema.stdout).unwrap();
+    let executed = run(&db, &["jobs", "run"]);
+    assert!(
+        executed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&executed.stderr)
+    );
+    let shared = core.job(schema["id"].as_str().unwrap()).unwrap();
+    assert_eq!(shared.status, "completed");
+    assert_eq!(shared.result.unwrap()["network_requests"], 0);
     let matrix = run(&db, &["api", "authz-matrix", "--project", &project]);
     assert!(matrix.status.success());
     let matrix: Value = serde_json::from_slice(&matrix.stdout).unwrap();

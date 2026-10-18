@@ -31,14 +31,14 @@ impl Database {
         let previous: i64 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if (1..10).contains(&previous) {
+        if (1..12).contains(&previous) {
             // VACUUM INTO takes a consistent SQLite snapshot, including committed WAL data.
             // It refuses to overwrite a file. Backups live beside the private database.
             let stamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_err(|_| AppError::new("BACKUP_FAILED", "System clock is invalid"))?
                 .as_nanos();
-            let backup = path.with_extension(format!("pre-v10-{stamp}.bak"));
+            let backup = path.with_extension(format!("pre-v12-{stamp}.bak"));
             conn.execute("VACUUM INTO ?1", [backup.to_string_lossy().as_ref()])
                 .map_err(|_| {
                     AppError::new(
@@ -60,7 +60,7 @@ impl Database {
         let version: i64 = tx
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if version > 10 {
+        if version > 12 {
             return Err(AppError::new(
                 "SCHEMA_TOO_NEW",
                 "Database was created by a newer ReconX version; no migration was performed",
@@ -136,6 +136,18 @@ impl Database {
             tx.pragma_update(None, "user_version", 10)
                 .map_err(db_error)?;
         }
+        if version < 11 {
+            tx.execute_batch(include_str!("../migrations/011_offline_schema_review.sql"))
+                .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 11)
+                .map_err(db_error)?;
+        }
+        if version < 12 {
+            tx.execute_batch(include_str!("../migrations/012_manual_http_replay.sql"))
+                .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 12)
+                .map_err(db_error)?;
+        }
         tx.commit().map_err(db_error)?;
         Ok(database)
     }
@@ -158,12 +170,141 @@ impl Database {
 mod tests {
     use super::*;
     #[test]
+    fn version_eleven_replay_upgrade_keeps_http_schema_history_and_creates_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("v11.db");
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute_batch("DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Schema checkpoint','Retained private notes','before','before'); INSERT INTO evidence(id,project_id,kind,title,created_at,metadata_json) VALUES('e','p','attachment','Retained evidence','before','{}'); INSERT INTO http_imports VALUES('i','p',NULL,'har','Existing capture','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','before','e','{}'); INSERT INTO http_exchanges VALUES('c','i','p',NULL,'example.test','GET','/',200,'{}'); INSERT INTO api_operations VALUES('o','i','p',NULL,'GET','/','{}'); INSERT INTO analysis_jobs(id,project_id,kind,status,created_at,timeout_ms,logs_json,result_json) VALUES('j','p','offline_schema_review','completed','before',30000,'[]','{\"observations\":[]}'); INSERT INTO http_schema_jobs VALUES('j','c','o','bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');").unwrap();
+        conn.pragma_update(None, "user_version", 11).unwrap();
+        let upgraded = Database::open(&path).unwrap();
+        let backup = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .find(|e| e.file_name().to_string_lossy().contains("pre-v12"))
+            .unwrap();
+        let snapshot =
+            Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .unwrap();
+        assert_eq!(
+            snapshot
+                .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
+                .unwrap(),
+            11
+        );
+        for c in [snapshot, upgraded.connect().unwrap()] {
+            assert_eq!(
+                c.query_row(
+                    "SELECT fingerprint FROM http_schema_jobs WHERE job_id='j'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+                "b".repeat(64)
+            );
+            assert_eq!(
+                c.query_row(
+                    "SELECT result_json FROM analysis_jobs WHERE id='j'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+                "{\"observations\":[]}"
+            );
+            assert!(
+                c.prepare("PRAGMA foreign_key_check")
+                    .unwrap()
+                    .query([])
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        assert_eq!(
+            upgraded
+                .connect()
+                .unwrap()
+                .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
+                .unwrap(),
+            12
+        );
+    }
+    #[test]
+    fn version_ten_schema_review_upgrade_preserves_http_and_snapshots_wal() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("v10.db");
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute_batch("DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Retained HTTP','private notes','before','before'); INSERT INTO evidence(id,project_id,kind,title,created_at,metadata_json) VALUES('e','p','attachment','private source','before','{}'); INSERT INTO http_imports VALUES('h','p',NULL,'har','Retained capture','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','before','e','{}'); INSERT INTO http_exchanges VALUES('c','h','p',NULL,'example.test','GET','/',200,'{}'); INSERT INTO http_notes VALUES('c','Retained note','before');").unwrap();
+        conn.pragma_update(None, "user_version", 10).unwrap();
+        let upgraded = Database::open(&path).unwrap();
+        assert_eq!(
+            upgraded
+                .connect()
+                .unwrap()
+                .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
+                .unwrap(),
+            12
+        );
+        let backup = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .find(|e| e.file_name().to_string_lossy().contains("pre-v12"))
+            .unwrap();
+        let snapshot =
+            Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .unwrap();
+        assert_eq!(
+            snapshot
+                .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
+                .unwrap(),
+            10
+        );
+        for c in [snapshot, upgraded.connect().unwrap()] {
+            assert_eq!(
+                c.query_row(
+                    "SELECT note FROM http_notes WHERE exchange_id='c'",
+                    [],
+                    |r| r.get::<_, String>(0)
+                )
+                .unwrap(),
+                "Retained note"
+            );
+            assert_eq!(
+                c.query_row("SELECT sha256 FROM http_imports WHERE id='h'", [], |r| {
+                    r.get::<_, String>(0)
+                })
+                .unwrap(),
+                "a".repeat(64)
+            );
+            assert!(
+                c.prepare("PRAGMA foreign_key_check")
+                    .unwrap()
+                    .query([])
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        assert_eq!(
+            upgraded
+                .connect()
+                .unwrap()
+                .query_row("SELECT count(*) FROM http_schema_jobs", [], |r| r
+                    .get::<_, u32>(0))
+                .unwrap(),
+            0
+        );
+    }
+    #[test]
     fn version_nine_http_migration_preserves_projects_providers_and_agent_routes() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("v9.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
-        conn.execute_batch("DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('retained','Retained project','Notes stay intact','before','before'); INSERT INTO providers(id,name,json) VALUES('profile','Retained model','{\"model\":\"fixture\"}'); INSERT INTO ai_profile_metadata(provider_id,vendor_id,options_json) VALUES('profile','custom','{\"streaming\":false}'); INSERT INTO ai_agent_routing VALUES('web','profile');").unwrap();
+        conn.execute_batch("DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('retained','Retained project','Notes stay intact','before','before'); INSERT INTO providers(id,name,json) VALUES('profile','Retained model','{\"model\":\"fixture\"}'); INSERT INTO ai_profile_metadata(provider_id,vendor_id,options_json) VALUES('profile','custom','{\"streaming\":false}'); INSERT INTO ai_agent_routing VALUES('web','profile');").unwrap();
         conn.pragma_update(None, "user_version", 9).unwrap();
         drop(conn);
         drop(db);
@@ -199,7 +340,7 @@ mod tests {
         assert_eq!(
             conn.pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
                 .unwrap(),
-            10
+            12
         );
         assert_eq!(
             conn.query_row("SELECT count(*) FROM pragma_foreign_key_check", [], |r| r
@@ -213,7 +354,7 @@ mod tests {
             std::fs::read_dir(dir.path())
                 .unwrap()
                 .flatten()
-                .any(|e| e.file_name().to_string_lossy().contains("pre-v10"))
+                .any(|e| e.file_name().to_string_lossy().contains("pre-v12"))
         );
     }
     #[test]
@@ -223,7 +364,7 @@ mod tests {
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
         conn.execute_batch("CREATE TABLE retained_http_artifact(id TEXT PRIMARY KEY,sha256 TEXT);INSERT INTO retained_http_artifact VALUES('retained','unchanged');DROP TABLE ai_agent_routing;DROP TABLE ai_profile_metadata;CREATE TABLE ai_profile_metadata(provider_id TEXT PRIMARY KEY REFERENCES providers(id),vendor_id TEXT NOT NULL DEFAULT 'custom',models_json TEXT NOT NULL DEFAULT '[]',models_fingerprint TEXT,models_refreshed_at TEXT,connection_json TEXT);").unwrap();
-        conn.execute_batch("DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports;").unwrap();
+        conn.execute_batch("DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports;").unwrap();
         conn.pragma_update(None, "user_version", 8).unwrap();
         drop(conn);
         drop(db);
@@ -241,7 +382,7 @@ mod tests {
         assert_eq!(
             conn.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            10
+            12
         );
         for column in ["options_json", "header_names_json", "revision"] {
             assert!(
@@ -253,7 +394,7 @@ mod tests {
             std::fs::read_dir(dir.path())
                 .unwrap()
                 .flatten()
-                .any(|p| p.file_name().to_string_lossy().contains("pre-v10"))
+                .any(|p| p.file_name().to_string_lossy().contains("pre-v12"))
         );
     }
     #[test]
@@ -321,7 +462,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            10
+            12
         );
     }
     #[test]
@@ -357,12 +498,12 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
                 .unwrap(),
-            10
+            12
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|e| e.ok())
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v10"))
+            .find(|e| e.file_name().to_string_lossy().contains("pre-v12"))
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -395,7 +536,7 @@ mod tests {
                 .unwrap()
                 .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
                 .unwrap(),
-            10
+            12
         );
         let backup = std::fs::read_dir(dir.path())
             .unwrap()

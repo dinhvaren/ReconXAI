@@ -98,6 +98,136 @@ const perform = async (fn: () => Promise<unknown>) => {
     /* App performs user-visible error handling; dialog also reports it. */
   }
 };
+it("queues the selected capture/operation through the shared backend and shows inconclusive schema evidence honestly", async () => {
+  const user = userEvent.setup();
+  let queued: Record<string, unknown> | undefined;
+  const message = {
+    headers: [],
+    cookies: [],
+    body: {
+      mime_type: "application/json",
+      preview: { id: 1 },
+      decoded_size: 8,
+      encoded: false,
+    },
+    http_version: "HTTP/1.1",
+  };
+  const result = {
+    checks: 3,
+    network_requests: 0,
+    coverage: "partial checks",
+    observations: [
+      {
+        classification: "insufficient_evidence",
+        rule: "redacted_value",
+        message: "Value was redacted; no type verdict",
+        capture_pointer: "/log/entries/0/response/content/text",
+        instance_pointer: "/token",
+        openapi_pointer: "/components/schemas/User/properties/token",
+        capture_evidence_id: "har-evidence",
+        openapi_evidence_id: "spec-evidence",
+      },
+    ],
+  };
+  vi.mocked(invoke).mockImplementation(async (_command, args) => {
+    const value = (args as { request: Record<string, unknown> }).request;
+    if (value.op === "http_workspace")
+      return {
+        ...empty,
+        total: 1,
+        traffic: [
+          {
+            id: "capture",
+            import_id: "har",
+            project_id: "p",
+            target_id: null,
+            method: "GET",
+            url: "https://api.example.test/api/users/1",
+            host: "api.example.test",
+            path: "/api/users/1",
+            status: 200,
+            identity: "alice",
+            role: "reader",
+            started_at: "",
+            elapsed_ms: 1,
+            authentication: [],
+            query_parameters: [],
+            request: message,
+            response: message,
+          },
+        ],
+        operations: [
+          {
+            id: "operation",
+            import_id: "spec",
+            target_id: null,
+            method: "GET",
+            path: "/users/{id}",
+            summary: "Owned API",
+          },
+        ],
+        analysis_jobs: queued
+          ? [
+              {
+                exchange_id: "capture",
+                job: {
+                  id: "job",
+                  kind: "offline_schema_review",
+                  status: "completed",
+                  progress: 100,
+                  stage: "Completed",
+                  result,
+                  logs: ["Offline"],
+                },
+              },
+            ]
+          : [],
+      };
+    if (value.op === "http_schema_enqueue") {
+      queued = value;
+      return { id: "job" };
+    }
+    if (value.op === "http_note") return "";
+    return null;
+  });
+  render(
+    <HttpPage
+      page="API Security"
+      data={data}
+      projectId="p"
+      busy={false}
+      perform={perform}
+      navigate={() => {}}
+    />,
+  );
+  await screen.findByRole("heading", { name: "Traffic captures (1)" });
+  await user.click(
+    document.querySelector(".http-explorer button.http-item") as HTMLElement,
+  );
+  const button = screen.getByRole("button", {
+    name: "Check documented schema",
+  });
+  expect(button).toBeDisabled();
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "Schema operation" }),
+    "operation",
+  );
+  expect(queued).toBeUndefined();
+  await user.click(button);
+  await screen.findByRole("region", { name: "Offline schema observations" });
+  expect(queued).toEqual({
+    op: "http_schema_enqueue",
+    exchange: "capture",
+    operation: "operation",
+  });
+  expect(screen.getByText("Insufficient evidence")).toBeInTheDocument();
+  await user.click(screen.getByText("Source evidence and schema location"));
+  expect(screen.getByText("har-evidence")).toBeInTheDocument();
+  expect(screen.getByText("spec-evidence")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Edit request / replay to loopback" }),
+  ).toBeEnabled();
+});
 it("requires a project and never renders fabricated traffic", async () => {
   render(
     <HttpPage

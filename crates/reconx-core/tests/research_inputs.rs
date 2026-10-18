@@ -396,7 +396,7 @@ fn migration_preserves_version_one_projects_settings_and_providers() {
             .unwrap()
             .pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))
             .unwrap(),
-        10
+        12
     );
     Database::open(&path).unwrap();
 }

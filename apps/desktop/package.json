@@ -16,7 +16,8 @@
     "test:outputs": "node ../../tests/e2e/outputs.mjs",
     "test:local-inventory": "node ../../tests/e2e/recon-local.mjs",
     "test:ai-providers": "node ../../tests/e2e/ai-providers.mjs",
-    "test:http-workspace": "node ../../tests/e2e/http-workspace.mjs"
+    "test:http-workspace": "node ../../tests/e2e/http-workspace.mjs",
+    "test:http-replay": "node ../../tests/e2e/http-replay.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.3",

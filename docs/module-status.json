@@ -126,7 +126,7 @@
     {
       "id": "web_api_offline",
       "status": "PARTIAL",
-      "verification": "artifacts/http-workspace-1792296085396/results.json",
+      "verification": "artifacts/schema-current-verification.json",
       "remaining": [
         "active editor/replay and protected authenticated identities",
         "full JSON Schema and multi-file reference support",
@@ -138,7 +138,8 @@
         "captured identity matrix",
         "offline job and approved mock AI interpretation",
         "integrity-linked comparison and review-only finding",
-        "four-format reports and restart"
+        "four-format reports and restart",
+        "bounded offline schema observations with hash/pointer provenance and exact target/origin isolation"
       ]
     }
   ],
@@ -378,13 +379,13 @@
       "id": "local_http_inventory",
       "status": "TESTED",
       "verification": "One manually approved loopback HEAD; real assets/private evidence/report, cancel/failure/restart and CLI parity",
-      "evidence": "artifacts/recon-local-1792217644790/results.json"
+      "evidence": "artifacts/recon-local-1792314487988/results.json"
     },
     {
       "id": "linux_core_cli",
       "status": "TESTED",
-      "verification": "Current-source AI manager tests and bounded native acceptance; artifacts/ai-manager-verification.json. Live cloud and Linux Desktop unverified.",
-      "evidence": "artifacts/linux-verify-1792217270990/acceptance.json"
+      "verification": "Current-source offline schema Core/CLI suite: 124 passed, one ignored; Linux Desktop unverified",
+      "evidence": "artifacts/schema-current-linux.log"
     },
     {
       "id": "ai_provider_manager",
@@ -399,28 +400,61 @@
     {
       "id": "offline_http_workspace",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-workspace-1792296085396/results.json",
+      "verification": "artifacts/replay-current-verification.json",
       "scope": "Bounded offline slice only; full Web/API module remains PARTIAL"
+    },
+    {
+      "id": "offline_schema_consistency",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/schema-current-verification.json",
+      "scope": "Bounded offline type/required/properties/items and HTTP metadata observations only; no automatic vulnerability, replay or full JSON Schema claim",
+      "limitations": [
+        "unsupported schema constraints/dialects remain explicit",
+        "redacted/serialized parameter values are inconclusive",
+        "absolute documented origin and exact target partition required",
+        "ambiguous older identical captures require reimport for this review"
+      ]
+    },
+    {
+      "id": "manual_loopback_http_replay",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/replay-current-verification.json",
+      "scope": "One individually approved owned-loopback request through existing jobs; no remote or autonomous adapter"
+    },
+    {
+      "id": "secure_http_auth_profiles",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/http-replay-1792314338414/results.json",
+      "scope": "Windows OS-backed native Bearer identities; other methods tested with real local HTTP and a deterministic secret store; Linux Secret Service runtime unverified"
+    },
+    {
+      "id": "active_authorization_matrix",
+      "status": "NOT_STARTED",
+      "scope": "Captured multi-identity comparison/manual finding review exists; no automatic BOLA/BFLA or stateful execution"
+    },
+    {
+      "id": "stateful_api_testing",
+      "status": "NOT_STARTED"
     }
   ],
   "verification": {
-    "rust_passed": 112,
+    "rust_passed": 133,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 22,
+    "frontend_passed": 26,
     "frontend_failed": 0,
-    "native_scenarios_passed": 8,
+    "native_scenarios_passed": 9,
     "ui_page_viewport_observations": 50,
     "theme_page_viewport_observations": 12,
     "debug_record": "artifacts/native-1792081858453/results.json",
-    "release_record": "artifacts/http-current-verification.json",
+    "release_record": "artifacts/replay-current-verification.json",
     "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
     "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
-    "inputs_release_record": "artifacts/inputs-1792217578167/results.json",
+    "inputs_release_record": "artifacts/inputs-1792314409622/results.json",
     "inputs_checkpoints_per_scenario": 9,
     "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Current optimized offline Web/API slice: Windows native and Linux Core/CLI. Older debug/preservation/typography fields are historical. Full v1.0 remains blocked.",
+    "note": "Current reviewed loopback HTTP/secure-identity slice and existing native regressions; legacy typography/debug fields are historical. Overall Web/API and v1.0 remain incomplete. Linux Desktop/Secret Service unverified.",
     "typography_before_record": "artifacts/typography-refinement/before/results.json",
     "typography_after_record": "artifacts/typography-refinement/after/results.json",
     "typography_observations_per_phase": 57,
@@ -455,7 +489,7 @@
       "local_inventory": 7
     },
     "jobs_debug_record": "artifacts/jobs-1792081914450/results.json",
-    "jobs_release_record": "artifacts/jobs-1792217588488/results.json",
+    "jobs_release_record": "artifacts/jobs-1792314420262/results.json",
     "native_configurations": [
       "windows-debug",
       "windows-release"
@@ -463,31 +497,32 @@
     "preservation_record": "artifacts/release-upgrade-1792216876468/after.json",
     "normal_startup_record": "artifacts/windows-x64/normal-startup.json",
     "integrations_debug_record": "artifacts/integrations-1792081951499/results.json",
-    "integrations_release_record": "artifacts/integrations-1792217614199/results.json",
+    "integrations_release_record": "artifacts/integrations-1792314447326/results.json",
     "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
     "release_sha256": {
-      "reconx.exe": "c02cb202b052e157657c203f5eda68b3b3b14241675c7e70e85c12607cf549e2",
-      "reconx-desktop.exe": "7d8658f278c7d4c5c2f2a5b322f569daec64bdb0362bc819ded07a97e3d25df3"
+      "reconx.exe": "b26e8c82094a3216750a9e1eb5ad67b72931769a994fd87f0f535c229f8e8bfe",
+      "reconx-desktop.exe": "be53fbbf2459796f0ec214782a80a42e3505f293ab6084006bc09cb2edca5fb9"
     },
-    "outputs_release_record": "artifacts/outputs-1792217631931/results.json",
+    "outputs_release_record": "artifacts/outputs-1792314471536/results.json",
     "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
     "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
-    "local_inventory_release_record": "artifacts/recon-local-1792217644790/results.json",
-    "linux_core_cli_record": "artifacts/linux-verify-1792217270990/acceptance.json",
-    "release_native_checkpoints_total": 64,
+    "local_inventory_release_record": "artifacts/recon-local-1792314487988/results.json",
+    "linux_core_cli_record": "artifacts/replay-linux-current-stdout.log",
+    "release_native_checkpoints_total": 77,
     "release_records": {
-      "native": "artifacts/native-1792295863172/results.json",
-      "http-workspace": "artifacts/http-workspace-1792296085396/results.json",
-      "recon-local": "artifacts/recon-local-1792295916549/results.json",
-      "ai-providers": "artifacts/native-ai-providers-1792295928577/results.json",
-      "inputs": "artifacts/inputs-1792295937679/results.json",
-      "jobs": "artifacts/jobs-1792295947866/results.json",
-      "integrations": "artifacts/integrations-1792295974285/results.json",
-      "outputs": "artifacts/outputs-1792295992032/results.json"
+      "http-replay": "artifacts/http-replay-1792314338414/results.json",
+      "http-workspace": "artifacts/http-workspace-1792314349444/results.json",
+      "native": "artifacts/native-1792314366857/results.json",
+      "inputs": "artifacts/inputs-1792314409622/results.json",
+      "jobs": "artifacts/jobs-1792314420262/results.json",
+      "integrations": "artifacts/integrations-1792314447326/results.json",
+      "outputs": "artifacts/outputs-1792314471536/results.json",
+      "recon-local": "artifacts/recon-local-1792314487988/results.json",
+      "ai-providers": "artifacts/native-ai-providers-1792314502191/results.json"
     },
     "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
-    "linux_current_rust_passed": 112,
-    "linux_current_record": "artifacts/http-current-linux.log",
+    "linux_current_rust_passed": 133,
+    "linux_current_record": "artifacts/replay-linux-current-stdout.log",
     "previous_release_records": {
       "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
       "regression": "artifacts/native-1792238059810/results.json",
@@ -497,7 +532,33 @@
       "research_outputs": "artifacts/outputs-1792238163896/results.json",
       "local_inventory": "artifacts/recon-local-1792238177437/results.json"
     },
-    "http_workspace_record": "artifacts/http-workspace-1792296085396/results.json"
+    "http_workspace_record": "artifacts/http-workspace-1792314349444/results.json",
+    "native_checkpoints_total": 77,
+    "current_schema_native_counts": {
+      "http-workspace": 12,
+      "native": 8,
+      "inputs": 9,
+      "jobs": 8,
+      "integrations": 6,
+      "outputs": 6,
+      "recon-local": 7,
+      "ai-providers": 10
+    },
+    "current_manual_http_native_counts": {
+      "http-replay": 11,
+      "http-workspace": 12,
+      "native": 8,
+      "inputs": 9,
+      "jobs": 8,
+      "integrations": 6,
+      "outputs": 6,
+      "recon-local": 7,
+      "ai-providers": 10
+    },
+    "negative_tls_records": [
+      "artifacts/replay-tls-windows.log",
+      "artifacts/replay-tls-linux.log"
+    ]
   },
   "v1_release": {
     "ready": false,
@@ -510,7 +571,7 @@
       "Live cloud providers and security integration profiles unverified"
     ]
   },
-  "database_schema_version": 10,
+  "database_schema_version": 12,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -526,9 +587,9 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "webkit2gtk-4.1 SDK absent; no privileged system packages installed",
       "current_core_cli_tests": {
-        "passed": 112,
+        "passed": 133,
         "ignored": 1,
-        "record": "artifacts/http-current-linux.log"
+        "record": "artifacts/replay-linux-current-stdout.log"
       }
     }
   },
@@ -536,32 +597,32 @@
     {
       "page": "Dashboard",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Projects",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Targets & Scope",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Reconnaissance",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Web Security",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "API Security",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Network Security",
@@ -571,7 +632,7 @@
     {
       "page": "Reverse Engineering",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Mobile Security",
@@ -591,47 +652,47 @@
     {
       "page": "AI Workspace",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Agent Workflows",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "MCP Hub",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Tool Manager",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Findings",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Evidence",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Reports",
       "status": "PARTIAL",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Settings",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/http-current-verification.json"
+      "verification": "artifacts/replay-current-verification.json"
     },
     {
       "page": "Job Center",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/jobs-1792295947866/results.json"
+      "verification": "artifacts/jobs-1792314420262/results.json"
     },
     {
       "page": "Red Team Lab",
@@ -639,5 +700,5 @@
       "verification": "No dedicated workspace implemented"
     }
   ],
-  "current_web_api_verification": "artifacts/http-current-verification.json"
+  "current_web_api_verification": "artifacts/replay-current-verification.json"
 }

@@ -279,6 +279,9 @@ impl Core {
         if job.kind == "local_http_inventory" {
             self.local_http_job_plan(job)?;
         }
+        if job.kind == "manual_http_replay" {
+            self.http_replay_job_plan(job, false)?;
+        }
         if self.project(&job.project_id)?.archived {
             return Err(AppError::new(
                 "PROJECT_ARCHIVED",
@@ -311,8 +314,15 @@ impl Core {
                 "Timeout expired before result commit",
             ));
         }
+        let mut replay_artifact = None;
         if let Some(http) = prepared.http.as_ref() {
-            prepared.result = self.commit_local_http(&tx, job, http)?;
+            if job.kind == "manual_http_replay" {
+                let pending = self.commit_http_replay(&tx, job, http)?;
+                prepared.result = pending.result.clone();
+                replay_artifact = Some(pending);
+            } else {
+                prepared.result = self.commit_local_http(&tx, job, http)?;
+            }
         }
         let changed=tx.execute("UPDATE analysis_jobs SET status='completed',progress=100,stage='Completed',finished_at=?1,result_json=?2,worker_id=NULL,lease_until=NULL,logs_json=json_insert(logs_json,'$[#]','Result committed') WHERE id=?3 AND status='running' AND worker_id=?4 AND cancel_requested=0",params![now(),serde_json::to_string(&prepared.result).map_err(json_error)?,job.id,owner]).map_err(db_error)?;
         if changed != 1 {
@@ -338,7 +348,11 @@ impl Core {
             }
         }
         Self::audit(&tx, "job.completed", &job.id, "completed")?;
-        tx.commit().map_err(db_error)
+        tx.commit().map_err(db_error)?;
+        if let Some(pending) = replay_artifact.as_mut() {
+            pending.keep();
+        }
+        Ok(())
     }
     fn fail_job(&self, id: &str, owner: &str, error: &AppError) -> Result<()> {
         let mut conn = self.db.connect()?;
@@ -394,6 +408,8 @@ impl Core {
                 },
                 "local_http_inventory"=>self.prepare_local_http(&job,&mut update)?,
                 "offline_http_review"=>self.prepare_http_review(&job,&mut update)?,
+                "offline_schema_review"=>self.prepare_http_schema(&job,&mut update)?,
+                "manual_http_replay"=>self.prepare_http_replay(&job,&mut update)?,
                 "mcp_tool"=>self.prepare_mcp_job(&job,&mut update)?,
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;

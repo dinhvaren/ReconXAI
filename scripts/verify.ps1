@@ -1,4 +1,4 @@
-param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory, [switch]$AiProviders, [switch]$HttpWorkspace)
+param([switch]$Native, [switch]$ToolInstall, [switch]$Visual, [switch]$Inputs, [switch]$Jobs, [switch]$Integrations, [switch]$Outputs, [switch]$LocalInventory, [switch]$AiProviders, [switch]$HttpWorkspace, [switch]$HttpReplay)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 # Large Tauri debug builds otherwise retain tens of GiB of incremental objects.
@@ -18,7 +18,7 @@ try {
         Invoke-Checked npm @('run','build')
         Invoke-Checked npm @('test')
     } finally { Pop-Location }
-    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory -or $AiProviders -or $HttpWorkspace) {
+    if ($Native -or $Visual -or $Inputs -or $Jobs -or $Integrations -or $Outputs -or $LocalInventory -or $AiProviders -or $HttpWorkspace -or $HttpReplay) {
         Invoke-Checked cargo @('build','--locked','-p','reconx','-p','reconx-desktop','--features','reconx-desktop/custom-protocol')
         $previousToolFlag = $env:RECONX_E2E_TOOL_INSTALL
         $previousVisualFlag = $env:RECONX_E2E_VISUAL
@@ -33,6 +33,7 @@ try {
             if($LocalInventory){Invoke-Checked node @('tests/e2e/recon-local.mjs')}
             if($AiProviders){Invoke-Checked node @('tests/e2e/ai-providers.mjs')}
             if($HttpWorkspace){Invoke-Checked node @('tests/e2e/http-workspace.mjs')}
+            if($HttpReplay){Invoke-Checked node @('tests/e2e/http-replay.mjs')}
         } finally {
             $env:RECONX_E2E_TOOL_INSTALL=$previousToolFlag
             $env:RECONX_E2E_VISUAL=$previousVisualFlag

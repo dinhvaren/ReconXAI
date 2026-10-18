@@ -30,3 +30,5 @@ tests/
 
 !/tests/e2e/ai-providers.mjs
 !/tests/e2e/http-workspace.mjs
+!/tests/e2e/http-replay.mjs
+!/tests/e2e/https-replay.mjs

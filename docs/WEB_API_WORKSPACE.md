@@ -1,3 +1,21 @@
+# Current manual extension - 2026-10-18
+
+Offline HAR/OpenAPI/schema workflows below are preserved. A separate, individually reviewed owned-loopback request editor and secure project identity manager now reuse those captures, jobs, evidence and reports. Import/save never sends traffic. Commands, security boundaries and limits: [HTTP_REPLAY.md](HTTP_REPLAY.md). Current actual runtime proof: artifacts/replay-current-verification.json; overall Web/API remains PARTIAL. The existing captured role comparison is not an automated active authorization matrix.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+# Current manual extension - 2026-10-18
+
+Offline HAR/OpenAPI/schema workflows below are preserved. A separate, individually reviewed owned-loopback request editor and secure project identity manager now reuse those captures, jobs, evidence and reports. Import/save never sends traffic. Commands, security boundaries and limits: [HTTP_REPLAY.md](HTTP_REPLAY.md). Current actual runtime proof: artifacts/replay-current-verification.json; overall Web/API remains PARTIAL. The existing captured role comparison is not an automated active authorization matrix.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+Current extension (2026-10-18): bounded offline schema observations are now available through the existing worker, Desktop and CLI. See [HTTP_SCHEMA_ANALYSIS.md](HTTP_SCHEMA_ANALYSIS.md) for exact coverage, source provenance, migration 011 and limitations. Active replay and credential-backed authorization testing remain unfinished.
+
 # Offline Web/API workspace
 
 The Web Security and API Security pages share a Rust service, schema 010 and the

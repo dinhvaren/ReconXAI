@@ -1,3 +1,39 @@
+## Current HTTP request/identity slice - 2026-10-18
+
+RUNTIME_VERIFIED bounded manual loopback slice: imported request drafts, secure project/target/origin identity manager, exact review/approval, real GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS transport with policy gates, persistent job state/history/captures, cancellation and comparison/evidence/report integration. Actual native acceptance exercises GET/POST and two OS-backed Bearer identities; other auth methods use real HTTP core fixtures with a deterministic secret-store adapter. Saving never sends traffic or marks authenticated.
+
+Target deletion preserves HTTP history and disables retained identities. Negative self-signed TLS rejection is separately verified on Windows/Linux Core-CLI. Migration012 and pre-v12 backup/preservation tests pass; existing projects, HAR/OpenAPI/schema011 records, AI settings and credentials are preserved. Fonts, layout and exactly Light/Dark/ReconX remain. Current proof: artifacts/replay-current-verification.json; Windows/Linux Core+CLI Rust 133 each, frontend 26, nine native suites/77 checkpoints, optimized Desktop/CLI and format/Clippy/types. See HTTP_REPLAY.md for commands and actual limits.
+
+Overall Web/API remains PARTIAL. No automatic BOLA/BFLA, stateful execution, arbitrary remote replay, proxy/redirect-following, multipart, scanner or autonomous HTTP agent is claimed. Captured role comparisons remain observations. Full JSON Schema, Linux Desktop/Secret Service, trusted-CA HTTPS success fixture, live cloud tests, installers/signing and full v1.0 remain incomplete/unverified.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current HTTP request/identity slice - 2026-10-18
+
+RUNTIME_VERIFIED bounded manual loopback slice: imported request drafts, secure project/target/origin identity manager, exact review/approval, real GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS transport with policy gates, persistent job state/history/captures, cancellation and comparison/evidence/report integration. Actual native acceptance exercises GET/POST and two OS-backed Bearer identities; other auth methods use real HTTP core fixtures with a deterministic secret-store adapter. Saving never sends traffic or marks authenticated.
+
+Migration012 and pre-v12 backup/preservation tests pass; existing projects, HAR/OpenAPI/schema011 records, AI settings and credentials are preserved. Fonts, layout and exactly Light/Dark/ReconX remain. Current proof: artifacts/replay-current-verification.json; Windows/Linux Core+CLI Rust 133 each, frontend 26, nine native suites/76 checkpoints, optimized Desktop/CLI and format/Clippy/types. See HTTP_REPLAY.md for commands and actual limits.
+
+Overall Web/API remains PARTIAL. No automatic BOLA/BFLA, stateful execution, arbitrary remote replay, proxy/redirect-following, multipart, scanner or autonomous HTTP agent is claimed. Captured role comparisons remain observations. Full JSON Schema, Linux Desktop/Secret Service, dedicated HTTPS fixture, live cloud tests, installers/signing and full v1.0 remain incomplete/unverified.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current offline schema review - 2026-10-18
+
+RUNTIME_VERIFIED bounded slice: Desktop and CLI can select an imported capture/operation and run persistent, cancellable offline schema observation jobs through the existing worker. Original hashes and normalized input provenance, exact origin/target isolation, JSON type/required/properties/items, status/media/header/parameter/auth observations and explicit unsupported/inconclusive cases are implemented. Source locations link both evidence artifacts. A mismatch never automatically creates or verifies a vulnerability.
+
+Migration 011 adds a job binding table and takes pre-v11 consistent backups for old schemas. User data/settings/themes/fonts are preserved. Current evidence: artifacts/schema-current-verification.json; Windows and Linux Core/CLI Rust 124 passed each (one ignored), frontend 23, eight Windows native suites/66 checkpoints, optimized Tauri/CLI and format/Clippy/types. See HTTP_SCHEMA_ANALYSIS.md for actual coverage and limits.
+
+Overall Web/API remains PARTIAL: no full JSON Schema, active replay, credential-backed stateful authorization matrix or scanner automation. Root-relative origins and ambiguous older duplicate captures cannot be used for this new review. Linux Desktop, installers/signing and live cloud verification remain UNVERIFIED. Existing captured matrices remain observational.
+
+---
+
+Older checkpoint sections below are retained for provenance. The checkpoint above takes precedence.
+
 ## Current Web/API verification - 2026-10-18
 
 The offline HAR/OpenAPI workspace is RUNTIME_VERIFIED as a bounded slice. The overall Web/API product remains PARTIAL. Native file picker/drop review, normalized traffic, target-aware endpoint inventory, captured role/identity matrix, real offline jobs, explicitly approved AI result review, integrity-linked comparison evidence, Needs Verification findings and four report formats share the existing Rust Core/SQLite services. Schema 010 is additive and snapshots older databases; no project/key/settings reset.

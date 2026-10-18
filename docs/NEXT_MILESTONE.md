@@ -1,5 +1,59 @@
 ## Current continuation checklist - 2026-10-18
 
+- [x] Preserve schema011 offline workspace and prior source/data.
+- [x] Add migration012, pre-v12 consistent backup and preservation tests.
+- [x] Share reviewed request drafts, secure synthetic identities, exact fingerprint approval and manual loopback execution between Desktop/CLI.
+- [x] Reuse existing worker, cancellation, evidence, traffic inspector/diff, findings and all four report formats.
+- [x] Fix cached draft revisions on reopen and add frontend regression.
+- [x] Verify Windows/Linux Core+CLI Rust 133 each, frontend 26, optimized Desktop/CLI and nine native suites/77 checkpoints; inspect final screenshots/PDF. Proof: artifacts/replay-current-verification.json.
+- [ ] Next safe slice: additional bounded offline schema consistency coverage and manual permission/ownership annotations linked to captured evidence. Keep all sends reviewed and loopback-only.
+- [ ] Trusted-CA HTTPS success fixture, abrupt HTTP process termination and Linux Secret Service runtime acceptance; document actual guarantees.
+- [ ] Full JSON Schema, stateful authorization automation, broader scanner/agent/research domains, Linux Desktop, installers/signing and release acceptance remain incomplete.
+
+Use artifacts/windows-replay-final-20261018-160538 for current manual acceptance. Do not reset user data, repeat completed milestones or claim full v1.0. No commit/push is authorized. Commands and restrictions: HTTP_REPLAY.md; precise continuation: MASTER_EXECUTION_PROGRESS.md.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current continuation checklist - 2026-10-18
+
+- [x] Preserve schema011 offline workspace and prior source/data.
+- [x] Add migration012, pre-v12 consistent backup and preservation tests.
+- [x] Share reviewed request drafts, secure synthetic identities, exact fingerprint approval and manual loopback execution between Desktop/CLI.
+- [x] Reuse existing worker, cancellation, evidence, traffic inspector/diff, findings and all four report formats.
+- [x] Fix cached draft revisions on reopen and add frontend regression.
+- [x] Verify Windows/Linux Core+CLI Rust 133 each, frontend 26, optimized Desktop/CLI and nine native suites/76 checkpoints; inspect final screenshots/PDF. Proof: artifacts/replay-current-verification.json.
+- [ ] Next safe slice: additional bounded offline schema consistency coverage and manual permission/ownership annotations linked to captured evidence. Keep all sends reviewed and loopback-only.
+- [ ] HTTPS fixture, abrupt HTTP process termination and Linux Secret Service runtime acceptance; document actual guarantees.
+- [ ] Full JSON Schema, stateful authorization automation, broader scanner/agent/research domains, Linux Desktop, installers/signing and release acceptance remain incomplete.
+
+Use artifacts/windows-replay-final-20261018-155056 for current manual acceptance. Do not reset user data, repeat completed milestones or claim full v1.0. No commit/push is authorized. Commands and restrictions: HTTP_REPLAY.md; precise continuation: MASTER_EXECUTION_PROGRESS.md.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+## Current continuation checklist - 2026-10-18
+
+- [x] Preserve offline HAR/OpenAPI, migration 010, AI settings and existing output pipeline.
+- [x] Add bounded evidence-linked offline schema jobs through shared Rust/Desktop/CLI.
+- [x] Verify normalized inputs, original hashes, exact target/origin, cycles and budgets.
+- [x] Add migration 011 and preservation/backup tests, with no normal user DB migration during tests.
+- [x] Pass Windows/Linux Core+CLI Rust 124 each, frontend 23 and optimized Desktop/CLI builds.
+- [x] Pass eight native suites/66 checkpoints: schema selection, actual mismatches, restart, evidence/reports, no automatic vulnerability and preserved existing functionality.
+- [ ] Next: reviewed request drafts plus a manual, bounded owned-loopback replay fixture using the existing jobs/scope policy. Keep unexpected destinations and redirect bypasses rejected.
+- [ ] Then implement secure synthetic identity profiles before local multi-role comparison; status/body-size differences must not verify a vulnerability.
+- [ ] Full JSON Schema, scanner adapters, broader research domains, independent Linux Desktop/installer/release acceptance remain unfinished.
+
+Exact source: crates/reconx-core/src/http/schema.rs; commands/limits in HTTP_SCHEMA_ANALYSIS.md. Proof: artifacts/schema-current-verification.json. Do not repeat imports/provider/output milestones or replace the current UI. Stop older clients before applying schema 011 to a real user workspace. No commit/push is authorized.
+
+---
+
+Older checkpoint sections below are retained for provenance. The checkpoint above takes precedence.
+
+## Current continuation checklist - 2026-10-18
+
 - [x] HAR/OpenAPI migration 010, shared services and native import/inspection.
 - [x] Source integrity, origin/port and target partitioning, bounded correlation, complete bounded project export.
 - [x] Captured identity matrix, offline jobs, explicit selected-result AI review and review-only finding/report flow.

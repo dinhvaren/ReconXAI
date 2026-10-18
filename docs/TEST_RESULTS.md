@@ -1,3 +1,181 @@
+# Current manual HTTP and secure identity verification - 2026-10-18
+
+This verifies a bounded manual loopback fixture slice plus existing product regressions, not autonomous authorization testing or all v1.0. Tests used isolated synthetic workspaces/credentials and owned local fixtures; normal user data and cloud providers were not used. Exact binaries: artifacts/windows-replay-final-20261018-160538. Source/binary hashes and machine-readable proof: artifacts/replay-current-verification.json.
+
+| Command/check | Actual result | Record |
+|---|---|---|
+| cargo fmt --all -- --check | pass | artifacts/replay-current-format.log |
+| cargo clippy --locked --workspace --all-targets -j2 -- -D warnings | pass | artifacts/replay-current-clippy.log |
+| cargo test --locked --workspace -j2 | 133 passed, 0 failed, 1 ignored | artifacts/replay-current-rust.log |
+| Linux cargo test --locked --offline --workspace --exclude reconx-desktop -j2 | 133 passed, 0 failed, 1 ignored | artifacts/replay-linux-current-stdout.log; separate stderr log |
+| npm run build (TypeScript and Vite) | pass | artifacts/replay-current-frontend-build.log |
+| npm test | 26 passed, 0 failed | artifacts/replay-current-frontend-tests.log |
+| npm run tauri -- build --no-bundle | pass; subsequent custom-protocol build includes final guard/target preservation | artifacts/replay-verified-tauri-build.log |
+| cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2 | pass, final matched binary pair | artifacts/replay-current-release-build.log |
+| Native http-replay | 11 passed | artifacts/http-replay-1792314338414/results.json |
+| Native http-workspace | 12 passed | artifacts/http-workspace-1792314349444/results.json |
+| Native native | 8 passed | artifacts/native-1792314366857/results.json |
+| Native inputs | 9 passed | artifacts/inputs-1792314409622/results.json |
+| Native jobs | 8 passed | artifacts/jobs-1792314420262/results.json |
+| Native integrations | 6 passed | artifacts/integrations-1792314447326/results.json |
+| Native outputs | 6 passed | artifacts/outputs-1792314471536/results.json |
+| Native recon-local | 7 passed | artifacts/recon-local-1792314487988/results.json |
+| Native ai-providers | 10 passed | artifacts/native-ai-providers-1792314502191/results.json |
+
+Nine native suites total 77 checkpoints, all passed. Actual new runtime proof includes native HAR picker, no import/registration autosend, masked OS-backed Alice/Bob keys, actual POST/GET and identity-dependent output, credential-echo redaction, job logs/history, CLI approval handled by Desktop worker, external redirect not followed, real pending cancellation, restart reuse without secret reentry, four report formats and all three theme dialogs at 1920/1440/1366. Existing target/file/job/MCP/mock-AI/provider/report workflows also pass. The ignored generic OS-store unit test remains ignored by default; new Windows native credential tests genuinely use the OS store.
+
+Separate negative TLS acceptance also passed on native Windows CLI and Linux Core/CLI: artifacts/replay-tls-windows.log and artifacts/replay-tls-linux.log. Each contacted the owned local TLS fixture, rejected its self-signed certificate with HTTP_CONNECT, and sent zero HTTP requests. No trust store was changed; ephemeral key/certificate files were removed. Trusted-CA HTTPS success is not established. The new target-deletion acceptance preserves history and disables detached identities.
+
+Independent PDF inspection: artifacts/http-replay-1792314338414/pdf-inspection.json. Report text decoded by pypdf; tested credential markers absent from PDF/JSON/HTML/Markdown and default traffic export, and ordinary DB/WAL. Final screenshots in the HTTP replay result directory were opened and inspected, including request review, actual redacted response and three themes. Dialog spacing/width changed only within the two new forms. No live cloud API or arbitrary public-target testing was performed. Linux Core/CLI is not Linux Desktop, HTTPS fixture or Secret Service runtime verification.
+
+New core tests cover actual network execution, five credential methods, echo redaction, secure rotation/expiry/deletion and deferred cleanup, stale approvals, project/origin isolation, forbidden destinations/headers/proxies/redirect policies, oversized declared/chunked responses, timeout and cancellation. Tests also check no plaintext keys in SQLite and reject selected credentials in public payloads. Migration011 history survives012 with backup/FK checks. Frontend tests reject extra returned metadata in save payloads and stale choices during editor reopen.
+
+Retained failed attempts: artifacts/replay-full-rust-first.log (accepted Windows fixture sockets now explicitly blocking); the two early native results http-replay-1792312481422 and http-replay-1792312573558 (uncaptured review failure/stale selector risk, then empty successful CLI output parsed as JSON). The selector now waits for fresh revisions with regression coverage; the runner accepts empty mutation output. Do not assert that the first uncaptured error's exact cause was proven. Failed Linux staging logs remain under replay-linux/replay-linux-final; current stage includes MCP fixtures and recompiles the embedded manifest path correctly. Synthetic OS keys from failed native fixtures were removed separately; user keys were untouched. Earlier passing native run before the final loading guard is retained separately from the final matched run.
+
+Remaining unverified/incomplete: automatic BOLA/BFLA/stateful testing, general remote replay, proxy/followed redirects, multipart/binary upload, full JSON Schema, trusted-CA HTTPS success and abrupt HTTP termination fixture, live providers, Linux Desktop/Secret Service, installer/signing and full release acceptance. No such feature is promoted based on compilation.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+# Current manual HTTP and secure identity verification - 2026-10-18
+
+This verifies a bounded manual loopback fixture slice plus existing product regressions, not autonomous authorization testing or all v1.0. Tests used isolated synthetic workspaces/credentials and owned local fixtures; normal user data and cloud providers were not used. Exact binaries: artifacts/windows-replay-final-20261018-155056. Source/binary hashes and machine-readable proof: artifacts/replay-current-verification.json.
+
+| Command/check | Actual result | Record |
+|---|---|---|
+| cargo fmt --all -- --check | pass | artifacts/replay-current-format.log |
+| cargo clippy --locked --workspace --all-targets -j2 -- -D warnings | pass | artifacts/replay-current-clippy.log |
+| cargo test --locked --workspace -j2 | 133 passed, 0 failed, 1 ignored | artifacts/replay-current-rust.log |
+| Linux cargo test --locked --offline --workspace --exclude reconx-desktop -j2 | 133 passed, 0 failed, 1 ignored | artifacts/replay-linux-current-stdout.log; separate stderr log |
+| npm run build (TypeScript and Vite) | pass | artifacts/replay-current-frontend-build.log |
+| npm test | 26 passed, 0 failed | artifacts/replay-current-frontend-tests.log |
+| npm run tauri -- build --no-bundle | pass; subsequent custom-protocol build includes final guard/target preservation | artifacts/replay-verified-tauri-build.log |
+| cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2 | pass, final matched binary pair | artifacts/replay-current-release-build.log |
+| Native http-replay | 10 passed | artifacts/http-replay-1792313456492/results.json |
+| Native http-workspace | 12 passed | artifacts/http-workspace-1792313466894/results.json |
+| Native native | 8 passed | artifacts/native-1792313484353/results.json |
+| Native inputs | 9 passed | artifacts/inputs-1792313527088/results.json |
+| Native jobs | 8 passed | artifacts/jobs-1792313537586/results.json |
+| Native integrations | 6 passed | artifacts/integrations-1792313564297/results.json |
+| Native outputs | 6 passed | artifacts/outputs-1792313581730/results.json |
+| Native recon-local | 7 passed | artifacts/recon-local-1792313594680/results.json |
+| Native ai-providers | 10 passed | artifacts/native-ai-providers-1792313606719/results.json |
+
+Nine native suites total 76 checkpoints, all passed. Actual new runtime proof includes native HAR picker, no import/registration autosend, masked OS-backed Alice/Bob keys, actual POST/GET and identity-dependent output, credential-echo redaction, job logs/history, CLI approval handled by Desktop worker, external redirect not followed, real pending cancellation, restart reuse without secret reentry, four report formats and all three theme dialogs at 1920/1440/1366. Existing target/file/job/MCP/mock-AI/provider/report workflows also pass. The ignored generic OS-store unit test remains ignored by default; new Windows native credential tests genuinely use the OS store.
+
+Independent PDF inspection: artifacts/http-replay-1792313456492/pdf-inspection.json. Report text decoded by pypdf; tested credential markers absent from PDF/JSON/HTML/Markdown and default traffic export, and ordinary DB/WAL. Final screenshots in the HTTP replay result directory were opened and inspected, including request review, actual redacted response and three themes. Dialog spacing/width changed only within the two new forms. No live cloud API or arbitrary public-target testing was performed. Linux Core/CLI is not Linux Desktop, HTTPS fixture or Secret Service runtime verification.
+
+New core tests cover actual network execution, five credential methods, echo redaction, secure rotation/expiry/deletion and deferred cleanup, stale approvals, project/origin isolation, forbidden destinations/headers/proxies/redirect policies, oversized declared/chunked responses, timeout and cancellation. Tests also check no plaintext keys in SQLite and reject selected credentials in public payloads. Migration011 history survives012 with backup/FK checks. Frontend tests reject extra returned metadata in save payloads and stale choices during editor reopen.
+
+Retained failed attempts: artifacts/replay-full-rust-first.log (accepted Windows fixture sockets now explicitly blocking); the two early native results http-replay-1792312481422 and http-replay-1792312573558 (uncaptured review failure/stale selector risk, then empty successful CLI output parsed as JSON). The selector now waits for fresh revisions with regression coverage; the runner accepts empty mutation output. Do not assert that the first uncaptured error's exact cause was proven. Failed Linux staging logs remain under replay-linux/replay-linux-final; current stage includes MCP fixtures and recompiles the embedded manifest path correctly. Synthetic OS keys from failed native fixtures were removed separately; user keys were untouched. Earlier passing native run before the final loading guard is retained separately from the final matched run.
+
+Remaining unverified/incomplete: automatic BOLA/BFLA/stateful testing, general remote replay, proxy/followed redirects, multipart/binary upload, full JSON Schema, dedicated HTTPS and abrupt HTTP termination fixture, live providers, Linux Desktop/Secret Service, installer/signing and full release acceptance. No such feature is promoted based on compilation.
+
+---
+
+Older checkpoints below are retained for provenance; the current checkpoint above takes precedence.
+
+# Current offline schema verification - 2026-10-18
+
+Preserved source at HEAD fe76e79, product 0.1.0. This verifies a bounded offline
+schema observation slice; it does not verify active Web/API testing or all v1.0.
+Exact immutable Desktop/CLI: artifacts/windows-schema-20261018-113252.
+Source hashes, binary hashes, native paths, PDF inspection and logs are recorded in
+artifacts/schema-current-verification.json. No normal user database or real cloud
+account was used; no imported request was replayed.
+
+| Command/check | Actual result | Log |
+| --- | --- | --- |
+| Baseline cargo test --locked --workspace -j2 | 112 passed, 0 failed, 1 ignored | artifacts/schema-baseline-rust.log |
+| Baseline npm test | 22 passed | artifacts/schema-baseline-frontend.log |
+| cargo fmt --all -- --check | exit 0 | artifacts/schema-verified-format.log |
+| cargo clippy --locked --workspace --all-targets -j2 -- -D warnings | exit 0 | artifacts/schema-verified-clippy.log |
+| cargo test --locked --workspace -j2 | 124 passed, 0 failed, 1 ignored | artifacts/schema-current-rust.log |
+| npm run build; npm test | TypeScript/Vite passed; 23 frontend tests passed | artifacts/schema-final-frontend.log |
+| npm run tauri -- build --no-bundle | optimized Windows Desktop built | artifacts/schema-final-tauri.log |
+| cargo build --locked --release -p reconx -j2 | optimized Windows CLI built | artifacts/schema-verified-cli.log |
+| Linux cargo test --locked --offline --workspace --exclude reconx-desktop -j2 | 124 passed, 0 failed, 1 ignored | artifacts/schema-current-linux.log; separate stderr |
+
+The ignored case is the explicit OS-secret-store fixture. Actual native provider
+acceptance separately used synthetic Credential Manager entries. Current Linux
+verification is Parrot/WSL Core+CLI; Linux Desktop/Secret Service runtime, installers,
+signing and live cloud interoperability remain UNVERIFIED.
+
+## Windows native execution
+
+All eight suites ran sequentially against the exact binaries above. The HTTP visual
+follow-up uses those same binaries; its earlier passing record is retained rather
+than double counted. Total **66 checkpoints**, zero failures in these final runs.
+
+| Suite | Checkpoints | Actual result record |
+| --- | --- | --- |
+| http-workspace | 12 passed | artifacts/http-workspace-1792298219547/results.json |
+| native | 8 passed | artifacts/native-1792298075709/results.json |
+| inputs | 9 passed | artifacts/inputs-1792298119022/results.json |
+| jobs | 8 passed | artifacts/jobs-1792298129766/results.json |
+| integrations | 6 passed | artifacts/integrations-1792298156667/results.json |
+| outputs | 6 passed | artifacts/outputs-1792298174808/results.json |
+| recon-local | 7 passed | artifacts/recon-local-1792298187711/results.json |
+| ai-providers | 10 passed | artifacts/native-ai-providers-1792298199307/results.json |
+
+HTTP coverage: native picker HAR/JSON/YAML import, exact target/origin/schema pairing,
+real existing-worker jobs, explicit partial coverage, intentional JSON type/required
+mismatches, zero-network results, source artifact integrity/pointers, no automatic
+vulnerability creation, evidence, reviewed four-format reports, restart and shared
+CLI state. The remaining suites rechecked projects/targets, PE import/static
+analysis, cancellation/timeout/recovery, synthetic secure AI settings, real benign
+MCP calls/local AI plans, managed tool lifecycle and approved loopback HEAD inventory.
+No general scanner or active authorization-matrix acceptance is claimed.
+
+## Independent visual/output inspection
+
+Actual WebView2 schema-detail images were viewed in artifacts/http-workspace-1792298219547:
+schema-reconx-1920.png, schema-light-1440.png, schema-dark-1366.png.
+The suite captures the schema card in all three themes at 1920x1080, 1440x900 and
+1366x768. Provenance wraps at narrower widths; document overflow assertions pass.
+Existing layout/fonts/colors remain intact. Narrow panels still scroll vertically;
+no new high-DPI or Linux GUI claim is made.
+
+Independent pypdf parsing read the actual six-page report, found the schema job
+evidence and none of seven synthetic credential markers; pdf-inspection.json is
+beside the report. All four existing report exports were executed with reviewed
+snapshot hashes. Limited known GitHub-token/private-key patterns were checked in
+the exact executables; schema-binary-pattern-review.json states that limited scope.
+This is not a full security or secret audit.
+
+## Retained failures and fixes
+
+- First new schema tests: duplicate HAR entries made helper ordering select the
+  untouched entry. Each validation test now has one distinct entry; no production
+  checks were weakened. Raw schema-core-first-tests.log is retained.
+- Initial new frontend result guard treated unknown JSON as a ReactNode; an explicit
+  null check corrected it. Clippy caught an array/Vec test mismatch; corrected.
+- The new CLI test initially used jobs run <id>, but the existing command drains
+  the queue with jobs run. An old migration test expected 10 after migration 011;
+  it now expects 11 while still checking retained project/settings/provider data.
+  Earlier schema-final-rust.log/schema-verified-rust.log retain these failures.
+- WSL inline shell arguments expanded incorrectly; the same isolated toolchain
+  worked when invoked through an LF script file. Streams remain separate.
+- Native artifacts/http-workspace-1792297973145/results.json expected fields from
+  the deliberately minimal YAML schema instead of the JSON schema. The backend
+  correctly reported no such mismatch. The test selects the explicit JSON operation
+  and final native runs pass. This failed result/screenshot is retained.
+
+## Remaining acceptance
+
+The overall Web/API module is PARTIAL. Full JSON Schema, serialized parameter-value
+validation, general relative/multi-file references, request replay, secure active
+identities, stateful BOLA/BFLA research and scanner orchestration are not implemented
+by this slice. Schema observations never establish authorization or a vulnerability.
+Migration 011 snapshots older schemas with pre-v11 backups and reuses jobs/evidence;
+only isolated acceptance databases were upgraded. Stop older clients before any
+real workspace upgrade. See HTTP_SCHEMA_ANALYSIS.md for exact limits and commands.
+
+---
+
+Older checkpoint sections below are retained for provenance. This checkpoint takes precedence.
+
 # Current Web/API verification - 2026-10-18
 
 Current source is the preserved working tree on HEAD 70bc08d; product 0.1.0. This is an offline Web/API acceptance milestone, not full v1.0. All native suites below used the exact optimized binaries in `artifacts/windows-web-api-20261018-105742`; hashes and source fingerprints are in `artifacts/http-current-verification.json`.

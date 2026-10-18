@@ -305,6 +305,50 @@ try {
   checks.push(
     "Native JSON/YAML OpenAPI imports expose actual parameters/security/components and correlate templated paths with HAR",
   );
+  await page.getByRole("tab", { name: "Traffic", exact: true }).click();
+  await page.locator(".http-explorer button.http-item").first().click();
+  // The JSON fixture documents id/owner; the YAML fixture intentionally does not.
+  const schemaOperation = ws.operations.find(
+    (o) => o.summary === "Read owned test user",
+  );
+  assert(schemaOperation);
+  await page
+    .getByLabel("Schema operation", { exact: true })
+    .selectOption(schemaOperation.id);
+  await page
+    .getByRole("button", { name: "Check documented schema", exact: true })
+    .click();
+  await page
+    .getByRole("region", { name: "Offline schema observations" })
+    .waitFor({ timeout: 30000 });
+  const schemaJob = (
+    await command(["jobs", "list", "--project", project.id])
+  ).find((j) => j.kind === "offline_schema_review");
+  assert.equal(schemaJob.status, "completed");
+  assert.equal(schemaJob.result.network_requests, 0);
+  assert(schemaJob.result.coverage.startsWith("partial"));
+  assert(schemaJob.result.observations.length > 0);
+  for (const observation of schemaJob.result.observations) {
+    assert(observation.capture_pointer.startsWith("/log/entries/"));
+    assert(observation.openapi_pointer.startsWith("/"));
+    await command(["evidence", "verify", observation.capture_evidence_id]);
+    await command(["evidence", "verify", observation.openapi_evidence_id]);
+  }
+  assert(!JSON.stringify(schemaJob.result).includes("synthetic-auth-token"));
+  await page
+    .getByRole("region", { name: "Offline schema observations" })
+    .screenshot({
+      path: path.join(artifact, "offline-schema-observations.png"),
+    });
+  const schemaEvidence = await command(["evidence", "from-job", schemaJob.id]);
+  await command(["evidence", "verify", schemaEvidence.id]);
+  await writeFile(
+    path.join(artifact, "schema-job.json"),
+    JSON.stringify(schemaJob, null, 2),
+  );
+  checks.push(
+    "Native schema selection queues the existing worker, shows partial evidence-linked observations and CLI reads the same persisted zero-network result",
+  );
   await importFile(path.join(fixture, "bob.har"), "har", "bob");
   await page.getByRole("tab", { name: "Traffic", exact: true }).click();
   await page
@@ -357,7 +401,7 @@ try {
       methodology:
         "HAR/OpenAPI correlation and offline comparison; no active replay",
       finding_ids: [findings[0].id],
-      evidence_ids: [comparison.evidence_id],
+      evidence_ids: [comparison.evidence_id, schemaEvidence.id],
     }),
   );
   const report = await command(["report", "prepare", "--input", reportInput]);
@@ -487,6 +531,7 @@ try {
       .click();
     for (const [width, height] of [
       [1920, 1080],
+      [1440, 900],
       [1366, 768],
     ]) {
       await page.setViewportSize({ width, height });
@@ -503,7 +548,7 @@ try {
     }
   }
   checks.push(
-    "Actual HTTP workspace screenshots in all three themes at 1920 and 1366 have no document overflow",
+    "Actual HTTP workspace screenshots in all three themes at 1920, 1440 and 1366 have no document overflow",
   );
   await stop();
   await launch();
@@ -600,6 +645,113 @@ try {
   });
   checks.push(
     "Overlapping targets remain separate in native inventory and identity matrix; target-bound API definitions never label another target as documented",
+  );
+  await page.getByLabel("HTTP target", { exact: true }).selectOption(target.id);
+  await importFile(
+    path.join(fixture, "schema-mismatch.har"),
+    "har",
+    "schema-fixture",
+  );
+  await page.getByRole("tab", { name: "Traffic", exact: true }).click();
+  await page
+    .locator(".http-explorer button.http-item")
+    .filter({ hasText: "schema-fixture" })
+    .click();
+  await page
+    .getByLabel("Schema operation", { exact: true })
+    .selectOption(schemaOperation.id);
+  await page
+    .getByRole("button", { name: "Check documented schema", exact: true })
+    .click();
+  const schemaRegion = page.getByRole("region", {
+    name: "Offline schema observations",
+  });
+  await schemaRegion
+    .getByText("Documented mismatch", { exact: true })
+    .first()
+    .waitFor({ timeout: 30000 });
+  const mismatchCard = schemaRegion
+    .locator(".http-item")
+    .filter({ hasText: "Captured JSON type" })
+    .first();
+  await mismatchCard.getByText("Source evidence and schema location").click();
+  await mismatchCard.scrollIntoViewIfNeeded();
+  await mismatchCard.screenshot({
+    path: path.join(artifact, "schema-mismatch-detail.png"),
+  });
+  for (const theme of ["Light", "Dark", "ReconX"]) {
+    await page
+      .getByRole("button", { name: "Topbar appearance", exact: true })
+      .click();
+    await page
+      .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
+      .click();
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [1366, 768],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await mismatchCard.scrollIntoViewIfNeeded();
+      assert(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1,
+        ),
+      );
+      await mismatchCard.screenshot({
+        path: path.join(artifact, `schema-${theme.toLowerCase()}-${width}.png`),
+      });
+    }
+  }
+  await page.screenshot({
+    path: path.join(artifact, "schema-mismatch-native.png"),
+    fullPage: true,
+  });
+  const latestSchema = (
+    await command(["jobs", "list", "--project", project.id])
+  ).find((j) => j.kind === "offline_schema_review");
+  assert(
+    latestSchema.result.observations.some(
+      (o) =>
+        o.rule === "json_type" &&
+        o.classification === "confirmed_documented_mismatch",
+    ),
+  );
+  assert(
+    latestSchema.result.observations.some((o) => o.rule === "required_field"),
+  );
+  assert(!JSON.stringify(latestSchema).includes("synthetic-schema-secret"));
+  await writeFile(
+    path.join(artifact, "schema-mismatch-job.json"),
+    JSON.stringify(latestSchema, null, 2),
+  );
+  const findingsBeforeRestart = await command([
+    "findings",
+    "list",
+    "--project",
+    project.id,
+  ]);
+  assert.equal(findingsBeforeRestart.length, 1); // Schema mismatches never create vulnerabilities automatically.
+  await stop();
+  await launch();
+  const restoredSchema = (
+    await command(["jobs", "list", "--project", project.id])
+  ).find((j) => j.id === latestSchema.id);
+  assert.deepEqual(restoredSchema.result, latestSchema.result);
+  await page
+    .getByLabel("Current project", { exact: true })
+    .selectOption(project.id);
+  await page.getByRole("button", { name: "Web Security", exact: true }).click();
+  await page.getByLabel("HTTP target", { exact: true }).selectOption(target.id);
+  await page
+    .locator(".http-explorer button.http-item")
+    .filter({ hasText: "schema-fixture" })
+    .click();
+  await page
+    .getByRole("region", { name: "Offline schema observations" })
+    .waitFor();
+  checks.push(
+    "Actual mismatched JSON produces type/required observations without creating a vulnerability; native restart and CLI retain the same reviewed schema job",
   );
   await writeFile(
     path.join(artifact, "results.json"),

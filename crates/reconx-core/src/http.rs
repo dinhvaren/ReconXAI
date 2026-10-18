@@ -1,4 +1,4 @@
-//! Offline traffic ingestion. No HTTP client, replay, shell, or automatic AI egress.
+//! Offline traffic ingestion and a separately approved manual loopback replay service.
 use super::*;
 use base64::Engine;
 use serde_json::{Value, json};
@@ -7,6 +7,12 @@ use std::{
     path::Path,
 };
 use url::Url;
+mod schema;
+pub use schema::{SchemaObservation, SchemaReview};
+mod auth;
+mod replay;
+pub use auth::{HttpAuthInput, HttpAuthKind, HttpAuthProfile};
+pub use replay::{HttpDraft, HttpDraftInput, HttpHeader, HttpReplayApproval, HttpReplayPlan};
 
 pub const MAX_HTTP_IMPORT: usize = 16 * 1024 * 1024;
 const MAX_ENTRIES: usize = 2000;
@@ -40,6 +46,9 @@ pub struct HttpImport {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HttpExchange {
+    /// JSON Pointer into the original HAR. Older imports are matched conservatively.
+    #[serde(default)]
+    pub source_pointer: Option<String>,
     pub id: String,
     pub import_id: String,
     pub project_id: String,
@@ -471,7 +480,7 @@ fn parse_har(
     let mut out = Vec::new();
     let mut keys = BTreeSet::new();
     let mut duplicates = 0;
-    for entry in entries {
+    for (entry_index, entry) in entries.iter().enumerate() {
         let req = entry
             .get("request")
             .ok_or_else(|| bad("HAR entry has no request"))?;
@@ -569,7 +578,7 @@ fn parse_har(
             }
             Ok(raw)
         };
-        out.push(HttpExchange{id:Uuid::new_v4().to_string(),import_id:import_id.into(),project_id:input.project_id.clone(),target_id:input.target_id.clone(),method,url:url.to_string(),host,path,status,started_at,elapsed_ms,identity:input.identity.clone(),role:input.role.clone(),authentication,query_parameters:query.into_iter().collect(),request:json!({"headers":headers,"cookies":safe_cookies(req)?,"body":request_body,"http_version":version(req)?}),response:json!({"headers":response_headers,"cookies":safe_cookies(res)?,"body":response_body,"http_version":version(res)?}),timings:Value::Object(safe_timings),body_sha256});
+        out.push(HttpExchange{source_pointer:Some(format!("/log/entries/{entry_index}")),id:Uuid::new_v4().to_string(),import_id:import_id.into(),project_id:input.project_id.clone(),target_id:input.target_id.clone(),method,url:url.to_string(),host,path,status,started_at,elapsed_ms,identity:input.identity.clone(),role:input.role.clone(),authentication,query_parameters:query.into_iter().collect(),request:json!({"headers":headers,"cookies":safe_cookies(req)?,"body":request_body,"http_version":version(req)?}),response:json!({"headers":response_headers,"cookies":safe_cookies(res)?,"body":response_body,"http_version":version(res)?}),timings:Value::Object(safe_timings),body_sha256});
     }
     Ok((
         out,
@@ -637,11 +646,7 @@ fn validate_refs(doc: &Value, value: &Value, refs: &mut usize) -> Result<()> {
     }
     Ok(())
 }
-fn parse_openapi(
-    bytes: &[u8],
-    input: &HttpImportInput,
-    import_id: &str,
-) -> Result<(Vec<ApiOperation>, Value)> {
+fn openapi_document(bytes: &[u8]) -> Result<Value> {
     let text = std::str::from_utf8(bytes).map_err(|_| bad("OpenAPI must be UTF-8"))?;
     let doc: Value = if text.trim_start().starts_with('{') {
         parse_json(bytes)?
@@ -652,6 +657,14 @@ fn parse_openapi(
         tree_budget(&value, 0, &mut 0)?;
         value
     };
+    Ok(doc)
+}
+fn parse_openapi(
+    bytes: &[u8],
+    input: &HttpImportInput,
+    import_id: &str,
+) -> Result<(Vec<ApiOperation>, Value)> {
+    let doc = openapi_document(bytes)?;
     let version = string(&doc, "openapi")?;
     if !version.starts_with("3.0.") && !version.starts_with("3.1.") {
         return Err(bad("Only OpenAPI 3.0 and 3.1 are supported"));
@@ -1124,7 +1137,7 @@ impl Core {
             .map_err(db_error)?
             .map(|s| serde_json::from_str(&s.map_err(db_error)?).map_err(json_error))
             .collect::<Result<Vec<_>>>()?;
-        let mut jq=conn.prepare("SELECT r.job_id,r.exchange_id FROM http_review_jobs r JOIN analysis_jobs j ON j.id=r.job_id WHERE j.project_id=?1 AND (?2 IS NULL OR j.target_id=?2) ORDER BY j.created_at DESC LIMIT 100").map_err(db_error)?;
+        let mut jq=conn.prepare("SELECT r.job_id,r.exchange_id FROM (SELECT job_id,exchange_id FROM http_review_jobs UNION ALL SELECT job_id,exchange_id FROM http_schema_jobs) r JOIN analysis_jobs j ON j.id=r.job_id WHERE j.project_id=?1 AND (?2 IS NULL OR j.target_id=?2) ORDER BY j.created_at DESC LIMIT 100").map_err(db_error)?;
         let pairs = jq
             .query_map(params![project, target], |r| {
                 Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))

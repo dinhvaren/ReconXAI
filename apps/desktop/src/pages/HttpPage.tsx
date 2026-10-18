@@ -9,7 +9,13 @@ import type {
   HttpExchange,
   HttpMessage,
   HttpWorkspace,
+  SchemaReview,
 } from "../http";
+import SchemaResults from "../components/SchemaResults";
+import HttpRequestWorkspace, {
+  type AuthProfile,
+} from "../components/HttpRequestWorkspace";
+import HttpAuthManager from "../components/HttpAuthManager";
 import "../http.css";
 
 const pretty = (value: unknown) => JSON.stringify(value, null, 2);
@@ -101,6 +107,11 @@ export default function HttpPage({
   const [note, setNote] = useState("");
   const [right, setRight] = useState("");
   const [owner, setOwner] = useState("");
+  const [replayOpen, setReplayOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [replaySource, setReplaySource] = useState<string | null>(null);
+  const [testIdentity, setTestIdentity] = useState<AuthProfile | null>(null);
+  const [schemaOperation, setSchemaOperation] = useState("");
   const [comparison, setComparison] = useState<HttpComparison | null>(null);
   const [aiReview, setAiReview] = useState<{
     job_id: string;
@@ -140,7 +151,14 @@ export default function HttpPage({
     }
   }, [project, target, search, offset]);
   useJobEvents((job) => {
-    if (job.project_id === project && job.kind === "offline_http_review")
+    if (
+      job.project_id === project &&
+      [
+        "offline_http_review",
+        "offline_schema_review",
+        "manual_http_replay",
+      ].includes(job.kind)
+    )
       void load();
   });
   useEffect(() => {
@@ -211,6 +229,7 @@ export default function HttpPage({
     }
   };
   const exchange = workspace?.traffic.find((e) => e.id === selected);
+  useEffect(() => setSchemaOperation(""), [selected, project, target]);
   const targetName = (id: string | null) =>
     data.targets?.find((t) => t.id === id)?.name ??
     (id ? "Associated target unavailable" : "No associated target");
@@ -265,11 +284,29 @@ export default function HttpPage({
   return (
     <>
       <Heading
-        eyebrow="Offline research"
+        eyebrow="HTTP research"
         title={page}
-        description="Inspect captured traffic and API definitions. Imports never send requests or upload evidence."
+        description="Inspect captured traffic and API definitions. Imports never send requests; manual loopback replay requires separate review and approval."
         action={
           <div className="form-actions">
+            <button
+              className="button secondary"
+              disabled={busy || !project}
+              onClick={() => {
+                setReplaySource(null);
+                setTestIdentity(null);
+                setReplayOpen(true);
+              }}
+            >
+              Saved requests
+            </button>
+            <button
+              className="button secondary"
+              disabled={busy || !project}
+              onClick={() => setAuthOpen(true)}
+            >
+              Authentication profiles
+            </button>
             <button
               className="button secondary"
               disabled={busy || !project}
@@ -904,6 +941,49 @@ export default function HttpPage({
                       )}
                       <hr />
                       <h3>Local capture analysis</h3>
+                      <label className="field">
+                        <span>Compare with documented operation</span>
+                        <select
+                          aria-label="Schema operation"
+                          value={schemaOperation}
+                          onChange={(e) => setSchemaOperation(e.target.value)}
+                        >
+                          <option value="">
+                            Select an imported OpenAPI operation
+                          </option>
+                          {workspace.operations
+                            .filter(
+                              (op) =>
+                                (op.target_id ?? null) === exchange.target_id &&
+                                op.method === exchange.method,
+                            )
+                            .map((op) => (
+                              <option value={op.id} key={op.id}>
+                                {op.method} {op.path} ·{" "}
+                                {op.summary || op.import_id}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <button
+                        className="button secondary"
+                        disabled={busy || !schemaOperation}
+                        onClick={() =>
+                          act(async () => {
+                            await request("http_schema_enqueue", {
+                              exchange: exchange.id,
+                              operation: schemaOperation,
+                            });
+                          }, "Offline schema observation job queued")
+                        }
+                      >
+                        Check documented schema
+                      </button>
+                      <p className="helper">
+                        Uses captured JSON and metadata only. Exact target and
+                        absolute server origin must match; redacted values and
+                        unsupported constraints stay inconclusive.
+                      </p>
                       <button
                         className="button secondary"
                         disabled={busy}
@@ -921,7 +1001,12 @@ export default function HttpPage({
                         ?.filter((j) => j.exchange_id === exchange.id)
                         .map(({ job }) => (
                           <article className="http-item" key={job.id}>
-                            <span>Captured-header review · {job.status}</span>
+                            <span>
+                              {job.kind === "offline_schema_review"
+                                ? "Offline schema review"
+                                : "Captured-header review"}{" "}
+                              · {job.status}
+                            </span>
                             <small>
                               {job.stage} · {job.progress}%
                             </small>
@@ -947,6 +1032,28 @@ export default function HttpPage({
                                 {pretty({ result: job.result, logs: job.logs })}
                               </pre>
                             </details>
+                            {job.kind === "offline_schema_review" &&
+                              job.result != null && (
+                                <SchemaResults
+                                  result={job.result as unknown as SchemaReview}
+                                />
+                              )}
+                            {job.status === "completed" && (
+                              <button
+                                className="button ghost"
+                                disabled={busy}
+                                onClick={() =>
+                                  act(async () => {
+                                    await request("evidence_from_job", {
+                                      id: job.id,
+                                    });
+                                    navigate("Evidence");
+                                  })
+                                }
+                              >
+                                Open result evidence
+                              </button>
+                            )}
                             <button
                               className="button ghost"
                               disabled={
@@ -983,10 +1090,14 @@ export default function HttpPage({
                         ))}
                       <button
                         className="button secondary"
-                        disabled
-                        title="Active replay is not implemented in this offline workspace"
+                        disabled={busy}
+                        onClick={() => {
+                          setReplaySource(exchange.id);
+                          setTestIdentity(null);
+                          setReplayOpen(true);
+                        }}
                       >
-                        Replay request — unavailable
+                        Edit request / replay to loopback
                       </button>
                       <p className="helper">
                         Imported credentials and traffic are never automatically
@@ -1217,6 +1328,35 @@ export default function HttpPage({
           </button>
         </form>
       </Modal>
+      <HttpRequestWorkspace
+        open={replayOpen}
+        project={project}
+        target={target}
+        source={replaySource}
+        identity={testIdentity}
+        data={data}
+        onClose={() => setReplayOpen(false)}
+        onResponse={(id) => {
+          setView("Traffic");
+          setSearch("");
+          setOffset(0);
+          setSelected(id);
+          void load();
+        }}
+      />
+      <HttpAuthManager
+        open={authOpen}
+        project={project}
+        target={target}
+        data={data}
+        onClose={() => setAuthOpen(false)}
+        onTest={(profile) => {
+          setTarget(profile.target_id);
+          setTestIdentity(profile);
+          setReplaySource(null);
+          setReplayOpen(true);
+        }}
+      />
     </>
   );
 }
