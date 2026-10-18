@@ -251,12 +251,28 @@
   ],
   "release_blockers": [
     "Remaining research domains and agents are incomplete",
-    "Linux Desktop runtime, optimized CLI packaging and installers unverified",
+    "Linux Desktop runtime/packages and clean installers unverified; optimized Linux CLI now tested on Parrot/WSL",
     "Windows custom-workspace ACLs require review; no process sandbox",
     "Report profiles share a text-first structure; list views capped at latest 1000",
     "Live cloud providers and security integration profiles unverified",
     "glib RUSTSEC-2024-0429 unresolved; new dependency gate correctly fails",
     "Six RustSec unmaintained dependencies require upstream/path review",
     "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
-  ]
+  ],
+  "github_dependency_alerts": {
+    "fixed_high": 8,
+    "open_medium": 1,
+    "record": "artifacts/dependabot-after-second-check.json"
+  },
+  "linux_release_cli": {
+    "status": "TESTED",
+    "environment": "Parrot/WSL2",
+    "source_references": [
+      "apps/cli/src/main.rs",
+      "scripts/linux_release_smoke.py"
+    ],
+    "runtime_evidence": [
+      "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
+    ]
+  }
 }

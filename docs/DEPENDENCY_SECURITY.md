@@ -43,9 +43,12 @@ extraction/redaction: `artifacts/outputs-1792322689103/results.json` and
 These exercised the earlier immutable app binaries; final changed-source regression
 is recorded separately in TEST_RESULTS.md.
 
-State: **PATCHED_IN_SOURCE**, not automatically CLOSED_ON_GITHUB. Only a new
-authenticated alert export after the authorized push can establish remote closure.
-No alert was dismissed or severity changed.
+State: **PATCHED_IN_SOURCE and REMOTE_FIXED_VERIFIED**. After the authorized push
+of `34421a8`, a fresh authenticated export confirmed alerts #2-#9 as `fixed`, with
+fixed_at timestamps 2026-10-18 11:45:53-55 UTC:
+`artifacts/dependabot-after-second-check.json`. A separate API contents check
+verified that main contains the exact local requirements pin. Alert #1 remains
+open. No alert was dismissed or severity changed.
 
 ## Medium #1: Linux GTK/glib unsound iterator — unresolved
 

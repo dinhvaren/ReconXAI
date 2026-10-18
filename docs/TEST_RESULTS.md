@@ -1,3 +1,46 @@
+## Verified remote-security / CI / Linux CLI followup — 2026-10-18
+
+GitHub confirmed all eight pypdf High alerts (#2-#9) FIXED after authorized push
+34421a8; actual fresh export: artifacts/dependabot-after-second-check.json. Glib
+Medium #1 remains OPEN and the dependency gate remains BLOCKED; no advisory was
+dismissed. Six RustSec maintenance warnings remain. Full v1.0 is NOT COMPLETE.
+
+Remote CI initially rejected a pre-existing unquoted --only-binary=:all: pip run
+line as invalid YAML. A new Rust workflow-parser regression reproduced the exact
+line-103 error, then passed with a folded run string. Both shipped YAML workflows
+and string-valued run steps are checked. Before/fixed logs: security-workflow-
+before-fix.log, security-workflow-final.log and security-workflow-linux-final.log
+under artifacts/. This distinguishes syntax acceptance from successful CI jobs;
+the glib gate is still expected to fail. Remote full CI is not claimed successful.
+
+Latest regression: 143 Rust tests passed on Windows and 143 on Parrot/WSL Core+CLI,
+one ignored each; frontend 26 and native 9 suites/77 checkpoints remain verified.
+The followup only changes CI/test/scripts/docs, not production Rust/frontend logic;
+the same final Windows binaries/installer remain valid. Current aggregate proof:
+artifacts/security-current-verification.json. Exact latest logs:
+artifacts/security-ci-followup-{rust,clippy,linux-stdout,linux-stderr}.log.
+
+New optimized Linux CLI built offline and executed from artifacts/linux-cli-security-20261018-185625/reconx.
+Actual separate CLI processes imported /usr/bin/true, independently matched SHA-256,
+parsed Elf/X86_64 (29 sections, 581 strings), completed/persisted a real analysis
+job, verified evidence, created an explicitly synthetic Needs Verification record,
+and exported Markdown/JSON/HTML/PDF from a reviewed snapshot. Restart/process
+persistence checks passed. Independent pypdf 6.19.0 inspection of the Linux-generated
+3-page PDF confirmed Vietnamese text/redaction. Evidence: artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json,
+pdf-inspection.json, build-manifest.json, compiler.txt and SHA256SUMS.txt. Linux
+Desktop, Secret Service, packages and other distributions remain UNVERIFIED.
+
+New reusable command: python3 scripts/linux_release_smoke.py --binary PATH --output
+NEW_DIRECTORY. It refuses existing output, retains its isolated test workspace,
+uses a benign system ELF without executing it, and never calls a network/AI
+service or credential manager. CI includes this acceptance and report artifacts.
+No migration added; schema remains 012. Exact next task remains compatible glib
+remediation/isolated Linux GUI prerequisites, then remaining safe offline/product
+requirements. Source commit/push uses the user's existing authorization; no release
+publication, force-push, normal user DB/key changes or privileged package installs.
+
+---
+
 ## Current security/schema verification — 2026-10-18
 
 Functional verification passes; dependency/release acceptance remains BLOCKED.

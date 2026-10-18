@@ -68,6 +68,9 @@ jobs:
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo test --locked --workspace
       - run: cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol
+      - name: Linux optimized CLI acceptance with a benign ELF
+        if: runner.os == 'Linux'
+        run: python3 scripts/linux_release_smoke.py --binary target/release/reconx --output artifacts/linux-release-smoke
       - name: Windows native WebView2 integration
         if: runner.os == 'Windows'
         run: node tests/e2e/native.mjs
@@ -100,7 +103,9 @@ jobs:
           RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
       - name: Independent PDF parser for Windows report acceptance
         if: runner.os == 'Windows'
-        run: python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --require-hashes -r tests/e2e/requirements.txt
+        run: >-
+          python -m pip install --index-url https://pypi.org/simple
+          --only-binary=:all: --require-hashes -r tests/e2e/requirements.txt
       - name: Windows native evidence findings and reports
         if: runner.os == 'Windows'
         run: node tests/e2e/outputs.mjs
@@ -146,6 +151,8 @@ jobs:
             target/release/reconx
             target/release/reconx-desktop
             target/release/bundle/deb/*.deb
+            artifacts/linux-release-smoke/*.json
+            artifacts/linux-release-smoke/*.pdf
             artifacts/native-*/results.json
             artifacts/http-replay-*/results.json
             artifacts/http-replay-*/auth-*.png

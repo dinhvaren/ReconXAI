@@ -385,8 +385,8 @@
     {
       "id": "linux_core_cli",
       "status": "TESTED",
-      "verification": "Current shared Core/CLI: 142 passed, 1 ignored on Parrot/WSL; Linux Desktop unverified",
-      "evidence": "artifacts/security-final-linux-stdout.log"
+      "verification": "143 passed/1 ignored Core-CLI; optimized CLI ELF/evidence/finding/four-format reports acceptance on Parrot/WSL",
+      "evidence": "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
     },
     {
       "id": "ai_provider_manager",
@@ -440,22 +440,28 @@
     {
       "id": "dependency_security",
       "status": "BLOCKED",
-      "verification": "artifacts/dependency-readiness.json",
+      "verification": "artifacts/dependency-readiness-after-push.json",
       "remaining": [
         "glib 0.18.5 unsoundness",
-        "six unmaintained dependency warnings",
-        "remote alert closure confirmation after authorized push"
-      ]
+        "six unmaintained dependency warnings"
+      ],
+      "github_high_alerts_fixed": 8
     },
     {
       "id": "database_readonly_preflight",
       "status": "TESTED",
       "verification": "artifacts/security-db-preflight.json",
       "scope": "Future/corrupt database refusal preserves original bytes and does not enable WAL; full workspace backup/restore remains incomplete"
+    },
+    {
+      "id": "release_workflow_syntax",
+      "status": "TESTED",
+      "verification": "artifacts/security-workflow-final.log; artifacts/security-workflow-linux-final.log",
+      "scope": "Both YAML workflows parse and run commands are strings; remote CI success remains independent"
     }
   ],
   "verification": {
-    "rust_passed": 142,
+    "rust_passed": 143,
     "rust_failed": 0,
     "rust_ignored_default": 1,
     "explicit_os_secret_test_passed": 1,
@@ -526,7 +532,7 @@
     "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
     "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
     "local_inventory_release_record": "artifacts/recon-local-1792323626517/results.json",
-    "linux_core_cli_record": "artifacts/security-final-linux-stdout.log",
+    "linux_core_cli_record": "artifacts/security-ci-followup-linux-stdout.log",
     "release_native_checkpoints_total": 77,
     "release_records": {
       "http-replay": "artifacts/http-replay-1792314338414/results.json",
@@ -540,8 +546,8 @@
       "ai-providers": "artifacts/native-ai-providers-1792314502191/results.json"
     },
     "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
-    "linux_current_rust_passed": 142,
-    "linux_current_record": "artifacts/security-final-linux-stdout.log",
+    "linux_current_rust_passed": 143,
+    "linux_current_record": "artifacts/security-ci-followup-linux-stdout.log",
     "previous_release_records": {
       "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
       "regression": "artifacts/native-1792238059810/results.json",
@@ -585,7 +591,7 @@
     "ledger": "docs/MASTER_EXECUTION_PROGRESS.md",
     "blockers": [
       "Remaining research domains and agents are incomplete",
-      "Linux Desktop runtime, optimized CLI packaging and installers unverified",
+      "Linux Desktop runtime/packages and clean installers unverified; optimized Linux CLI now tested on Parrot/WSL",
       "Windows custom-workspace ACLs require review; no process sandbox",
       "Report profiles share a text-first structure; list views capped at latest 1000",
       "Live cloud providers and security integration profiles unverified",
@@ -606,15 +612,16 @@
       "core": "TESTED",
       "cli_debug": "TESTED",
       "desktop": "UNVERIFIED",
-      "optimized_cli": "UNVERIFIED",
+      "optimized_cli": "TESTED on Parrot/WSL2; other distributions unverified",
       "packaging": "UNVERIFIED",
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 142,
+        "passed": 143,
         "ignored": 1,
-        "record": "artifacts/security-final-linux-stdout.log"
-      }
+        "record": "artifacts/security-ci-followup-linux-stdout.log"
+      },
+      "optimized_cli_record": "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
     }
   },
   "page_inventory": [
@@ -727,8 +734,8 @@
   "current_web_api_verification": "artifacts/security-current-verification.json",
   "current_security_verification": {
     "proof": "artifacts/security-current-verification.json",
-    "windows_rust": 142,
-    "linux_core_cli_rust": 142,
+    "windows_rust": 143,
+    "linux_core_cli_rust": 143,
     "frontend": 26,
     "native_checkpoints": 77,
     "dependency_gate": "BLOCKED",

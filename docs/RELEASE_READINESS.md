@@ -8,7 +8,7 @@ The detailed current local evidence is `artifacts/security-current-verification.
 | Gate | Status | Actual scope / remaining work |
 |---|---|---|
 | Existing shared Core/Desktop/CLI | TESTED | Windows native regressions; Linux Core/CLI only |
-| Dependency security | BLOCKED | Eight pypdf High advisories patched in source; remote closure must be confirmed. glib unsoundness remains; six maintenance warnings require review |
+| Dependency security | BLOCKED | Eight pypdf High advisories patched and confirmed fixed by GitHub. glib unsoundness remains; six maintenance warnings require review |
 | Offline HAR/OpenAPI | TESTED, bounded | Imports, capture comparison, schema constraints/composition, evidence and report flow; patterns/formats/multi-file/resource resolution incomplete |
 | HTTP replay/identities | PARTIAL | Individually approved loopback request only; general remote replay/stateful authorization matrix/workflow features incomplete |
 | Recon | PARTIAL | Reviewed local HEAD inventory only; broad passive/active adapters absent |
@@ -21,6 +21,7 @@ The detailed current local evidence is `artifacts/security-current-verification.
 | Storage preservation | TESTED, bounded | Transactional additive migrations through 012; read-only future/corrupt DB rejection; complete workspace backup/restore not implemented |
 | Windows portable application | TESTED | Matching optimized Desktop/CLI pair; actual native workflow regression |
 | Windows installer | IMPLEMENTED / UNVERIFIED installation | NSIS produced and hashed. No clean-environment install/upgrade/uninstall acceptance; unsigned |
+| Linux optimized CLI | TESTED on Parrot/WSL2 | Real ELF analysis, persisted jobs/evidence, four report formats and separate-process persistence; other distributions unverified |
 | Linux Desktop/packages | BLOCKED / UNVERIFIED | WSLg exists but GLib/GTK/WebKit SDK missing; GUI, Secret Service and packages not tested; glib advisory unresolved |
 | Signing | BLOCKED | No validated signing infrastructure supplied |
 | Complete product E2E/release | BLOCKED | Missing modules/platform gates above; no final v1.0 release or publication |
@@ -40,6 +41,17 @@ The normal Windows installation, registry, user DB and credentials were not
 modified for installer testing. Existing WebView2 supports native acceptance;
 first-run WebView2 provisioning on a clean machine is still unverified.
 No release was published and no binary/user dataset is committed to Git.
+
+Linux CLI candidate: `artifacts/linux-cli-security-20261018-185625/reconx`.
+Its actual release-mode ELF acceptance is in `smoke/acceptance.json`; a separate
+pypdf 6.19.0 inspection checked the Linux-generated three-page PDF's Vietnamese
+text and redaction. Hashes, native compiler and dynamic libraries are recorded
+beside the binary. This establishes the tested Parrot/WSL CLI slice only.
+
+The initial remote workflow run rejected an unquoted pip flag containing a colon.
+It was reproduced by a new Rust YAML parser regression and corrected with a
+folded run string. The workflow's remote execution and known glib security-gate
+failure are tracked independently from local functional acceptance.
 
 ## Dependency and credential assessment
 
