@@ -1,0 +1,262 @@
+{
+  "date": "2026-10-18",
+  "version": "0.1.0",
+  "release_ready": false,
+  "source_base_revision": "0e496ed",
+  "evidence_is_local_not_bundled": true,
+  "modules": [
+    {
+      "module": "Dashboard",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/Dashboard.tsx"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Projects",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/WorkspacePages.tsx",
+        "crates/reconx-core/src/lib.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Targets & Scope",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/TargetsPage.tsx",
+        "crates/reconx-core/src/targets.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Reconnaissance",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/ReconPage.tsx",
+        "crates/reconx-core/src/recon.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Web Security",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/HttpPage.tsx",
+        "crates/reconx-core/src/http/replay.rs",
+        "crates/reconx-core/src/http/schema.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "API Security",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/HttpPage.tsx",
+        "crates/reconx-core/src/http/auth.rs",
+        "crates/reconx-core/src/http/schema.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Network Security",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/pages/WorkspacePages.tsx"
+      ],
+      "runtime_evidence": [],
+      "limitations": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "module": "Reverse Engineering",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/ReversePage.tsx",
+        "crates/reconx-core/src/reverse.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Mobile Security",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/pages/WorkspacePages.tsx"
+      ],
+      "runtime_evidence": [],
+      "limitations": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "module": "Cloud & Containers",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/pages/WorkspacePages.tsx"
+      ],
+      "runtime_evidence": [],
+      "limitations": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "module": "CI/CD Security",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/pages/WorkspacePages.tsx"
+      ],
+      "runtime_evidence": [],
+      "limitations": "No dedicated implemented module; existing parser/catalog entries are not a workspace"
+    },
+    {
+      "module": "AI Workspace",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/WorkspacePages.tsx",
+        "crates/reconx-core/src/ai_manager.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Agent Workflows",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/OrchestrationPage.tsx",
+        "crates/reconx-core/src/capabilities.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "MCP Hub",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/McpPage.tsx",
+        "crates/reconx-core/src/mcp.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Tool Manager",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/WorkspacePages.tsx",
+        "crates/reconx-core/src/tooling.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Findings",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/RecordsPage.tsx",
+        "crates/reconx-core/src/findings.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Evidence",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/RecordsPage.tsx",
+        "crates/reconx-core/src/evidence.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Reports",
+      "status": "PARTIAL",
+      "source_references": [
+        "apps/desktop/src/pages/RecordsPage.tsx",
+        "crates/reconx-core/src/reporting.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Settings",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/WorkspacePages.tsx",
+        "apps/desktop/src/components/AiProviderManager.tsx"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Job Center",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "apps/desktop/src/pages/JobsPage.tsx",
+        "crates/reconx-core/src/jobs.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/security-current-verification.json"
+      ],
+      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+    },
+    {
+      "module": "Red Team Lab",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/pages/WorkspacePages.tsx"
+      ],
+      "runtime_evidence": [],
+      "limitations": "No dedicated workspace implemented"
+    }
+  ],
+  "release_blockers": [
+    "Remaining research domains and agents are incomplete",
+    "Linux Desktop runtime, optimized CLI packaging and installers unverified",
+    "Windows custom-workspace ACLs require review; no process sandbox",
+    "Report profiles share a text-first structure; list views capped at latest 1000",
+    "Live cloud providers and security integration profiles unverified",
+    "glib RUSTSEC-2024-0429 unresolved; new dependency gate correctly fails",
+    "Six RustSec unmaintained dependencies require upstream/path review",
+    "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
+  ]
+}

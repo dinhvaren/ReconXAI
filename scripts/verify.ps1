@@ -10,6 +10,7 @@ function Invoke-Checked([string]$Program, [string[]]$Arguments) {
 }
 Push-Location $repoRoot
 try {
+    Invoke-Checked python @('-m','unittest','discover','-s','scripts','-p','test_dependency_readiness.py','-v')
     Invoke-Checked cargo @('fmt','--all','--','--check')
     Invoke-Checked cargo @('clippy','--locked','--workspace','--all-targets','--','-D','warnings')
     Invoke-Checked cargo @('test','--locked','--workspace')

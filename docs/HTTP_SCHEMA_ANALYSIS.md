@@ -46,6 +46,18 @@ in Desktop and CLI. No second scheduler or separate configuration is introduced.
   points to the original OpenAPI document, including resolved component references.
 - Direction-aware required properties: OpenAPI 3.0 readOnly/writeOnly exceptions;
   3.1 application-dependent directional cases are kept inconclusive.
+- Enum and OpenAPI 3.1 const equality use the existing JSON Schema library, including
+  mathematical numeric equality and integers beyond the f64 exact range. Redacted
+  descendants make equality inconclusive. Const is explicitly unsupported in 3.0.
+- Minimum/maximum/exclusive bounds, multipleOf, Unicode code-point string lengths,
+  array lengths and object-property counts respect the 3.0/3.1 constraint dialect.
+  Invalid declarations are reported without copying library messages or values.
+- allOf, anyOf, oneOf and not use three-way branch outcomes. Failed alternatives
+  do not leak speculative errors into the final report; unsupported/redacted cases
+  cannot be counted as successful matches. All branches share the work budget.
+- additionalProperties supports booleans and a schema, with original property and
+  schema pointers. patternProperties interactions and invalid properties remain
+  explicitly unsupported rather than producing false extra-property mismatches.
 
 Every observation has one of `confirmed_documented_mismatch`, `possible_mismatch`,
 `insufficient_evidence`, `unsupported_validation_case`. “Confirmed” describes a
@@ -90,13 +102,15 @@ the original records are preserved. New imports store the entry pointer directly
 
 ## Remaining work
 
-This is not a full JSON Schema validator. Composition, additionalProperties,
-enum/const, numeric/string constraints, formats, tuples, custom dialects and URI
-resource scope are not implemented; encountered unsupported constraints are labeled.
+This is not a full JSON Schema validator. Regex patterns/patternProperties,
+format assertions, uniqueItems, tuples, unevaluated/dependent keywords, custom
+dialects, multi-file references and URI resource scope remain unsupported.
+Encountered unsupported constraints are labeled; no external resolver is enabled.
 Only observed JSON structure is evaluated, never hidden values. Absence of a mismatch
-does not mean the entire schema passed. Active replay, credential-backed identities,
-stateful authorization testing, scanner adapters and autonomous Web/API execution
-remain separate unfinished milestones. Linux Desktop, installers and live cloud
+does not mean the entire schema passed. Reviewed loopback replay and protected
+identities are separately documented in HTTP_REPLAY.md; stateful authorization
+testing, scanner adapters and autonomous Web/API execution remain incomplete.
+Linux Desktop, installers and live cloud
 interoperability are not verified by the Core/CLI tests.
 
 Protocol references: [OpenAPI 3.0.4](https://spec.openapis.org/oas/v3.0.4.html),

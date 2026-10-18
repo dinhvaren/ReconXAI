@@ -8,6 +8,34 @@ permissions:
 env:
   CARGO_INCREMENTAL: '0'
 jobs:
+  dependency-security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.15.0'
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: '1.95.0'
+      - run: python3 -m unittest discover -s scripts -p test_dependency_readiness.py -v
+      - run: npm ci --registry https://registry.npmjs.org
+        working-directory: apps/desktop
+      - name: Audit the frontend lockfile
+        run: npm audit --registry https://registry.npmjs.org --audit-level=moderate
+        working-directory: apps/desktop
+      - name: Install the pinned Rust audit tool
+        run: cargo install cargo-audit --version 0.22.2 --locked --no-default-features
+      - name: Audit Rust including unsound-code advisories
+        # Known glib/GTK advisory currently blocks this gate. Do not hide it with
+        # --ignore or treat cargo-audit's default success exit as a clean result.
+        run: cargo audit --deny unsound --json > dependency-audit.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: dependency-security
+          path: dependency-audit.json
+          if-no-files-found: warn
   verify:
     strategy:
       fail-fast: false

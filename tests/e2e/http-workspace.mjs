@@ -293,7 +293,11 @@ try {
   checks.push(
     "Actual captured-header job uses the existing worker/evidence; separately approved local mock AI interpretation persists and never sees raw HAR credentials",
   );
-  await importFile(path.join(fixture, "openapi30.json"), "openapi");
+  const extendedSpec = JSON.parse(await readFile(path.join(fixture, "openapi30.json"), "utf8"));
+  extendedSpec.components.schemas.User.allOf = [{ minProperties: 99 }];
+  const extendedSpecPath = path.join(artifact, "extended-openapi.json");
+  await writeFile(extendedSpecPath, JSON.stringify(extendedSpec));
+  await importFile(extendedSpecPath, "openapi");
   await importFile(path.join(fixture, "openapi31.yaml"), "openapi");
   ws = await command(["web", "traffic", "--project", project.id]);
   assert.equal(ws.operations.length, 2);
@@ -328,6 +332,7 @@ try {
   assert.equal(schemaJob.result.network_requests, 0);
   assert(schemaJob.result.coverage.startsWith("partial"));
   assert(schemaJob.result.observations.length > 0);
+  assert(schemaJob.result.observations.some((o) => o.rule === "schema_constraint" && o.openapi_pointer === "/components/schemas/User/allOf/0/minProperties"));
   for (const observation of schemaJob.result.observations) {
     assert(observation.capture_pointer.startsWith("/log/entries/"));
     assert(observation.openapi_pointer.startsWith("/"));
@@ -347,7 +352,7 @@ try {
     JSON.stringify(schemaJob, null, 2),
   );
   checks.push(
-    "Native schema selection queues the existing worker, shows partial evidence-linked observations and CLI reads the same persisted zero-network result",
+    "Native schema selection queues the existing worker, displays an allOf/minProperties observation with exact provenance and CLI reads the same persisted zero-network result",
   );
   await importFile(path.join(fixture, "bob.har"), "har", "bob");
   await page.getByRole("tab", { name: "Traffic", exact: true }).click();

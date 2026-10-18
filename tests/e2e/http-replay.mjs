@@ -43,6 +43,7 @@ const fixture = createServer(async (req, res) => {
         ? "bob"
         : "anonymous";
   calls.push({
+    receivedAt: Date.now(),
     method: req.method,
     url: req.url,
     owner,
@@ -176,7 +177,14 @@ async function createIdentity(name, key) {
     0,
   );
 }
+async function respectDispatchSpacing() {
+  // Wait for the real backend rate budget, never invent execution progress.
+  // Fast native runs can otherwise hit the 500 ms project dispatch guard.
+  const last = calls.at(-1)?.receivedAt;
+  if (last) await delay(Math.max(0, 650 - (Date.now() - last)));
+}
 async function sendFromEditor(dialog) {
+  await respectDispatchSpacing();
   const previous = (await latest(projectId))?.id;
   await dialog
     .getByRole("button", { name: "Review send", exact: true })
@@ -532,6 +540,7 @@ try {
   ]);
   const plan = await command(["http", "preview", id]);
   const redirectBefore = calls.length;
+  await respectDispatchSpacing();
   const queued = await command([
     "http",
     "replay",
@@ -567,6 +576,7 @@ try {
     .getByLabel("HTTP request URL", { exact: true })
     .fill(url + "slow");
   await editor.getByLabel("HTTP request timeout", { exact: true }).fill("5000");
+  await respectDispatchSpacing();
   await editor
     .getByRole("button", { name: "Review send", exact: true })
     .click();

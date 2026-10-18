@@ -1,2 +1,3 @@
-# Independent PDF parser for native report acceptance; official PyPI wheel digest.
-pypdf==6.16.1 --hash=sha256:63fec31c4092ae50b6729beedcb469055b60d20c834bde1c402df241f371f644
+# Independent test-only PDF parser. Pin the official PyPI wheel and its digest.
+# 6.19.0 fixes Dependabot alerts #2-#9; see docs/DEPENDENCY_SECURITY.md.
+pypdf==6.19.0 --hash=sha256:7e5d6e730e7dae87d560a2cee218b852f6498c8be61966f3cd02ead971e48d14

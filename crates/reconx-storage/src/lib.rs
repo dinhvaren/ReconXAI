@@ -1,6 +1,6 @@
 use reconx_security::{AppError, Result};
 pub use rusqlite;
-use rusqlite::{Connection, TransactionBehavior};
+use rusqlite::{Connection, OpenFlags, TransactionBehavior};
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -20,6 +20,23 @@ pub fn db_error(_: rusqlite::Error) -> AppError {
 impl Database {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
+        // Inspect existing databases read-only before connect() enables WAL.
+        // An older client must not change a newer database's persistent journal
+        // mode merely to discover that its schema cannot be opened.
+        if path
+            .try_exists()
+            .map_err(|_| AppError::new("WORKSPACE_IO", "Cannot inspect workspace database"))?
+        {
+            let inspection = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .map_err(db_error)?;
+            inspection
+                .busy_timeout(Duration::from_secs(5))
+                .map_err(db_error)?;
+            let version: i64 = inspection
+                .pragma_query_value(None, "user_version", |r| r.get(0))
+                .map_err(db_error)?;
+            require_supported_schema(version)?;
+        }
         if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent)
                 .map_err(|_| AppError::new("WORKSPACE_IO", "Cannot create workspace directory"))?;
@@ -60,12 +77,9 @@ impl Database {
         let version: i64 = tx
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .map_err(db_error)?;
-        if version > 12 {
-            return Err(AppError::new(
-                "SCHEMA_TOO_NEW",
-                "Database was created by a newer ReconX version; no migration was performed",
-            ));
-        }
+        // Recheck under the write lock: another client may have upgraded after
+        // the read-only preflight. Clients still need coordinated upgrades.
+        require_supported_schema(version)?;
         if version == 0 {
             tx.execute_batch(include_str!("../migrations/001_foundation.sql"))
                 .map_err(db_error)?;
@@ -163,6 +177,17 @@ impl Database {
         conn.pragma_update(None, "journal_mode", "WAL")
             .map_err(db_error)?;
         Ok(conn)
+    }
+}
+
+fn require_supported_schema(version: i64) -> Result<()> {
+    if version > 12 {
+        Err(AppError::new(
+            "SCHEMA_TOO_NEW",
+            "Database was created by a newer ReconX version; no migration was performed",
+        ))
+    } else {
+        Ok(())
     }
 }
 
@@ -584,5 +609,44 @@ mod tests {
             .pragma_update(None, "user_version", 99)
             .unwrap();
         assert_eq!(Database::open(&path).unwrap_err().code, "SCHEMA_TOO_NEW");
+    }
+
+    #[test]
+    fn future_schema_is_rejected_without_changing_bytes_or_enabling_wal() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("future.db");
+        let conn = Connection::open(&path).unwrap();
+        conn.execute_batch("CREATE TABLE future_data(value TEXT); INSERT INTO future_data VALUES('preserve'); PRAGMA user_version=99;").unwrap();
+        drop(conn);
+        let before = std::fs::read(&path).unwrap();
+        assert_eq!(Database::open(&path).unwrap_err().code, "SCHEMA_TOO_NEW");
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+        let inspection =
+            Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        assert_eq!(
+            inspection
+                .pragma_query_value(None, "journal_mode", |r| r.get::<_, String>(0))
+                .unwrap(),
+            "delete"
+        );
+        assert_eq!(
+            inspection
+                .query_row("SELECT value FROM future_data", [], |r| r
+                    .get::<_, String>(0))
+                .unwrap(),
+            "preserve"
+        );
+    }
+
+    #[test]
+    fn invalid_database_is_rejected_without_replacing_or_mutating_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("invalid.db");
+        let bytes = b"Owned invalid database fixture; preserve original bytes";
+        std::fs::write(&path, bytes).unwrap();
+        assert_eq!(Database::open(&path).unwrap_err().code, "DATABASE_ERROR");
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 }

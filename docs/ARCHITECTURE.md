@@ -13,7 +13,13 @@ The desktop and CLI call the same `reconx-core` service. Business rules live in 
 
 Database selection: CLI `--database` override, then `RECONX_DATA_DIR/reconx.db`, then the OS application data directory. Desktop uses the same environment/default rule. No workspace-specific database is created implicitly.
 
-AI replies are unverified text and have no execution channel. Streaming uses Tauri IPC channels and a bounded cancellation registry. Fixed tool version checks are distinct from arbitrary external execution. MCP, recon, findings and reports remain unimplemented. Navigation marks future modules clearly.
+AI replies remain unverified text. Chat does not execute commands; a separate,
+reviewed local-file planner can queue typed allowlisted jobs. Streaming uses Tauri
+IPC channels and a bounded cancellation registry. Fixed version checks, managed
+YARA-X signatures, manually approved benign MCP calls, evidence/findings/reports,
+offline HAR/OpenAPI review and individually reviewed loopback HTTP have real core
+services. General scanners, remote replay and broad autonomous agents are not
+implemented. Navigation marks future modules clearly.
 
 Migration 002 extends existing projects with targets, imported sample metadata,
 analysis jobs and hashed binary-analysis artifact references. Target/scope validation
@@ -24,6 +30,17 @@ Policy is rechecked at each stage. Raw samples/strings/hex stay in local managed
 SQLite stores references and metadata. See RESEARCH_INPUTS.md for limits and removals.
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
+
+Schema version is 012. Opening an existing workspace now checks its version with
+a read-only SQLite connection before enabling WAL, then rechecks under the write
+lock. Newer/corrupt files are rejected; additive upgrade backups and preservation
+tests remain in storage. This is not a complete workspace backup/restore feature;
+binary/evidence bytes and OS credentials have separate lifecycles.
+
+Dependency/release readiness is separate from functional test success. The pinned
+Python PDF parser is test-only; glib/GTK still blocks Linux GUI safety acceptance.
+See DEPENDENCY_SECURITY.md and RELEASE_READINESS.md. Source/release artifacts and
+current acceptance hashes are local under artifacts/, excluded from Git.
 
 Migration 003 adds the durable local Job Engine in reconx-core/src/jobs.rs. Atomic
 SQLite claims enforce a two-job ceiling across processes; worker leases, fenced

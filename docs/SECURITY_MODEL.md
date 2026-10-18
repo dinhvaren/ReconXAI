@@ -1,6 +1,14 @@
 # Security model
 
-This build exposes local project/configuration/target management, authorized read-only binary analysis, explicitly initiated AI text requests, and a pinned local utility installer/version checker. Security modes cannot unlock absent active workflows. Model output never becomes a command.
+Current dependency/release assessment is in DEPENDENCY_SECURITY.md and
+RELEASE_READINESS.md. Linux glib unsoundness is unresolved; successful functional
+tests do not waive it. No process-sandbox or complete v1.0 claim is made.
+
+This build exposes local project/target management, static binary analysis, managed
+utilities/YARA-X, reviewed benign MCP calls, evidence/findings/reports, offline
+HAR/OpenAPI observations and individually reviewed bounded loopback HTTP replay.
+AI chat is distinct from the allowlisted local-file job planner. Security modes
+cannot unlock absent active workflows; model output never becomes a shell command.
 
 Credentials use native OS storage. Configurations reject secret fields and gateway URLs containing authentication, query strings or fragments. HTTPS is required except for loopback HTTP. Secret references bind provider ID, protocol and gateway SHA-256 fingerprint. Gateway changes with a key require key removal first. Legacy UUID-only entries from the early foundation build are not reused or deleted automatically; those keys require reentry.
 
@@ -32,8 +40,9 @@ UI thread. Network operations are asynchronous.
 Target registration is not authorization to execute a tool. Scope exclusions win;
 host/path component and URL-origin boundaries are checked. Local analysis requires
 recorded permission, matching immutable import source identity and an active project.
-Workers recheck policy/cancellation at stage boundaries. No mode executes samples,
-shell strings, scanners or AI tool plans. A 64 MiB input limit, output cardinality
+Workers recheck policy/cancellation at stage boundaries. No mode executes samples
+or unrestricted shell strings/scanners. Reviewed AI plans can queue only typed
+local-file jobs. A 64 MiB input limit, output cardinality
 limits, ZIP directory checks and panic containment defend parser entry points.
 These controls are not an OS process sandbox.
 
@@ -46,7 +55,11 @@ does not forcibly interrupt a parser already inside one bounded stage.
 
 SQLite uses ordinary account/filesystem protection, without encryption. Notes/metadata exports are user-authored and not automatically redacted. Rust secret buffers are zeroized where practical; browser inputs, libraries and OS services may copy them. Same-account malicious processes, filesystem races and comprehensive process sandboxing are outside the claimed protection.
 
-Existing MCP/provider credentials are not imported. MCP children have no OS sandbox; manually approved loopback HTTP inventory is bounded as described below. General active network workflows remain unimplemented; local scope review is available. Tests isolate temporary data and loopback mock services; WebView2 debugging is set only in the test child environment. Generated test data is excluded from Git and release packages.
+Existing MCP/provider credentials are not imported. MCP children have no OS sandbox;
+manually approved loopback HTTP inventory/replay are bounded by their documented
+policy. General active network workflows remain unimplemented. Tests isolate
+temporary data and local fixtures; WebView2 debugging is set only in the test child
+environment. Generated test data is excluded from Git and release packages.
 
 The visual redesign preserves IPC contracts and backend policy. Search uses project/provider metadata and module routes, never credentials. API key entry remains masked; status actions return configured/unconfigured only. Screenshots are captured before filling the ephemeral fixture credential, which is removed by the test. Original artwork and licensed font assets are bundled; no reference-site artwork or runtime font/image tracking is included. Future module pages cannot invoke absent analysis services.
 
@@ -104,3 +117,28 @@ retry/auth/cookies/body analysis; fixed deadlines/header budgets and a persisted
 request. A response may contain secrets, so raw headers are private evidence;
 normalized assets/job summaries omit cookie/auth fields. These are availability
 observations only. AI cannot choose this adapter or enable public scanning.
+
+## Reviewed HTTP replay and offline schema observations
+
+The separate replay adapter supports one exact approved request to an owned
+loopback service, with origin/project/target-bound OS-store identities, TLS
+verification, bounded UTF-8 bodies, cancellation and sanitized captures. It rejects
+general DNS destinations, proxies, followed redirects, automatic retries and cookie
+jars. Fingerprints bind current input/identity/policy revisions; dispatch budgets
+are enforced in Rust. A native test that sent too quickly was correctly rejected;
+the runner now waits for the budget instead of changing enforcement. See
+HTTP_REPLAY.md for exact limits. HTTP success proves neither authentication nor
+authorization, and cancellation cannot undo an action already received by a server.
+
+Offline schema constraints/composition share a global work/recursion/output budget.
+Alternative branches use match/mismatch/unknown states; redacted values and
+unsupported checks never become successful validation by omission. A closed scalar
+keyword subset uses the existing JSON Schema library, without reference/URI/regex
+resolvers. Original hashes and source pointers remain attached; observations are
+not automatically verified findings. Pattern/format/multi-file coverage is incomplete.
+
+Database preflight reads existing schema metadata through a read-only connection
+before WAL, and rechecks under the write transaction. Future/corrupt fixture files
+remain byte-identical when rejected. This does not provide cross-version concurrent
+upgrade coordination or a full backup of artifact files and OS credentials. Stop
+older clients before upgrading and protect backups as private workspace data.

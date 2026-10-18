@@ -1,3 +1,47 @@
+## Current security/schema verification — 2026-10-18
+
+Functional verification passes; dependency/release acceptance remains BLOCKED.
+All commands used isolated test databases and local fixtures; no personal cloud
+credentials, public target scans or normal user data were used.
+
+| Command/check | Result | Evidence |
+|---|---|---|
+| cargo fmt --all -- --check | pass | final local check |
+| cargo clippy --locked --workspace --all-targets -j2 -- -D warnings | pass | artifacts/security-final-clippy.log |
+| cargo test --locked --workspace -j2 | 142 passed, 1 ignored | artifacts/security-final-rust.log |
+| Linux cargo test --locked --offline --workspace --exclude reconx-desktop -j2 | 142 passed, 1 ignored | artifacts/security-final-linux-stdout.log |
+| npm run build / npm test | pass / 26 passed | artifacts/security-expanded-frontend-*.log |
+| python -m unittest discover -s scripts -p test_dependency_readiness.py -v | 4 passed | artifacts/security-readiness-tests.log |
+| npm audit --json --registry https://registry.npmjs.org | 0 findings, exit 0 | artifacts/security-npm-before.json |
+| cargo audit --deny unsound --json | **BLOCKED, exit 1**: glib; 6 maintenance warnings | artifacts/security-rust-gate.json |
+| CLI future/corrupt database rejection | 2 actual CLI cases; original bytes unchanged | artifacts/security-db-preflight.json |
+| Optimized shared CLI/Desktop build | pass | artifacts/security-release-build.log |
+| npm run tauri -- build --config ../../packaging/tauri.windows.json | NSIS built; NotSigned; clean installation unverified | artifacts/security-tauri-bundle.log |
+| Native http-replay | 11 passed | artifacts/http-replay-1792323486749/results.json |
+| Native http-workspace | 12 passed | artifacts/http-workspace-1792323498002/results.json |
+| Native native | 8 passed | artifacts/native-1792323515422/results.json |
+| Native inputs | 9 passed | artifacts/inputs-1792323558147/results.json |
+| Native jobs | 8 passed | artifacts/jobs-1792323568765/results.json |
+| Native integrations | 6 passed | artifacts/integrations-1792323595665/results.json |
+| Native outputs | 6 passed | artifacts/outputs-1792323613641/results.json |
+| Native recon-local | 7 passed | artifacts/recon-local-1792323626517/results.json |
+| Native ai-providers | 10 passed | artifacts/native-ai-providers-1792323638564/results.json |
+| Independent PDF extraction/redaction | pypdf 6.19.0, passed | artifacts/http-replay-1792323486749/pdf-inspection.json |
+| Negative HTTPS certificate rejection | Windows + Linux CLI, TCP observed and zero HTTP requests | artifacts/security-tls-windows.log; security-tls-linux.log |
+
+Nine native suites: 77 checkpoints. Final matched binaries and installer are in
+artifacts/windows-security-20261018-183806; hashes/source fingerprints: artifacts/security-current-verification.json.
+New schema runtime evidence includes allOf/minProperties with exact OpenAPI pointer
+and preserved evidence. All three themes and shared CLI persistence still pass.
+The retained failed first cancellation run is explained in the master ledger;
+it is not counted as a pass. Linux GUI probe: artifacts/security-linux-desktop-probe.json.
+Artifact log pattern scan: 1,794 files, no matches in the documented limited scope.
+No comprehensive secret audit, trusted-CA HTTPS success, clean installer, live
+cloud-provider or Linux Desktop claim is made. Dependency resolution details and
+remaining glib risk: DEPENDENCY_SECURITY.md.
+
+---
+
 # Current manual HTTP and secure identity verification - 2026-10-18
 
 This verifies a bounded manual loopback fixture slice plus existing product regressions, not autonomous authorization testing or all v1.0. Tests used isolated synthetic workspaces/credentials and owned local fixtures; normal user data and cloud providers were not used. Exact binaries: artifacts/windows-replay-final-20261018-160538. Source/binary hashes and machine-readable proof: artifacts/replay-current-verification.json.

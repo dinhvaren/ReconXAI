@@ -4,6 +4,7 @@ dist/
 apps/desktop/src-tauri/gen/
 .data/
 artifacts/
+__pycache__/
 *.db
 *.db-wal
 *.db-shm

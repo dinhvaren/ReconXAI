@@ -1,3 +1,61 @@
+## Current verified security/schema checkpoint — 2026-10-18
+
+Based on 0e496ed; no reset or user-data migration. Product remains 0.1.0 and v1.0
+is NOT READY. GitHub returned nine actual alerts: eight High in test-only pypdf
+6.16.1 and one Medium in Linux GTK/glib 0.18.5. Pypdf is now pinned to 6.19.0 with
+the official wheel hash; native PDF acceptance passes with an isolated interpreter.
+Remote closure must be checked separately after pushing. Glib remains unresolved,
+not suppressed; cargo audit also reports six unmaintained dependencies. The new
+warnings-aware dependency gate correctly fails (exit 1). See DEPENDENCY_SECURITY.md.
+
+Implemented bounded offline enum/3.1 const, numeric/string/count constraints,
+allOf/anyOf/oneOf/not and additionalProperties using shared work limits and
+three-way branch results. Unknown/redacted branches remain inconclusive; no
+network/file resolver, regex execution or automatic finding verification is added.
+Existing Desktop/CLI schema jobs/evidence show the new constraints with exact
+source pointers. Also added read-only database version preflight before WAL,
+with byte-preservation tests and actual CLI rejection of future/corrupt fixtures.
+No migration was added; schema stays 012.
+
+Current proof: artifacts/security-current-verification.json. Windows Rust 142
+passed/0 failed/1 ignored; Linux Parrot/WSL Core+CLI 142/0/1; frontend 26 passed;
+4 dependency-gate tests passed. Format, Clippy, TypeScript/Vite, optimized CLI/
+Desktop and all 9 native suites/77 checkpoints pass. Independent pypdf 6.19.0 PDF
+inspection and negative untrusted-TLS tests pass on Windows and Linux Core/CLI.
+Windows NSIS generation succeeds; clean install/upgrade/uninstall, signing and
+Linux GUI/packages/Secret Service remain unverified or blocked. Artifacts:
+artifacts/windows-security-20261018-183806, including installer/, build-manifest.json and SHA256SUMS.txt.
+
+Retained failures: security-schema-first.log (missing Map import),
+security-schema-second.log (old unsupported-oneOf expectation) were fixed before
+full verification. Native http-replay-1792323405520 failed because the runner
+sent inside the backend's real 500 ms spacing limit; its alert proves policy
+rejection. The runner now waits from the last observed fixture request rather
+than relaxing policy. First-failure logs remain. All current suites were rerun
+on the final NSIS-tagged binary pair. Screenshots, including new schema results,
+were inspected. Synthetic fixture keys are separately cleaned; user keys are not.
+
+Exact next safe task: resolve the compatible glib/GTK dependency issue with a
+reviewed upstream fix/backport and actual isolated Linux SDK/runtime testing.
+Keep the dependency gate failing until resolved. If blocked upstream, continue
+bounded offline pattern/format/reference coverage and manual evidence-linked
+permission annotations. General external replay, stateful authorization/scanner
+automation and broader agents/research domains remain incomplete; do not promote
+them based on this checkpoint. Do not repeat existing imports/providers/output
+services or change typography/themes. RELEASE_READINESS.md and release-gaps.json
+record remaining release gates.
+
+Resume: cargo fmt --all -- --check; cargo clippy --locked --workspace --all-targets
+-j2 -- -D warnings; cargo test --locked --workspace -j2; npm run build / npm test in
+apps/desktop; python -m unittest discover -s scripts -p test_dependency_readiness.py
+-v. Use CARGO_INCREMENTAL=0. Native suites use the explicit snapshot executables.
+Audit: cargo audit --deny unsound --json; scripts/dependency_readiness.py combines
+recorded exports without hiding warnings. Commit/push is authorized by the user's
+later instruction; use only the clean HTTPS URL, no force-push or release publication.
+Exact Git handoff is recorded locally in artifacts/source-push-result.json.
+
+---
+
 ## Source handoff: commit and push authorized - 2026-10-18
 
 The user explicitly authorized committing and pushing the current verified source. This supersedes older no-commit/no-push continuation instructions below. No force-push, history rewrite, user-data upload or release publication is authorized by this handoff. Use the credential-free repository URL and normal credential-manager authentication; never print or reuse an embedded Git remote token.

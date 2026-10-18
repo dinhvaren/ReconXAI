@@ -1,5 +1,6 @@
 //! Bounded, offline consistency observations. Never a security verdict or network client.
 use super::*;
+use serde_json::Map;
 
 const MAX_CHECKS: usize = 10_000;
 const MAX_OBSERVATIONS: usize = 200;
@@ -66,7 +67,169 @@ struct Review<'a> {
     output_bytes: usize,
     update: &'a mut dyn FnMut(u8, &str) -> Result<()>,
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Branch {
+    Matches,
+    Mismatch,
+    Unknown,
+}
+
 impl Review<'_> {
+    /// Branch diagnostics are speculative. Keep their work charged to the shared
+    /// budget, but never leak failed alternatives into the final observation list.
+    fn branch(
+        &mut self,
+        value: &Value,
+        at: &str,
+        body: &str,
+        instance: &str,
+        response: bool,
+        depth: usize,
+    ) -> Result<Branch> {
+        let start = self.report.observations.len();
+        let bytes = self.output_bytes;
+        self.schema(value, at, body, instance, response, depth)?;
+        let diagnostics = self.report.observations.split_off(start);
+        self.output_bytes = bytes;
+        if diagnostics
+            .iter()
+            .any(|o| o.classification == "confirmed_documented_mismatch")
+        {
+            Ok(Branch::Mismatch)
+        } else if !diagnostics.is_empty() || self.report.checks >= MAX_CHECKS {
+            Ok(Branch::Unknown)
+        } else {
+            Ok(Branch::Matches)
+        }
+    }
+
+    /// Bound all data inspected by equality constraints, including values hidden
+    /// in enum/const. Redacted descendants cannot establish equality or inequality.
+    fn equality_data(
+        &mut self,
+        value: &Value,
+        body: &str,
+        instance: &str,
+        at: &str,
+    ) -> Result<bool> {
+        if !self.step(body, instance, at)? {
+            return Ok(false);
+        }
+        match value {
+            Value::String(s) => Ok(!s.contains("[REDACTED]") && !s.starts_with("[Body withheld:")),
+            Value::Array(values) => {
+                for child in values {
+                    if !self.equality_data(child, body, instance, at)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            Value::Object(values) => {
+                for (key, child) in values {
+                    if key.contains("[REDACTED]")
+                        || !self.equality_data(child, body, instance, at)?
+                    {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            _ => Ok(true),
+        }
+    }
+
+    fn constraints(
+        &mut self,
+        value: &Value,
+        schema: &Value,
+        at: &str,
+        body: &str,
+        instance: &str,
+    ) -> Result<()> {
+        // Only closed scalar/count constraints enter the library. No $ref, URI,
+        // format resolver or regular expression can be compiled here.
+        let mut flat = Map::new();
+        for keyword in [
+            "enum",
+            "const",
+            "minimum",
+            "maximum",
+            "exclusiveMinimum",
+            "exclusiveMaximum",
+            "multipleOf",
+            "minLength",
+            "maxLength",
+            "minItems",
+            "maxItems",
+            "minProperties",
+            "maxProperties",
+        ] {
+            let Some(constraint) = schema.get(keyword) else {
+                continue;
+            };
+            if !self.step(body, instance, at)? {
+                return Ok(());
+            }
+            if keyword == "const" && self.version30 {
+                self.observe(
+                    "unsupported_validation_case",
+                    "schema_dialect",
+                    "const is outside the OpenAPI 3.0 Schema Object subset",
+                    body,
+                    instance,
+                    &pointer(at, keyword),
+                );
+                continue;
+            }
+            if matches!(keyword, "enum" | "const")
+                && (!self.equality_data(value, body, instance, at)?
+                    || !self.equality_data(constraint, body, instance, at)?)
+            {
+                self.observe(
+                    "insufficient_evidence",
+                    "equality_constraint",
+                    "Equality comparison contains redacted data or exceeded its work budget",
+                    body,
+                    instance,
+                    &pointer(at, keyword),
+                );
+                continue;
+            }
+            flat.insert(keyword.into(), constraint.clone());
+        }
+        if flat.is_empty() {
+            return Ok(());
+        }
+        let flat = Value::Object(flat);
+        let validator = if self.version30 {
+            jsonschema::draft4::new(&flat)
+        } else {
+            jsonschema::draft202012::new(&flat)
+        };
+        let validator = match validator {
+            Ok(validator) => validator,
+            Err(_) => {
+                self.observe("unsupported_validation_case", "invalid_constraint", "Constraint declaration is invalid for this schema dialect; no values or parser messages are copied", body, instance, at);
+                return Ok(());
+            }
+        };
+        for error in validator.iter_errors(value) {
+            if !self.step(body, instance, at)? {
+                break;
+            }
+            self.observe(
+                "confirmed_documented_mismatch",
+                "schema_constraint",
+                "Captured value violates the documented scalar or size constraint",
+                body,
+                instance,
+                &format!("{at}{}", error.schema_path()),
+            );
+        }
+        Ok(())
+    }
     fn observe(
         &mut self,
         class: &str,
@@ -274,6 +437,24 @@ impl Review<'_> {
             "deprecated",
             "xml",
             "externalDocs",
+            "enum",
+            "const",
+            "minimum",
+            "maximum",
+            "exclusiveMinimum",
+            "exclusiveMaximum",
+            "multipleOf",
+            "minLength",
+            "maxLength",
+            "minItems",
+            "maxItems",
+            "minProperties",
+            "maxProperties",
+            "allOf",
+            "anyOf",
+            "oneOf",
+            "not",
+            "additionalProperties",
         ];
         if object
             .keys()
@@ -334,6 +515,84 @@ impl Review<'_> {
                     );
                     return Ok(());
                 }
+            }
+        }
+        self.constraints(value, schema, at, body, instance)?;
+        for keyword in ["allOf", "anyOf", "oneOf"] {
+            let Some(alternatives) = object.get(keyword) else {
+                continue;
+            };
+            let location = pointer(at, keyword);
+            let Some(alternatives) = alternatives.as_array().filter(|a| !a.is_empty()) else {
+                self.observe(
+                    "unsupported_validation_case",
+                    "invalid_composition",
+                    "Composition requires a nonempty schema array",
+                    body,
+                    instance,
+                    &location,
+                );
+                continue;
+            };
+            let mut matches = 0;
+            let mut unknown = 0;
+            for (i, alternative) in alternatives.iter().enumerate() {
+                if self.version30 && !alternative.is_object() {
+                    unknown += 1;
+                    self.observe(
+                        "unsupported_validation_case",
+                        "boolean_schema",
+                        "OpenAPI 3.0 composition members must be Schema Objects",
+                        body,
+                        instance,
+                        &pointer(&location, &i.to_string()),
+                    );
+                    continue;
+                }
+                let child = pointer(&location, &i.to_string());
+                if keyword == "allOf" {
+                    self.schema(value, &child, body, instance, response, depth + 1)?;
+                } else {
+                    match self.branch(value, &child, body, instance, response, depth + 1)? {
+                        Branch::Matches => matches += 1,
+                        Branch::Unknown => unknown += 1,
+                        Branch::Mismatch => (),
+                    }
+                }
+                if self.report.checks >= MAX_CHECKS {
+                    break;
+                }
+            }
+            if keyword != "allOf" {
+                let incomplete = self.report.checks >= MAX_CHECKS;
+                let mismatch = !incomplete
+                    && ((matches == 0 && unknown == 0) || (keyword == "oneOf" && matches > 1));
+                let uncertain = incomplete || (unknown > 0 && (matches == 0 || keyword == "oneOf"));
+                if mismatch || uncertain {
+                    self.observe(if mismatch {"confirmed_documented_mismatch"} else {"insufficient_evidence"}, "schema_composition", if mismatch {"Captured value does not satisfy the documented alternative count"} else {"Alternatives contain unsupported, redacted or budget-limited cases; composition is inconclusive"}, body, instance, &location);
+                }
+            }
+        }
+        if object.contains_key("not") {
+            let location = pointer(at, "not");
+            match self.branch(value, &location, body, instance, response, depth + 1)? {
+                Branch::Matches => self.observe(
+                    "confirmed_documented_mismatch",
+                    "schema_not",
+                    "Captured value matches a schema excluded by not",
+                    body,
+                    instance,
+                    &location,
+                ),
+                Branch::Unknown => self.observe(
+                    "insufficient_evidence",
+                    "schema_not",
+                    "Excluded schema could not be evaluated completely",
+                    body,
+                    instance,
+                    &location,
+                ),
+                Branch::Mismatch => (),
             }
         }
         if let Some(data) = value.as_object() {
@@ -403,6 +662,52 @@ impl Review<'_> {
                             response,
                             depth + 1,
                         )?;
+                    }
+                }
+            }
+            if let Some(additional) = object.get("additionalProperties") {
+                let location = pointer(at, "additionalProperties");
+                if object.get("properties").is_some_and(|p| !p.is_object()) {
+                    self.observe("unsupported_validation_case", "additional_properties", "Invalid properties declaration prevents additional-property classification", body, instance, &location);
+                } else if object.contains_key("patternProperties") {
+                    self.observe("unsupported_validation_case", "additional_properties", "patternProperties must be evaluated before deciding which properties are additional", body, instance, &location);
+                } else if !additional.is_boolean() && !additional.is_object() {
+                    self.observe(
+                        "unsupported_validation_case",
+                        "additional_properties",
+                        "additionalProperties must be a boolean or schema",
+                        body,
+                        instance,
+                        &location,
+                    );
+                } else {
+                    for (name, child) in data {
+                        if !self.step(body, instance, &location)? {
+                            break;
+                        }
+                        if object
+                            .get("properties")
+                            .and_then(Value::as_object)
+                            .is_some_and(|p| p.contains_key(name))
+                        {
+                            continue;
+                        }
+                        if name.contains("[REDACTED]") {
+                            self.observe("insufficient_evidence", "additional_properties", "Redacted property names cannot establish whether the property is additional", body, instance, &location);
+                            continue;
+                        }
+                        if additional == false {
+                            self.observe("confirmed_documented_mismatch", "additional_properties", "Captured object contains a property disallowed by additionalProperties", body, &pointer(instance, name), &location);
+                        } else if additional.is_object() {
+                            self.schema(
+                                child,
+                                &location,
+                                body,
+                                &pointer(instance, name),
+                                response,
+                                depth + 1,
+                            )?;
+                        }
                     }
                 }
             }
@@ -708,7 +1013,7 @@ impl Core {
             "Both source hashes and exact target/origin binding checked",
         )?;
         let capture_root = self.schema_capture_pointer(&capture)?;
-        let report = SchemaReview { exchange_id:capture.id.clone(), operation_id:operation.id.clone(), sources, observations:Vec::new(), checks:0, coverage:"partial: type/required/properties/items and HTTP metadata only; no vulnerability verdict".into(), network_requests:0 };
+        let report = SchemaReview { exchange_id:capture.id.clone(), operation_id:operation.id.clone(), sources, observations:Vec::new(), checks:0, coverage:"partial: bounded structure, scalar/size constraints, composition and HTTP metadata; patterns/formats/resource resolution remain unsupported; no vulnerability verdict".into(), network_requests:0 };
         let mut review = Review {
             doc: &doc,
             capture: &capture,

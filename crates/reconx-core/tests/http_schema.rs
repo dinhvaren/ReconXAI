@@ -206,7 +206,7 @@ fn mime_wildcards_and_mismatches_and_request_body_checks() {
 fn schema_cycles_dialects_and_unimplemented_constraints_are_explicit() {
     for schema in [
         json!({"$ref":"#/components/schemas/User"}),
-        json!({"type":"object","oneOf":[{"type":"object"}]}),
+        json!({"type":"object","patternProperties":{"^x-":{"type":"string"}}}),
         json!({"$schema":"https://example.test/custom-dialect","type":"array"}),
         json!({"$id":"relative.json","type":"array"}),
     ] {
@@ -224,6 +224,251 @@ fn schema_cycles_dialects_and_unimplemented_constraints_are_explicit() {
         );
         assert!(rule(&report, "json_type").is_empty());
     }
+}
+
+fn constrained(value: Value, schema: Value, version: &str) -> Value {
+    let mut har = fixture("alice.har");
+    har["log"]["entries"][0]["response"]["content"] =
+        json!({"mimeType":"application/json","text":value.to_string()});
+    let mut spec = fixture("openapi30.json");
+    spec["openapi"] = json!(version);
+    spec["components"]["schemas"]["User"] = schema;
+    let (_dir, core, _, capture, op) = imported(har, spec);
+    analyze(&core, &capture, &op)
+}
+
+#[test]
+fn scalar_constraints_use_dialect_aware_numeric_equality_and_unicode_lengths() {
+    for (value, schema, version, mismatches) in [
+        (json!(1), json!({"enum":[1.0]}), "3.1.1", 0),
+        (json!({"n":1}), json!({"const":{"n":1.0}}), "3.1.1", 0),
+        (
+            json!("Tiếng Việt"),
+            json!({"minLength":10,"maxLength":10}),
+            "3.0.4",
+            0,
+        ),
+        (json!("é"), json!({"minLength":2}), "3.1.1", 1),
+        (json!(4), json!({"minimum":5}), "3.0.4", 1),
+        (
+            json!(5),
+            json!({"minimum":5,"exclusiveMinimum":true}),
+            "3.0.4",
+            1,
+        ),
+        (json!(5), json!({"exclusiveMinimum":5}), "3.1.1", 1),
+        (json!(0.3), json!({"multipleOf":0.1}), "3.1.1", 0),
+        (json!([1, 2]), json!({"maxItems":1}), "3.1.1", 1),
+        (json!({"id":1}), json!({"minProperties":2}), "3.1.1", 1),
+        (
+            json!(9007199254740993_u64),
+            json!({"enum":[9007199254740992_u64]}),
+            "3.1.1",
+            1,
+        ),
+    ] {
+        let report = constrained(value, schema, version);
+        assert_eq!(
+            rule(&report, "schema_constraint").len(),
+            mismatches,
+            "{report}"
+        );
+        assert!(rule(&report, "invalid_constraint").is_empty(), "{report}");
+        for o in rule(&report, "schema_constraint") {
+            assert!(
+                o["openapi_pointer"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("/components/schemas/User/")
+            );
+            assert_eq!(o["classification"], "confirmed_documented_mismatch");
+        }
+    }
+}
+
+#[test]
+fn invalid_scalar_declarations_and_30_const_are_explicit_not_assumed_valid() {
+    for (schema, version, expected) in [
+        (
+            json!({"minimum":3,"exclusiveMinimum":3}),
+            "3.0.4",
+            "invalid_constraint",
+        ),
+        (
+            json!({"exclusiveMinimum":true}),
+            "3.1.1",
+            "invalid_constraint",
+        ),
+        (json!({"multipleOf":0}), "3.1.1", "invalid_constraint"),
+        (json!({"minLength":-1}), "3.1.1", "invalid_constraint"),
+        (json!({"const":3}), "3.0.4", "schema_dialect"),
+    ] {
+        let report = constrained(json!(3), schema, version);
+        assert!(!rule(&report, expected).is_empty(), "{report}");
+        assert!(rule(&report, "schema_constraint").is_empty());
+    }
+}
+
+#[test]
+fn alternatives_do_not_publish_failed_branch_errors_or_guess_unknown_branches() {
+    for (schema, mismatch, unknown) in [
+        (
+            json!({"oneOf":[{"type":"integer"},{"type":"string"}]}),
+            false,
+            false,
+        ),
+        (
+            json!({"oneOf":[{"type":"integer"},{"type":"number"}]}),
+            true,
+            false,
+        ),
+        (
+            json!({"anyOf":[{"type":"string"},{"minimum":4}]}),
+            false,
+            false,
+        ),
+        (
+            json!({"anyOf":[{"type":"string"},{"minimum":6}]}),
+            true,
+            false,
+        ),
+        (
+            json!({"oneOf":[{"type":"integer"},{"format":"unknown"}]}),
+            false,
+            true,
+        ),
+        (
+            json!({"anyOf":[{"type":"string"},{"format":"unknown"}]}),
+            false,
+            true,
+        ),
+        (
+            json!({"anyOf":[{"type":"integer"},{"format":"unknown"}]}),
+            false,
+            false,
+        ),
+    ] {
+        let report = constrained(json!(5), schema, "3.1.1");
+        let observations = rule(&report, "schema_composition");
+        assert_eq!(
+            observations
+                .iter()
+                .any(|o| o["classification"] == "confirmed_documented_mismatch"),
+            mismatch,
+            "{report}"
+        );
+        assert_eq!(
+            observations
+                .iter()
+                .any(|o| o["classification"] == "insufficient_evidence"),
+            unknown,
+            "{report}"
+        );
+        assert!(
+            rule(&report, "json_type").is_empty(),
+            "Alternative errors must remain speculative: {report}"
+        );
+    }
+}
+
+#[test]
+fn allof_and_not_keep_original_constraint_locations() {
+    let report = constrained(
+        json!(5),
+        json!({"allOf":[{"minimum":4},{"maximum":3}],"not":{"enum":[5]}}),
+        "3.1.1",
+    );
+    assert_eq!(
+        rule(&report, "schema_constraint")[0]["openapi_pointer"],
+        "/components/schemas/User/allOf/1/maximum"
+    );
+    assert_eq!(
+        rule(&report, "schema_not")[0]["classification"],
+        "confirmed_documented_mismatch"
+    );
+    let report = constrained(json!(5), json!({"not":{"format":"unknown"}}), "3.1.1");
+    assert_eq!(
+        rule(&report, "schema_not")[0]["classification"],
+        "insufficient_evidence"
+    );
+}
+
+#[test]
+fn redacted_equality_and_alternatives_never_create_fabricated_mismatches() {
+    let value = json!({"token":"private-test-value"});
+    let report = constrained(
+        value,
+        json!({"oneOf":[{"const":{"token":"something-else"}}]}),
+        "3.1.1",
+    );
+    assert_eq!(
+        rule(&report, "schema_composition")[0]["classification"],
+        "insufficient_evidence"
+    );
+    assert!(!report.to_string().contains("private-test-value"));
+    let report = constrained(
+        json!({"token":"private-test-value"}),
+        json!({"enum":[{"token":"different"}]}),
+        "3.1.1",
+    );
+    assert!(rule(&report, "schema_constraint").is_empty());
+    assert_eq!(
+        rule(&report, "equality_constraint")[0]["classification"],
+        "insufficient_evidence"
+    );
+}
+
+#[test]
+fn additional_properties_validate_values_and_defer_unknown_pattern_semantics() {
+    let report = constrained(
+        json!({"id":1,"extra":"wrong"}),
+        json!({"properties":{"id":{"type":"integer"}},"additionalProperties":{"type":"integer"}}),
+        "3.1.1",
+    );
+    assert_eq!(rule(&report, "json_type")[0]["instance_pointer"], "/extra");
+    assert_eq!(
+        rule(&report, "json_type")[0]["openapi_pointer"],
+        "/components/schemas/User/additionalProperties/type"
+    );
+    let report = constrained(
+        json!({"x":"allowed"}),
+        json!({"patternProperties":{"^x$":{"type":"string"}},"additionalProperties":false}),
+        "3.1.1",
+    );
+    assert!(!rule(&report, "additional_properties").is_empty());
+    assert!(
+        rule(&report, "additional_properties")
+            .iter()
+            .all(|o| o["classification"] == "unsupported_validation_case")
+    );
+    let report = constrained(
+        json!({"id":1,"extra":2}),
+        json!({"properties":{"id":{}},"additionalProperties":false}),
+        "3.0.4",
+    );
+    assert_eq!(
+        rule(&report, "additional_properties")[0]["instance_pointer"],
+        "/extra"
+    );
+}
+
+#[test]
+fn equality_and_alternative_expansion_share_the_global_work_budget() {
+    let alternatives: Vec<_> = (0..12_000).map(|_| json!({"type":"integer"})).collect();
+    let report = constrained(json!(5), json!({"anyOf":alternatives}), "3.1.1");
+    assert!(report["checks"].as_u64().unwrap() <= 10_000);
+    assert_eq!(
+        rule(&report, "schema_composition")[0]["classification"],
+        "insufficient_evidence"
+    );
+    let report = constrained(
+        json!(5),
+        json!({"enum":(0..12_000).collect::<Vec<_>>()}),
+        "3.1.1",
+    );
+    assert!(report["checks"].as_u64().unwrap() <= 10_000);
+    assert!(rule(&report, "schema_constraint").is_empty());
+    assert!(!rule(&report, "resource_budget").is_empty());
 }
 #[test]
 fn recursive_schema_can_follow_finite_instance_without_false_cycle() {
