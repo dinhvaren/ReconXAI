@@ -318,6 +318,7 @@ impl Core {
         .into()
     }
     pub async fn mcp_connect(&self, id: &str) -> Result<McpServer> {
+        self.managed_verify_server(id)?;
         let s = self.mcp_server(id)?;
         if !s.config.enabled || !s.config.trusted {
             return Err(AppError::new(
@@ -473,6 +474,7 @@ impl Core {
         name: &str,
         input: &serde_json::Value,
     ) -> Result<serde_json::Value> {
+        self.managed_verify_server(id)?;
         let s = self.mcp_server(id)?;
         if !s.config.enabled
             || !s.config.trusted

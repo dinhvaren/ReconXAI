@@ -613,9 +613,7 @@ try {
     ["ReconX", 1366, 768],
   ]) {
     await page.setViewportSize({ width, height });
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
       .click();

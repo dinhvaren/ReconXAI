@@ -8,7 +8,7 @@ use std::{
 };
 use url::Url;
 mod schema;
-pub use schema::{SchemaObservation, SchemaReview};
+pub use schema::{SchemaObservation, SchemaReview, SchemaReviewOptions};
 mod auth;
 mod replay;
 pub use auth::{HttpAuthInput, HttpAuthKind, HttpAuthProfile};

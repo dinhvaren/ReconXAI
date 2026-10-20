@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import JobHistory from "../components/JobHistory";
 import FileResearchPanel from "../components/FileResearchPanel";
 import { useJobEvents, activeJob as jobIsActive } from "../research";
@@ -241,24 +242,30 @@ export default function ReversePage({
         title="Reverse Engineering"
         description="Import owned files, inspect real binary structure, and retain analysis history."
         action={
-          <button
+          <Button
             className="button"
             disabled={busy || !projectId}
             onClick={() => pick()}
+            disabledReason={
+              busy ? "An operation is in progress" : "Select a project first"
+            }
           >
             Import File
-          </button>
+          </Button>
         }
       />
       <section className="panel import-controls">
         <div className="inline-actions">
-          <button
+          <Button
             className="button secondary"
             disabled={busy || !projectId}
             onClick={() => pick(true)}
+            disabledReason={
+              busy ? "An operation is in progress" : "Select a project first"
+            }
           >
             Import Folder
-          </button>
+          </Button>
           <span className="muted">
             Drop local files into this workspace · 64 MiB per file
           </span>
@@ -334,7 +341,7 @@ export default function ReversePage({
                   </p>
                 </div>
                 <div className="inline-actions">
-                  <button
+                  <Button
                     className="button"
                     disabled={busy || !!activeJob}
                     onClick={() =>
@@ -349,16 +356,26 @@ export default function ReversePage({
                         await load();
                       }, "Static analysis queued")
                     }
+                    disabledReason={
+                      busy
+                        ? "An operation is in progress"
+                        : "Wait for the active analysis job to finish"
+                    }
                   >
                     {activeJob ? "Analyzing…" : "Analyze File"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className="text-button"
                     disabled={busy || !!activeJob}
                     onClick={() => setRemove(true)}
+                    disabledReason={
+                      busy
+                        ? "An operation is in progress"
+                        : "Wait for the active analysis job to finish"
+                    }
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               </div>
               {activeJob && (
@@ -374,7 +391,7 @@ export default function ReversePage({
                     value={activeJob.progress}
                   />
                   <p>{activeJob.stage}</p>
-                  <button
+                  <Button
                     className="button secondary"
                     disabled={activeJob.cancel_requested}
                     onClick={() =>
@@ -383,11 +400,12 @@ export default function ReversePage({
                         await load();
                       }, "Cancellation requested")
                     }
+                    disabledReason={"Cancellation has already been requested"}
                   >
                     {activeJob.cancel_requested
                       ? "Cancellation requested"
                       : "Cancel analysis"}
-                  </button>
+                  </Button>
                 </div>
               )}
               {detailLoading && <p role="status">Loading saved analysis…</p>}
@@ -577,7 +595,7 @@ export default function ReversePage({
                               ))}
                           </select>
                         </label>
-                        <button
+                        <Button
                           className="button secondary"
                           disabled={!compareId || busy}
                           onClick={() =>
@@ -594,9 +612,14 @@ export default function ReversePage({
                               ),
                             )
                           }
+                          disabledReason={
+                            !compareId
+                              ? "Select a file to compare"
+                              : "An operation is in progress"
+                          }
                         >
                           Compare binaries
-                        </button>
+                        </Button>
                         {comparison && (
                           <pre className="hex-preview">{comparison}</pre>
                         )}
@@ -625,14 +648,14 @@ export default function ReversePage({
           busy={busy}
         />
       </div>
-      <section className="panel">
-        <h3>Integration capabilities</h3>
+      <details className="module-details">
+        <summary>Available analysis integrations</summary>
         <p className="muted">
           Disassembly, decompilation, Ghidra, YARA and AI function analysis are
           not connected in this build. Metadata and strings shown above come
           from the local static parser.
         </p>
-      </section>
+      </details>
       <Modal
         title="Import local file"
         open={chooseImport}
@@ -649,13 +672,18 @@ export default function ReversePage({
           />
           I have permission to analyze the imported local files.
         </label>
-        <button
+        <Button
           className="button"
           disabled={!projectId || busy}
           onClick={() => pick()}
+          disabledReason={
+            !projectId
+              ? "Select a project first"
+              : "An operation is in progress"
+          }
         >
           Choose local files
-        </button>
+        </Button>
       </Modal>
       <Modal
         title="Remove imported file"
@@ -666,7 +694,7 @@ export default function ReversePage({
           Remove {file?.name} and its analysis references? The original file and
           cached sample remain untouched; job history is retained.
         </p>
-        <button
+        <Button
           className="button"
           disabled={busy}
           onClick={() =>
@@ -676,9 +704,10 @@ export default function ReversePage({
               await load();
             }, "Imported file removed")
           }
+          disabledReason={"An operation is in progress"}
         >
           Remove imported file
-        </button>
+        </Button>
       </Modal>
     </>
   );

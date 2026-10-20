@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useEffect, useState } from "react";
 import {
   request,
@@ -108,13 +109,18 @@ export default function AiProviderManager({
             becomes available in AI Workspace immediately.
           </p>
         </div>
-        <button
+        <Button
           className="button primary"
           disabled={busy || !catalog.length}
           onClick={() => setEditor({ vendor: catalog[0] })}
+          disabledReason={
+            busy
+              ? "An operation is in progress"
+              : "The provider catalog has not loaded"
+          }
         >
           Add AI Provider
-        </button>
+        </Button>
       </div>
       {error && <p role="alert">{error}</p>}
       {!state && !error && <p role="status">Loading provider catalog…</p>}
@@ -206,14 +212,15 @@ export default function AiProviderManager({
                   )}
               </div>
               <div className="provider-actions">
-                <button
+                <Button
                   className="text-button"
                   disabled={busy}
                   onClick={() => vendor && setEditor({ vendor, profile })}
+                  disabledReason={"An operation is in progress"}
                 >
                   Manage
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button"
                   disabled={busy || !p.enabled || !ready(profile)}
                   onClick={() =>
@@ -222,10 +229,17 @@ export default function AiProviderManager({
                       "Connection test finished; review the result",
                     )
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : !p.enabled
+                        ? "Enable this provider first"
+                        : "Store the required provider credential first"
+                  }
                 >
                   Test connection
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button"
                   disabled={
                     busy ||
@@ -249,10 +263,19 @@ export default function AiProviderManager({
                       "Default model saved",
                     )
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : !p.enabled
+                        ? "Enable this provider first"
+                        : !ready(profile)
+                          ? "Store the required provider credential first"
+                          : "This provider is already the default"
+                  }
                 >
                   Set default
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button"
                   disabled={busy}
                   onClick={() =>
@@ -264,22 +287,24 @@ export default function AiProviderManager({
                       p.enabled ? "Profile disabled" : "Profile enabled",
                     )
                   }
+                  disabledReason={"An operation is in progress"}
                 >
                   {p.enabled ? "Disable" : "Enable"}
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button danger"
                   disabled={busy}
                   onClick={() => setRemoving(profile)}
+                  disabledReason={"An operation is in progress"}
                 >
                   Remove
-                </button>
+                </Button>
               </div>
             </article>
           );
         })}
       </div>
-      <details open={!profiles.length || filter !== "all" || !!search}>
+      <details open={filter !== "all" || !!search}>
         <summary>Browse provider catalog ({vendors.length})</summary>
         <div className="catalog-grid">
           {vendors.map((v) => (
@@ -362,7 +387,7 @@ export default function AiProviderManager({
               </label>
             ))}
           </div>
-          <button
+          <Button
             className="button secondary"
             disabled={busy}
             onClick={() =>
@@ -371,9 +396,10 @@ export default function AiProviderManager({
                 "Agent routing saved",
               )
             }
+            disabledReason={"An operation is in progress"}
           >
             Save agent routing
-          </button>
+          </Button>
         </details>
       )}
       {editor && (
@@ -400,7 +426,7 @@ export default function AiProviderManager({
               Remove {removing.provider.name} and its stored API key and
               headers? Projects and evidence are preserved.
             </p>
-            <button
+            <Button
               className="button danger"
               disabled={busy}
               onClick={() =>
@@ -411,9 +437,10 @@ export default function AiProviderManager({
                   setRemoving(null);
                 }, "Provider removed")
               }
+              disabledReason={"An operation is in progress"}
             >
               Confirm removal
-            </button>
+            </Button>
           </>
         )}
       </Modal>
@@ -657,14 +684,23 @@ function ProviderSetup({
           </select>
         </label>
         <div className="form-actions">
-          <button
+          <Button
             type="button"
             className="button secondary"
             disabled={busy || refreshing || !vendor.discovery || replaceHeaders}
             onClick={() => void refresh()}
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : refreshing
+                  ? "Model discovery is in progress"
+                  : !vendor.discovery
+                    ? "This provider has no supported model discovery adapter"
+                    : "Save header credential changes before discovering models"
+            }
           >
             {refreshing ? "Discovering models…" : "Refresh Models"}
-          </button>
+          </Button>
           <span className="helper">
             {replaceHeaders
               ? "Save custom headers before refreshing models."
@@ -927,7 +963,7 @@ function ProviderSetup({
           </p>
         </details>
         {hasKey && (
-          <button
+          <Button
             className="text-button danger"
             type="button"
             disabled={busy || refreshing}
@@ -939,9 +975,14 @@ function ProviderSetup({
                 close();
               }, "Stored API key removed")
             }
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : "Model discovery is in progress"
+            }
           >
             Remove stored API key
-          </button>
+          </Button>
         )}
         <label className="inline-check">
           <input
@@ -953,20 +994,32 @@ function ProviderSetup({
         </label>
         {error && <p role="alert">{error}</p>}
         <div className="form-actions">
-          <button
+          <Button
             className="button primary"
             disabled={busy || refreshing || !provider.model}
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : refreshing
+                  ? "Model discovery is in progress"
+                  : "Select a model first"
+            }
           >
             Save provider
-          </button>
-          <button
+          </Button>
+          <Button
             className="button ghost"
             type="button"
             disabled={busy || refreshing}
             onClick={close}
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : "Model discovery is in progress"
+            }
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

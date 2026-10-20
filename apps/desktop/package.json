@@ -9,6 +9,8 @@
     "test": "vitest run",
     "tauri": "tauri",
     "test:native": "node ../../tests/e2e/native.mjs",
+    "test:ux": "node ../../tests/e2e/ux.mjs after",
+    "test:extensions": "node ../../tests/e2e/extensions.mjs",
     "test:inputs": "node ../../tests/e2e/inputs.mjs",
     "test:jobs": "node ../../tests/e2e/jobs.mjs",
     "test:typography": "node ../../tests/e2e/typography.mjs after",
@@ -21,6 +23,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.3",
+    "lucide-react": "1.59.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

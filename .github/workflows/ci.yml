@@ -68,6 +68,25 @@ jobs:
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo test --locked --workspace
       - run: cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol
+      - name: Windows native UX and single-theme-control regression
+        if: runner.os == 'Windows'
+        run: node tests/e2e/ux.mjs after
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+          RECONX_NATIVE_TEST_HIDDEN: '1'
+      - name: Windows native approved first-party extension lifecycle
+        if: runner.os == 'Windows'
+        run: node tests/e2e/extensions.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+          RECONX_NATIVE_TEST_HIDDEN: '1'
+      - name: Linux CLI approved portable extension lifecycle
+        if: runner.os == 'Linux'
+        run: python3 scripts/extension_smoke.py --binary target/release/reconx --output artifacts/extension-cli-smoke --approve-install
+      - name: Offline CLI schema, evidence and report acceptance
+        run: python scripts/http_schema_smoke.py --output artifacts/http-schema-smoke
       - name: Linux optimized CLI acceptance with a benign ELF
         if: runner.os == 'Linux'
         run: python3 scripts/linux_release_smoke.py --binary target/release/reconx --output artifacts/linux-release-smoke
@@ -153,7 +172,15 @@ jobs:
             target/release/bundle/deb/*.deb
             artifacts/linux-release-smoke/*.json
             artifacts/linux-release-smoke/*.pdf
+            artifacts/http-schema-smoke/acceptance.json
+            artifacts/http-schema-smoke/schema-job.json
+            artifacts/http-schema-smoke/report.*
             artifacts/native-*/results.json
+            artifacts/ux-after-*/results.json
+            artifacts/ux-after-*/*.png
+            artifacts/extensions-*/results.json
+            artifacts/extensions-*/*.png
+            artifacts/extension-cli-smoke/results.json
             artifacts/http-replay-*/results.json
             artifacts/http-replay-*/auth-*.png
             artifacts/http-replay-*/reviewed-request-editor.png

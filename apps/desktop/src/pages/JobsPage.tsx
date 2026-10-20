@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import {
@@ -164,9 +165,13 @@ export default function JobsPage({
               onChange={(e) => setTimeoutSeconds(Number(e.target.value))}
             />
           </label>
-          <button className="button" disabled={busy}>
+          <Button
+            className="button"
+            disabled={busy}
+            disabledReason={"An operation is in progress"}
+          >
             Queue job
-          </button>
+          </Button>
         </form>
         <p className="helper">
           Progress records completed parsing stages and processed bytes.

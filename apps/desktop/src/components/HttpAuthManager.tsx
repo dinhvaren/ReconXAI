@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useEffect, useRef, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { Modal } from "./ui";
@@ -120,7 +121,7 @@ export default function HttpAuthManager({
                     cannot be used. Remove it to delete its stored credential.
                   </p>
                 )}
-                <button
+                <Button
                   className="button secondary"
                   disabled={busy || p.credential_state === "target_removed"}
                   title={
@@ -142,18 +143,23 @@ export default function HttpAuthManager({
                   }}
                 >
                   Edit identity
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button secondary"
                   disabled={busy || p.expired}
                   onClick={() => {
                     onTest(p);
                     onClose();
                   }}
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : "Replace the expired credential first"
+                  }
                 >
                   Test with reviewed request
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button ghost"
                   disabled={busy || p.expired}
                   onClick={() =>
@@ -167,10 +173,15 @@ export default function HttpAuthManager({
                       );
                     })
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : "Replace the expired credential first"
+                  }
                 >
                   Mark expired
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button ghost danger"
                   disabled={busy}
                   onClick={() =>
@@ -185,9 +196,10 @@ export default function HttpAuthManager({
                       );
                     })
                   }
+                  disabledReason={"An operation is in progress"}
                 >
                   Remove identity
-                </button>
+                </Button>
               </div>
             </article>
           ))}
@@ -334,14 +346,14 @@ export default function HttpAuthManager({
                   autoComplete="new-password"
                 />
               </label>
-              <button
+              <Button
                 type="button"
                 className="button ghost"
                 aria-pressed={show}
                 onClick={() => setShow((v) => !v)}
               >
                 {show ? "Hide entered credential" : "Show entered credential"}
-              </button>
+              </Button>
               <p className="helper">
                 Only newly entered credentials can be shown. Cookie format:
                 session=token. Token/password/cookie values require at least
@@ -350,22 +362,28 @@ export default function HttpAuthManager({
             </>
           )}
           <div className="form-actions">
-            <button
+            <Button
               className="button primary"
               disabled={busy || !targetId}
               type="submit"
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "Select a target before creating an authentication profile"
+              }
             >
               Save identity
-            </button>
+            </Button>
             {editing && (
-              <button
+              <Button
                 className="button secondary"
                 type="button"
                 disabled={busy}
                 onClick={reset}
+                disabledReason={"An operation is in progress"}
               >
                 Cancel identity edit
-              </button>
+              </Button>
             )}
           </div>
         </form>

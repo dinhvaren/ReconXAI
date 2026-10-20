@@ -1,3 +1,4 @@
+import { Button } from "./components/controls";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   request,
@@ -8,7 +9,9 @@ import {
 } from "./api";
 import { ThemeProvider, useTheme } from "./theme";
 import ThemeMenu from "./components/ThemeMenu";
-import { Icon, Modal, type Perform } from "./components/ui";
+import AiProviderManager from "./components/AiProviderManager";
+import { Heading } from "./components/ui";
+import { Icon, type Perform } from "./components/ui";
 import { navigation, routes } from "./components/navigation";
 import ActivitySidebar from "./components/ActivitySidebar";
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +22,7 @@ import { OrchestrationPage } from "./pages/OrchestrationPage";
 import JobsPage from "./pages/JobsPage";
 import RecordsPage from "./pages/RecordsPage";
 import ReconPage from "./pages/ReconPage";
+import ExtensionsPage from "./pages/ExtensionsPage";
 import HttpPage from "./pages/HttpPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
@@ -31,14 +35,6 @@ import {
   ToolManagerPage,
   PlannedModule,
 } from "./pages/WorkspacePages";
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((s) => s[0])
-    .join("")
-    .toUpperCase();
 export default function App({ initialTheme }: { initialTheme?: AppTheme }) {
   return (
     <ThemeProvider initialTheme={initialTheme}>
@@ -72,15 +68,22 @@ function Workbench() {
   const [reconTarget, setReconTarget] = useState<string>();
   const [reverseFile, setReverseFile] = useState<string>();
   const [importRequest, setImportRequest] = useState(0);
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(
+    () => localStorage.getItem("reconx.navCollapsed") === "true",
+  );
   const [groups, setGroups] = useState<string[]>([]);
   const [showActivity, setShowActivity] = useState(
-    () => window.innerWidth >= 1340,
+    () => localStorage.getItem("reconx.activityOpen") === "true",
   );
   const [selected, setSelected] = useState<string | null>(() =>
     localStorage.getItem("reconx.selectedProject"),
   );
-  const [notifications, setNotifications] = useState(false);
+  useEffect(() => {
+    localStorage.setItem("reconx.activityOpen", String(showActivity));
+  }, [showActivity]);
+  useEffect(() => {
+    localStorage.setItem("reconx.navCollapsed", String(navCollapsed));
+  }, [navCollapsed]);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchIndex, setSearchIndex] = useState(0);
@@ -167,9 +170,6 @@ function Workbench() {
   };
   const project =
     selected === null ? projects[0] : projects.find((p) => p.id === selected);
-  const provider =
-    data?.providers.find((p) => p.id === data.settings.default_provider_id) ??
-    data?.providers.find((p) => p.enabled);
   const needle = query.trim().toLowerCase();
   const searchResults = [
     ...projects
@@ -212,66 +212,17 @@ function Workbench() {
         run: () => navigate(r.name),
       })),
   ].slice(0, 9);
-  const failed =
-    data?.audit.filter((e) => e.outcome === "failed").slice(0, 5) ?? [];
   return (
     <div
       className={`app-shell ${navCollapsed ? "nav-collapsed" : ""} ${showActivity ? "activity-visible" : "activity-hidden"}`}
     >
       <aside className="icon-rail" aria-label="Workspace rail">
-        <button
-          className="rail-brand"
-          title="ReconX AI home"
-          aria-label="Open Dashboard"
-          onClick={() => navigate("Dashboard")}
-        >
+        <div className="rail-brand" aria-label="ReconX AI">
           <span>
             R<span>×</span>
           </span>
-        </button>
-        <span className="rail-divider" />
-        <button
-          className={"rail-item " + (page === "Dashboard" ? "active" : "")}
-          title="Local workspace"
-          aria-label="Open workspace overview"
-          onClick={() => navigate("Dashboard")}
-        >
-          <Icon name="layers" size={23} />
-        </button>
-        <div className="rail-projects">
-          {projects.slice(0, 3).map((p, index) => (
-            <button
-              key={p.id}
-              className={`rail-project tone-${index} ${project?.id === p.id ? "selected" : ""}`}
-              title={p.name}
-              aria-label={`Select project ${p.name}`}
-              onClick={() => {
-                selectProject(p.id);
-                navigate("Projects");
-              }}
-            >
-              <span>{initials(p.name)}</span>
-            </button>
-          ))}
         </div>
-        <button
-          className={"rail-item " + (page === "AI Workspace" ? "active" : "")}
-          aria-label="Open AI Workspace"
-          title="AI Workspace"
-          onClick={() => navigate("AI Workspace")}
-        >
-          <Icon name="ai" size={23} />
-        </button>
-        <button
-          className="rail-add"
-          aria-label="Add project"
-          title="Add a research project"
-          onClick={() => navigate("Projects")}
-        >
-          <Icon name="plus" size={23} />
-        </button>
         <div className="rail-bottom">
-          <ThemeMenu location="Sidebar" rail />
           <button
             className="rail-item"
             title={navCollapsed ? "Expand navigation" : "Collapse navigation"}
@@ -285,17 +236,17 @@ function Workbench() {
           <button
             className={"rail-item " + (page === "Settings" ? "active" : "")}
             title="Settings"
-            aria-label="Open Settings"
+            aria-label="Settings"
             onClick={() => navigate("Settings")}
           >
             <Icon name="settings" size={21} />
           </button>
+          <ThemeMenu />
         </div>
       </aside>
       <aside className="navigation-sidebar" aria-label="Module navigation">
         <div className="navigation-heading">
-          <span>Research workspace</span>
-          <span className="navigation-edition">AI</span>
+          <span>ReconX AI</span>
         </div>
         <nav aria-label="Primary navigation">
           {navigation.map((group) => (
@@ -342,39 +293,11 @@ function Workbench() {
             </section>
           ))}
         </nav>
-        <button
-          className="navigation-status"
-          aria-label="Configure AI provider"
-          onClick={() => navigate("Settings")}
-        >
-          <span className="nav-provider-avatar">
-            <Icon name="ai" size={19} />
-          </span>
-          <span>
-            <b>
-              {provider
-                ? `${provider.name} · ${provider.model}`
-                : "No model selected"}
-            </b>
-            <small>
-              {provider
-                ? "Configured · test in Settings"
-                : "Choose a cloud or local model"}
-            </small>
-          </span>
-          <Icon name="settings" size={15} />
-        </button>
       </aside>
       <div className="main-workspace">
         <header className="workspace-toolbar">
           <div className="toolbar-location">
-            <button
-              className="breadcrumb-home"
-              aria-label="Go to Dashboard"
-              onClick={() => navigate("Dashboard")}
-            >
-              <Icon name="grid" size={15} />
-            </button>
+            <Icon name="grid" size={15} />
             <span>{page}</span>
           </div>
           <div className="workspace-search">
@@ -493,6 +416,7 @@ function Workbench() {
                   setReconTarget(undefined);
                   navigate("Reconnaissance");
                 }
+                if (action === "Start API Testing") navigate("API Security");
                 if (action === "Export Report") navigate("Reports");
                 if (action === "View Jobs") navigate("Analysis Jobs");
                 if (action === "Open AI Workspace") navigate("AI Workspace");
@@ -505,16 +429,6 @@ function Workbench() {
                   navigate("Agent Workflows");
               }}
             />
-            <ThemeMenu location="Topbar" />
-            <button
-              className="icon-button notification-button"
-              aria-label="Notifications"
-              title="Notifications"
-              onClick={() => setNotifications(true)}
-            >
-              <Icon name="bell" />
-              {(notice || error || failed.length > 0) && <i />}
-            </button>
             <button
               className={"icon-button " + (showActivity ? "selected" : "")}
               aria-label={
@@ -562,12 +476,12 @@ function Workbench() {
               <div className="loading-spinner" />
               <h1>Opening your workspace</h1>
               <p>Connecting to the native Rust service.</p>
-              <button
+              <Button
                 className="button secondary"
                 onClick={() => void perform(refresh)}
               >
                 Retry connection
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="page-view" key={page}>
@@ -577,7 +491,7 @@ function Workbench() {
                     key={name}
                     page={name}
                     data={data}
-                    projectId={selected ?? undefined}
+                    projectId={project?.id}
                     perform={perform}
                     busy={busy}
                     newFindingRequest={findingCreateRequest}
@@ -586,12 +500,19 @@ function Workbench() {
                 ) : null,
               )}
               {(page === "Web Security" || page === "API Security") && (
-                <HttpPage page={page} data={data} projectId={selected??undefined} perform={perform} busy={busy} navigate={navigate}/>
+                <HttpPage
+                  page={page}
+                  data={data}
+                  projectId={project?.id}
+                  perform={perform}
+                  busy={busy}
+                  navigate={navigate}
+                />
               )}
               {page === "Reconnaissance" && (
                 <ReconPage
                   data={data}
-                  projectId={selected ?? undefined}
+                  projectId={project?.id}
                   initialTarget={reconTarget}
                   perform={perform}
                   busy={busy}
@@ -619,6 +540,20 @@ function Workbench() {
                   perform={perform}
                   onAddTarget={() => addTarget()}
                 />
+              )}
+              {page === "AI Providers" && (
+                <>
+                  <Heading
+                    eyebrow="AI"
+                    title="AI Providers"
+                    description="Configure cloud providers and local inference. Saving a configuration does not test a connection."
+                  />
+                  <AiProviderManager
+                    data={data}
+                    busy={busy}
+                    perform={perform}
+                  />
+                </>
               )}
               {page === "Settings" && (
                 <SettingsPage data={data} busy={busy} perform={perform} />
@@ -685,6 +620,17 @@ function Workbench() {
                   requestImport={importRequest}
                 />
               )}
+              {page === "Extensions" && (
+                <ExtensionsPage
+                  onOpenMcp={() => navigate("MCP Hub")}
+                  projectId={project?.id}
+                  onOpenFiles={() => {
+                    setImportRequest((n) => n + 1);
+                    navigate("Reverse Engineering");
+                  }}
+                  onOpenJobs={() => navigate("Analysis Jobs")}
+                />
+              )}
               {page === "Analysis Jobs" && (
                 <JobsPage
                   data={data}
@@ -710,16 +656,17 @@ function Workbench() {
             <i className={data ? "connection-dot" : "connection-dot waiting"} />
             {data ? "Local workspace connected" : "Connecting to workspace"}
           </span>
-          <button
+          <Button
             className="text-button"
             disabled={busy}
             onClick={() => void perform(refresh, "Workspace refreshed")}
+            disabledReason={"An operation is in progress"}
           >
             <Icon name="clock" size={12} />
             Refresh
-          </button>
+          </Button>
           <span>
-            ReconX AI <b>0.1</b>
+            ReconX AI <b>{data?.version ?? "—"}</b>
           </span>
         </footer>
       </div>
@@ -727,7 +674,7 @@ function Workbench() {
         <ActivitySidebar
           data={data}
           project={project}
-          navigate={navigate}
+          onClose={() => setShowActivity(false)}
           notice={notice}
           error={error}
         />
@@ -748,42 +695,6 @@ function Workbench() {
           }
         />
       )}
-      <Modal
-        title="Notifications"
-        open={notifications}
-        onClose={() => setNotifications(false)}
-      >
-        <div className="notification-content">
-          {notice && (
-            <p className="notification-entry">
-              <Icon name="check" />
-              {notice}
-            </p>
-          )}
-          {error && (
-            <p className="notification-entry error">
-              <Icon name="flag" />
-              {error}
-            </p>
-          )}
-          {failed.map((e) => (
-            <div className="notification-entry" key={e.id}>
-              <Icon name="clock" />
-              <div>
-                <b>{e.action} failed</b>
-                <small>{new Date(e.timestamp).toLocaleString()}</small>
-              </div>
-            </div>
-          ))}
-          {!notice && !error && !failed.length && (
-            <div className="empty compact">
-              <Icon name="bell" />
-              <h3>You're up to date</h3>
-              <p>No application notifications.</p>
-            </div>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }

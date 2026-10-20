@@ -1,3 +1,268 @@
+## MCP Registry / reviewed npm runtime checkpoint — 2026-10-19
+
+Version **0.1.0**, schema **016**; **v1.0 NOT READY**. A bounded Registry + npm
+installation slice is runtime verified. A subsequent cached-runtime selection fix
+is currently rebuilding/retesting; the accepted binaries below remain preserved.
+No commit/push/publication. Normal user data/credentials were not opened for tests.
+
+Authoritative bounded proof: artifacts/mcp-current-verification.json. Windows pair:
+artifacts/windows-mcp-candidate-1792415560; Linux CLI:
+artifacts/linux-cli-mcp-1792415142/reconx. Windows binaries are actually NotSigned.
+The OneDrive Desktop ReconX AI.lnk points to this tested Windows pair; record:
+artifacts/desktop-shortcut-mcp.json. Earlier schema014 candidates are retained.
+
+Implemented: actual official v0.1 Registry search/details/version listing, encoded
+IDs/cursors, pagination, runtime filters, bounded HTTP/schema/retry policies and
+SQLite offline/stale cache. Actual public Core CLI search(2/page), encoded detail,
+version lookup, next cursor, offline and clear all pass (6 calls):
+artifacts/registry-core-live-1792415328. Native Registry live/offline also passes:
+artifacts/registry-native-1792415690918. Public metadata is untrusted; no package
+execution is authorized by registry presence. Unknown OS/schema/install methods
+stay explicit. Version-history UI currently displays one page.
+
+Reviewed npm adapter reconx.mcp-everything installs official MCP Everything1/2
+from compiled locks (108/94 tarballs), validates SHA-512, safely extracts without
+npm scripts, reuses compatible Node>=24 or automatically installs pinned portable
+Node24.22.0 with archive/executable SHA-256, checks real free space, and uses the
+existing persistent Job Engine. Actual initialize/list_tools/schema health precedes
+atomic activation. Generated MCP config has no secrets and starts with no allowed
+tools. Desktop permission approval and exact-input invocation approval are separate.
+Actual Echo output persists; no automatic tool calls or fabricated findings.
+Everything is a protocol test server, not a scanner or Ghidra/Burp integration.
+
+Schema015 adds bounded metadata cache;016 adds managed package descriptors and
+installation operations/history. Previous configurations survive failed/cancelled
+activation; user-edited configs fail reconciliation rather than being overwritten.
+Enable/disable/remove, integrity checks, reviewed updates/rollback and shared-runtime
+retention reuse Core state. Legacy YARA APIs explicitly reject managed MCP IDs.
+CLI mcp install/doctor, catalog, tools dependencies and extension permissions share
+the same backend. JSON null operations now emit machine-readable null.
+
+Verified before the last cache-runtime fix: Windows Rust180/0/2 and Linux Core/CLI
+180/0/2; warning-denied Clippy both hosts; rustfmt, TypeScript/Vite; frontend36/0.
+76 Rust/SQL/manifest/lock source files match the Linux snapshot. Native current
+Windows acceptance30 checks: managed MCP4 + Registry1 + preserved YARA5 + HTTP14 +
+outputs6. Actual CLI lifecycle27 commands per host covers real package installation,
+Echo, restart, disable/enable, health,2→1→2, file-tamper rejection, managed removal,
+retained history and actual schema14→16 backup. Windows native separately forces
+managed Node installation; Linux detects Node20 as incompatible and auto-installs24.
+Native screenshots of all three themes and the installation dialog were viewed.
+Frontend and both reviewed npm lock audits report zero vulnerabilities; historical
+glib/maintenance backlog still blocks release (no new cargo audit claim).
+
+Failures/fixes: Registry upstream timeouts reproduced with Rust/curl/Python; bounded
+30s attempts and retries eventually passed actual API acceptance. Throttled excessive
+per-chunk logs and corrected total-byte reporting. Windows shared-load15s MCP timeout
+was real; removed duplicate tree hashing and set managed MCP60s bounded timeout,
+then real CLI/native Echo passed. Native test corrected Connect/Discover capitalization.
+Actual screenshot exposed missing dialog padding; fixed shared-body spacing/width.
+Linux native filesystem testing avoids Windows-mounted-filesystem metadata overhead.
+The last discovered issue was cached package receipts retaining a previously selected
+Node; source now rebinds receipt to the exact approved verified runtime atomically.
+
+Current unfinished task: finish acceptance of that cached-runtime fix. Running logs:
+artifacts/mcp-runtime-fix-{check,test,release}.log and the log named by
+artifacts/mcp-linux-current-log.txt. Once built, run
+scripts/managed_mcp_failure_smoke.py --binary <new-cli> --data <isolated prior-smoke>
+--approve-install on Windows and Linux; it tests actual nonzero-byte download
+cancellation, exact managed runtime rebinding and failed-update preservation.
+Then repeat native managed MCP acceptance using the new pair, update proof and
+shortcut only after acceptance, and replace this in-progress paragraph.
+
+Exact source files for this milestone: crates/reconx-core/src/{registry,managed_mcp,
+extensions,jobs,mcp,lib}.rs; tests/managed_mcp.rs; crates/reconx-tools/src/{packages,
+lib}.rs and Cargo.toml; Cargo.lock; crates/reconx-storage/src/lib.rs and migrations
+015_mcp_registry.sql/016_managed_mcp.sql; apps/cli/src/main.rs;
+apps/desktop/src-tauri/src/lib.rs; apps/desktop/src/{extensions.ts,extensions.css,
+ManagedMcp.test.tsx,App.tsx,pages/ExtensionsPage.tsx,components/RegistryBrowser.tsx,
+components/ManagedMcpDetails.tsx}; manifests/mcp/*; scripts/managed_mcp*.py;
+schema16 fixture updates in scripts/{extension,http_schema}_smoke.py and
+tests/e2e/extensions.mjs; new tests/e2e/{managed-mcp,registry}.mjs. Prior changes remain.
+
+Commands: cargo fmt --all -- --check; cargo clippy --locked --workspace --all-targets
+-j2 -- -D warnings; cargo test --locked --workspace -j2; cargo build --locked
+--release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2;
+Linux --offline equivalents excluding Desktop; npm test/build/audit; npm audit
+--package-lock-only for each reviewed package; scripts/managed_mcp_smoke.py;
+tests/e2e/{managed-mcp,registry,extensions,http-workspace,outputs}.mjs. Exact artifacts
+and hashes are in the proof. No fake pass is assigned to earlier failed iterations.
+
+Remaining: generalized npm/PyPI/Cargo/OCI/MCPB installers and runtime constraints,
+more reviewed integration adapters, large/paginated MCP catalogs/schema refs,
+remote authentication/OAuth, OS sandbox, disk-full/permissions/crash recovery
+acceptance, first-run profile wizard, installer lifecycle, Linux GUI/Secret Service,
+signed updater/signing, billing/OAuth/local model runtimes and original research
+backlog. No universal one-click installation or Linux Desktop claim.
+
+## UX and extension test results — 2026-10-19
+
+Active priority: user product milestones A-H. A's bounded Windows UX and B's
+first-party YARA-X installation/invocation slice are accepted. Full A cross-platform
+visual acceptance and broader B/C marketplace/MCP setup remain PARTIAL. Preserve
+all earlier schema/security work. Version remains **0.1.0**, schema **014**;
+**v1.0 is NOT READY**. No commit, push, installer publication or release.
+
+Authoritative current proof: artifacts/ux-extensions-current-verification.json.
+Windows portable pair: D:\ReconXAI\artifacts\windows-extensions-verified-20261019-172615.
+Linux optimized CLI: artifacts/linux-cli-extensions/reconx. Actual hashes/signature
+status are beside the binaries. Windows Desktop and CLI are actually NotSigned.
+The OneDrive Desktop ReconX AI.lnk now points to the new accepted Windows pair;
+artifacts/desktop-shortcut-extensions.json verifies its target and binary hash.
+The normal user workspace/credentials were not opened or migrated by this work.
+
+Implemented UX: shared 30/34/38 px controls, stable Button DOM and disabled reasons;
+actual Lucide icons; preserved Segoe UI Variable/Source Sans 3/IBM Plex Mono;
+exactly one rail Appearance menu (Light/Dark/ReconX), informational Settings;
+48px rail, collapsible navigation and optional activity drawer; real compact
+project/jobs/audit dashboard, useful recon empty state, direct provider navigation,
+collapsed provider catalog and build-derived version. Native visual inspection
+fixed ReconX token specificity, inconsistent default HTTP project binding,
+provider/reverse density and extension detail/install-dialog padding/alignment.
+No original user-referenced screenshot files were attached, so no comparison with
+those missing files is claimed. Actual baseline: artifacts/ux-before-1792391426265.
+Current native matrix: artifacts/ux-after-1792405586148: **120 captures**, ten pages ×
+three themes × four sizes (1280×720/1366×768/1440×900/1920×1080). Screenshots were
+actually viewed. Extra native checks cover rail width, disabled explanations,
+one theme menu, panel/navigation collapse, keyboard/persistence/restart and HTTP
+default project binding. 125/150/200% are CDP raster scaling, not physical OS DPI.
+Reviewable before/after viewer: artifacts/ux-comparison.html.
+
+Implemented bounded Marketplace: one compiled YARA-X native adapter; strict
+versioned manifest, real dependency/source/hash inspection, exact approved plan,
+portable dependency installation/reuse, actual version and benign signature health
+check before Ready, safe failure state, enable/disable/remove, shared-tool retention,
+input-file selection, real Job Engine execution/evidence and persistent history.
+CLI and Desktop share the same Rust methods/state. Migration014 adds registrations,
+tool requirements and atomic invocation permission bindings. Workers recheck the
+enabled revision at checkpoints and final commit. Disable/removal cancels queued
+or running bound work. Uninstall preserves tools, artifacts and history; tools
+needed by any installed registration cannot be removed. Native runtime directly
+tests queued cancellation; concurrent running-extension revocation is not separately
+claimed as runtime verified. No arbitrary native library/plugin or shell execution.
+
+Verified: Windows Rust **171 passed/0 failed/1 ignored**, Linux Core/CLI **171/0/1**;
+extension tests3/storage12; frontend **33/0**; TypeScript/Vite, rustfmt and warning-
+denied Clippy on Windows and Linux Core/CLI. Actual source hashes match for 64 Rust,
+SQL and manifest files in the Linux snapshot: artifacts/extensions-source-hashes.json.
+Optimized Windows pair and Linux CLI built. Final native extension acceptance:
+artifacts/extensions-1792405575406 (5 checkpoints); fresh final HTTP/schema14 and outputs:
+20 checkpoints. Current binary's UX matrix120 passes. Earlier same-checkpoint
+existing suites pass77; schema14 tools/MCP/AI-plan6 and HTTP replay11 also pass.
+Provider inference fixtures are not live account verification. Actual CLI extension
+lifecycle: **28 commands per host**, real pinned YARA-X, evidence hashes, integrity,
+disable/enable, rejected stale/unapproved plans, retained tools/history and reinstall.
+Both hosts use the actual schema13 binary to create queued work, then verify the
+intact pre-v14 backup and successful migrated execution. Database integrity and
+foreign-key checks pass. npm audit: zero vulnerabilities. Cargo.lock is unchanged;
+the previously verified glib unsoundness plus maintenance backlog still blocks v1.
+
+Commands/logs: npm test, npm run build, npm audit; cargo fmt --all -- --check;
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings; cargo test
+--locked --workspace -j2; cargo build --locked --release -p reconx -p reconx-desktop
+--features reconx-desktop/custom-protocol -j2; Linux offline equivalents excluding
+Desktop; scripts/extension_smoke.py --legacy-binary <schema13> --approve-install;
+tests/e2e/extensions.mjs, ux.mjs, http-workspace.mjs, outputs.mjs and existing native
+suites. Final logs: artifacts/extensions-verified-tests.log,
+extensions-linux-final-tests.log, extensions-final-clippy.log,
+extensions-dialog-refined-tests.log, extensions-dialog-refined-frontend-build.log,
+extensions-final-native-build.log, extensions-final-native-*.log and
+extensions-final-regression-*.log. Final YAML workflow parsing and py_compile pass.
+
+Retained failures: early Button conditional wrapper lost pointer/ref continuity
+(19 frontend pass/7 fail), fixed by a stable native button and regression test;
+extension UI DOM shim/API/Send compile errors fixed before acceptance; native
+reinstall test held a locator from the prior WebView, fixed and rerun. Native
+screenshots caught/fixed actual padding defects. Linux staging first omitted
+fixture/workflow files, then shared Cargo cache retained an old compile-time
+CARGO_MANIFEST_DIR; staged complete source and touched workspace source to force
+recompile. Combined Windows WSL stdout/stderr handles overwrote log segments;
+final test logging is redirected inside Linux, with complete171/0/1 results.
+No guard was relaxed to make any test pass.
+
+
+---
+## Current conditional-schema checkpoint - 2026-10-19
+
+Bounded OpenAPI 3.1 if/then/else now uses real captured predicates, selected-branch
+provenance and the existing shared budgets/format policy. Windows and Parrot/WSL
+Core+CLI Rust: 167/0/1 each; schema 41/storage 11; frontend 26; native HTTP/schema
+and outputs: 20 fresh checkpoints. Optimized binaries, real schema-12 upgrades,
+evidence/four-format reports, PDF inspection and restart pass on both CLI hosts.
+Proof: artifacts/schema-conditional-current-verification.json; exact commands,
+files, candidates and next multi-file-import action: MASTER_EXECUTION_PROGRESS.md.
+No new migration; schema 013/version 0.1.0. v1.0 NOT READY: glib, Linux GUI,
+installer/signing, full schema coverage and unfinished research modules remain.
+No commit, push or release publication.
+
+---
+
+## Current opt-in format checkpoint - 2026-10-19
+
+Default-off per-job syntactic formats, durable fingerprint policy and additive
+schema-013 migration are runtime-verified. Windows and Parrot/WSL Core+CLI Rust:
+163/0/1 each; schema 37/storage 11; frontend 26; native HTTP/schema+outputs: 19
+fresh checkpoints. Real old-binary queued-job upgrades, consistent backups,
+evidence, four report formats, independent PDF parsing and restart pass on both
+hosts. Proof: artifacts/schema-format-current-verification.json; exact commands,
+files, candidates, limitations and next action: MASTER_EXECUTION_PROGRESS.md.
+Version 0.1.0; v1.0 NOT READY. glib/maintenance, Linux GUI, installer/signing and
+unfinished modules remain unresolved. No commit, push or release publication.
+
+---
+
+## Current offline regex checkpoint - 2026-10-19
+
+Bounded pattern and 3.1 patternProperties now run through shared jobs, evidence,
+Desktop and CLI. Specialized/unsupported regex syntax and limits stay explicit.
+Final Windows and Parrot/WSL Core-CLI Rust: 157/0/1 each; frontend 26; native
+HTTP/schema+outputs: 18 fresh checkpoints; optimized CLI/evidence/four-format
+reports pass on both hosts. Exact scope/failures/commands/next action:
+MASTER_EXECUTION_PROGRESS.md and artifacts/schema-pattern-current-verification.json.
+No migration; schema 012/version 0.1.0. v1.0 remains NOT READY. Next: explicit,
+default-off durable format assertion policy; Linux GUI/installers/signing and
+glib/maintenance review remain unresolved. No push or release publication.
+
+---
+
+## Current checkpoint: bounded offline tuples, uniqueness and dependencies - 2026-10-18
+
+Phase 1.5 advanced safely through the existing shared Core/Job Engine/Desktop/CLI.
+uniqueItems now uses numeric/structural equality; OpenAPI 3.1 prefixItems/items
+and dependentRequired/dependentSchemas retain exact source locations. Redacted,
+invalid, cyclic and budget-limited cases remain explicit/inconclusive. No network
+resolver, external replay, automatic finding verification or migration was added.
+The schema remains 012, version 0.1.0, and v1.0 is NOT READY.
+
+Current proof: `artifacts/schema-arrays-current-verification.json`. Windows Rust
+150 passed/0 failed/1 ignored; Parrot/WSL Core+CLI 150/0/1; frontend 26 passed;
+format, warning-denied Clippy, TypeScript/Vite and optimized Windows Desktop/CLI
+and Linux CLI builds pass. Fresh native HTTP/schema, output and replay acceptance
+passes 29 checkpoints across three suites. Other suites retain their earlier
+historical proof and were not reclassified as freshly rerun. Native screenshots
+of actual uniqueness/tuple observations were inspected. Separate optimized CLI
+processes on Windows and Linux verified jobs, source evidence, persistence and
+all four exports; pypdf 6.19.0 independently parsed both five-page PDFs/redaction.
+Linux Desktop/Secret Service/packages and Windows installer lifecycle/signing
+remain unverified; this checkpoint produced portable binaries, no new installer.
+
+Fresh cargo-audit still reports one glib unsound warning and six maintenance
+warnings; npm audit reports zero advisories. The explicit deny-unsound check exits
+1 and dependency readiness stays BLOCKED. Earlier GitHub alert export is retained
+as historical input, not a new remote verification. No advisory was suppressed.
+
+Current unfinished task: complete remaining safe offline schema coverage
+(patterns/patternProperties, formats with explicit assertion policy, resource/
+multi-file resolution) with bounded CPU/memory and original evidence provenance.
+Next exact action: inspect the existing JSON Schema library's regex limits and
+dialect semantics, then implement the next bounded offline validator slice with
+positive/negative/redaction/budget cases. Broader Web/API, recon, AI, tool/MCP,
+reverse/mobile/cloud/network and release requirements remain PARTIAL/NOT_STARTED
+as recorded in module-status.json and RELEASE_READINESS.md.
+
+Exact changed files, commands, retained failures and next action: MASTER_EXECUTION_PROGRESS.md.
+
+---
+
 ## Current followup: CI fixture reliability and complete project DOCX — 2026-10-18
 
 Preserved the tested production source, schema 012, user DBs, credentials, typography

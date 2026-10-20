@@ -1,0 +1,11 @@
+{
+  "retrieved": "2026-10-19",
+  "schema_source": "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/docs/reference/server-json/draft/server.schema.json",
+  "schema_sha256": "e81b689767ce00722800b2c838ff7e93f6fb1d7bb6d7b2249250f66e4dc4d8c8",
+  "npm_source": "https://registry.npmjs.org/@modelcontextprotocol/server-everything",
+  "lockfiles": {
+    "1.0.0": "7742fe34babf8cfe8eb8304f0e49ec8e76fcf1b18407183f847208a5619cd745",
+    "2.0.0": "33f69df406ca0124ad92e4850614ee08898b226a6726ead1dc79cc98b4cff297"
+  },
+  "note": "Public schema and lock metadata only. No downloaded binaries or node_modules. Installation scripts are not permitted."
+}

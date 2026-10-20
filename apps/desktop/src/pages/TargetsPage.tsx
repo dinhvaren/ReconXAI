@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useJobEvents } from "../research";
 import { useEffect, useState, useCallback } from "react";
 import { request, errorText, type Snapshot } from "../api";
@@ -125,9 +126,9 @@ export default function TargetsPage({
         title="Targets & Scope"
         description="Register assets, group them with tags, and define authorization boundaries."
         action={
-          <button className="button" onClick={onAdd}>
+          <Button className="button" onClick={onAdd}>
             + Add Target
-          </button>
+          </Button>
         }
       />
       <section className="panel target-inventory">
@@ -165,20 +166,26 @@ export default function TargetsPage({
               ))}
             </select>
           </label>
-          <button
+          <Button
             className="button secondary"
             disabled={busy}
             onClick={() => transfer(false)}
+            disabledReason={"An operation is in progress"}
           >
             Import targets
-          </button>
-          <button
+          </Button>
+          <Button
             className="button secondary"
             disabled={busy || !targets.length}
             onClick={() => transfer(true)}
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : "There are no targets to export"
+            }
           >
             Export targets
-          </button>
+          </Button>
         </div>
         {error && (
           <p role="alert" className="banner error">
@@ -212,12 +219,12 @@ export default function TargetsPage({
                     className={selected?.id === t.id ? "selected-row" : ""}
                   >
                     <td>
-                      <button
+                      <Button
                         className="text-button target-name"
                         onClick={() => setSelected(t)}
                       >
                         {t.name}
-                      </button>
+                      </Button>
                       <small className="break-value">{t.value}</small>
                       {!!t.tags.length && <small>{t.tags.join(" · ")}</small>}
                     </td>
@@ -240,18 +247,18 @@ export default function TargetsPage({
                     </td>
                     <td>
                       <div className="inline-actions">
-                        <button
+                        <Button
                           className="text-button"
                           onClick={() => onEdit(t)}
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="text-button"
                           onClick={() => setRemove(t)}
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -265,9 +272,9 @@ export default function TargetsPage({
         <section className="panel target-details">
           <div className="panel-heading">
             <h2>{selected.name}</h2>
-            <button className="text-button" onClick={() => setSelected(null)}>
+            <Button className="text-button" onClick={() => setSelected(null)}>
               Close details
-            </button>
+            </Button>
           </div>
           <p className="break-value">{selected.value}</p>
           <p>{selected.description || "No description recorded."}</p>
@@ -315,9 +322,13 @@ export default function TargetsPage({
                 placeholder={selected.value}
               />
             </label>
-            <button className="button secondary" disabled={busy}>
+            <Button
+              className="button secondary"
+              disabled={busy}
+              disabledReason={"An operation is in progress"}
+            >
               Validate scope
-            </button>
+            </Button>
           </form>
           {scope && (
             <p role="status" className="scope-result">
@@ -326,14 +337,14 @@ export default function TargetsPage({
           )}
           <h3>Available analysis</h3>
           {["url", "rest_api", "graphql"].includes(selected.kind) && (
-            <button
+            <Button
               className="button secondary"
               onClick={() => onRecon(selected.id, selected.project_id)}
             >
               Plan local HTTP inventory
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             className="button secondary"
             disabled={busy}
             onClick={() =>
@@ -352,11 +363,12 @@ export default function TargetsPage({
                 ]);
               }, "Read-only target scope review queued")
             }
+            disabledReason={"An operation is in progress"}
           >
             Review target scope
-          </button>
+          </Button>
           {localFileKinds.includes(selected.kind) ? (
-            <button
+            <Button
               className="button"
               disabled={busy || scope?.status !== "allowed"}
               onClick={() =>
@@ -368,9 +380,14 @@ export default function TargetsPage({
                   onReverse(file.id, file.project_id);
                 })
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "This target requires approved authorization and matching scope"
+              }
             >
               Import for static analysis
-            </button>
+            </Button>
           ) : !["url", "rest_api", "graphql"].includes(selected.kind) ? (
             <p className="muted">
               Target registration is available. This target type has no
@@ -422,7 +439,7 @@ export default function TargetsPage({
           Delete {remove?.name} from the inventory? Imported files and job
           history are retained with their target link removed.
         </p>
-        <button
+        <Button
           className="button"
           disabled={busy}
           onClick={() =>
@@ -432,9 +449,10 @@ export default function TargetsPage({
               await load();
             }, "Target removed")
           }
+          disabledReason={"An operation is in progress"}
         >
           Delete target
-        </button>
+        </Button>
       </Modal>
     </>
   );

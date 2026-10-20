@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import AiProviderManager from "../components/AiProviderManager";
 import type { AiManagerState } from "../ai";
 import {
@@ -85,15 +86,15 @@ export function Projects({
         description="A durable home for your research notes and workspace history."
         action={
           <div className="inline-actions">
-            <button className="button" onClick={onAddTarget}>
+            <Button className="button" onClick={onAddTarget}>
               + Add Target
-            </button>
-            <button
+            </Button>
+            <Button
               className="button secondary"
               onClick={() => setShowImport(!showImport)}
             >
               Import project
-            </button>
+            </Button>
           </div>
         }
       />
@@ -124,11 +125,15 @@ export function Projects({
               />
             </label>
             <div className="form-actions">
-              <button className="button primary" disabled={busy}>
+              <Button
+                className="button primary"
+                disabled={busy}
+                disabledReason={"An operation is in progress"}
+              >
                 {busy ? "Saving…" : editing ? "Save project" : "Create project"}
-              </button>
+              </Button>
               {editing && (
-                <button
+                <Button
                   type="button"
                   className="button ghost"
                   onClick={() => {
@@ -138,7 +143,7 @@ export function Projects({
                   }}
                 >
                   Cancel edit
-                </button>
+                </Button>
               )}
             </div>
             <p className="helper">
@@ -182,7 +187,7 @@ export function Projects({
                   <p>{p.description || "No description"}</p>
                   <small>Updated {date(p.updated_at)}</small>
                   <div className="card-actions">
-                    <button
+                    <Button
                       disabled={busy}
                       className="text-button"
                       onClick={() => {
@@ -190,17 +195,19 @@ export function Projects({
                         setName(p.name);
                         setDescription(p.description);
                       }}
+                      disabledReason={"An operation is in progress"}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       disabled={busy}
                       className="text-button"
                       onClick={() => exportProject(p.id)}
+                      disabledReason={"An operation is in progress"}
                     >
                       Export
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       disabled={busy}
                       className="text-button"
                       onClick={() =>
@@ -213,9 +220,10 @@ export function Projects({
                           p.archived ? "Project restored" : "Project archived",
                         )
                       }
+                      disabledReason={"An operation is in progress"}
                     >
                       {p.archived ? "Restore" : "Archive"}
-                    </button>
+                    </Button>
                   </div>
                 </article>
               ))}
@@ -257,9 +265,13 @@ export function Projects({
                 placeholder='{"format_version":1,"name":"Research","description":""}'
               />
             </label>
-            <button className="button primary" disabled={busy}>
+            <Button
+              className="button primary"
+              disabled={busy}
+              disabledReason={"An operation is in progress"}
+            >
               Import as a new project
-            </button>
+            </Button>
           </form>
         </section>
       )}
@@ -302,7 +314,7 @@ export function SettingsPage({
         eyebrow="WORKSPACE CONFIGURATION"
         title="Settings"
         action={
-          <button
+          <Button
             className="button secondary"
             onClick={() =>
               document
@@ -311,7 +323,7 @@ export function SettingsPage({
             }
           >
             AI Providers
-          </button>
+          </Button>
         }
         description="Choose your models and manage your shared desktop and CLI configuration."
       />
@@ -330,25 +342,17 @@ export function SettingsPage({
               );
             }}
           >
-            <label>
-              Appearance
-              <select
-                aria-label="Appearance"
-                value={theme.preference}
-                onChange={(e) =>
-                  void theme
-                    .setTheme(e.target.value as Settings["theme"])
-                    .catch(() => {})
-                }
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="reconx">ReconX</option>
-              </select>
-            </label>
             <p className="helper">
-              Appearance applies and saves immediately. Light, Dark and ReconX
-              share one selection across all appearance controls.
+              Appearance:{" "}
+              <strong aria-label="Current appearance">
+                {theme.preference === "reconx"
+                  ? "ReconX"
+                  : theme.preference === "dark"
+                    ? "Dark"
+                    : "Light"}
+              </strong>
+              . Change it from the palette button at the bottom of the left
+              rail.
             </p>
             <label>
               Security mode
@@ -420,9 +424,13 @@ export function SettingsPage({
               interrupted answers are not retried. Saving this choice authorizes
               transmission to the fallback gateway.
             </p>
-            <button className="button primary" disabled={busy}>
+            <Button
+              className="button primary"
+              disabled={busy}
+              disabledReason={"An operation is in progress"}
+            >
               Save preferences
-            </button>
+            </Button>
           </form>
         </section>
         <section className="panel">
@@ -525,9 +533,9 @@ export function AiWorkspace({
         eyebrow="AI-ASSISTED LOCAL RESEARCH"
         title="AI Workspace"
         action={
-          <button className="button secondary" onClick={onTools}>
+          <Button className="button secondary" onClick={onTools}>
             Plan local analysis
-          </button>
+          </Button>
         }
         description="Ask your configured model to explain evidence, review code, or draft remediation."
       />
@@ -720,7 +728,7 @@ export function AiWorkspace({
                 Stream output
               </label>
               {running && (
-                <button
+                <Button
                   type="button"
                   className="button secondary"
                   onClick={() =>
@@ -730,9 +738,9 @@ export function AiWorkspace({
                   }
                 >
                   Cancel request
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 className="button primary"
                 disabled={
                   busy ||
@@ -740,9 +748,18 @@ export function AiWorkspace({
                   !enabled.some((p) => p.id === id) ||
                   !prompt.trim()
                 }
+                disabledReason={
+                  busy
+                    ? "An operation is in progress"
+                    : !!missingCredential
+                      ? "Store the required provider credential first"
+                      : !enabled.some((p) => p.id === id)
+                        ? "Select an enabled provider"
+                        : "Enter a message first"
+                }
               >
                 {busy ? "Waiting for model…" : "Send message ↗"}
-              </button>
+              </Button>
             </div>
             {cancelError && (
               <p role="alert" className="helper">
@@ -921,13 +938,14 @@ export function ToolManagerPage({
         title="Tool Manager"
         description="Review pinned official releases, verify integrity, and manage portable local tools."
         action={
-          <button
+          <Button
             className="button secondary"
             disabled={busy}
             onClick={() => void perform(load)}
+            disabledReason={"An operation is in progress"}
           >
             Refresh inventory
-          </button>
+          </Button>
         }
       />
       {loadError && (
@@ -958,7 +976,7 @@ export function ToolManagerPage({
             ))}
           </select>
         </label>
-        <button
+        <Button
           className="button secondary"
           disabled={busy}
           onClick={() =>
@@ -970,9 +988,10 @@ export function ToolManagerPage({
               ),
             )
           }
+          disabledReason={"An operation is in progress"}
         >
           Review profile plan
-        </button>
+        </Button>
         {profilePlan.length > 0 && (
           <>
             <pre className="technical-output">
@@ -988,7 +1007,7 @@ export function ToolManagerPage({
                 2,
               )}
             </pre>
-            <button
+            <Button
               className="button primary"
               disabled={busy}
               onClick={() =>
@@ -1007,9 +1026,10 @@ export function ToolManagerPage({
                   await load();
                 }, "Profile installed and health checks passed")
               }
+              disabledReason={"An operation is in progress"}
             >
               Approve profile installation
-            </button>
+            </Button>
           </>
         )}
       </section>
@@ -1052,7 +1072,7 @@ export function ToolManagerPage({
               {tool.status.replaceAll("_", " ")}
             </span>
             <div className="card-actions">
-              <button
+              <Button
                 className="text-button"
                 disabled={busy}
                 onClick={() =>
@@ -1068,10 +1088,11 @@ export function ToolManagerPage({
                     ),
                   )
                 }
+                disabledReason={"An operation is in progress"}
               >
                 Open logs
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={busy}
                 className="text-button"
                 onClick={() =>
@@ -1083,10 +1104,11 @@ export function ToolManagerPage({
                     ),
                   )
                 }
+                disabledReason={"An operation is in progress"}
               >
                 Review install plan
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={busy || !tool.integrity_verified}
                 title={
                   !tool.integrity_verified
@@ -1102,8 +1124,8 @@ export function ToolManagerPage({
                 }
               >
                 Health check
-              </button>
-              <button
+              </Button>
+              <Button
                 className="text-button"
                 disabled={busy || tool.integrity_verified}
                 title={
@@ -1120,8 +1142,8 @@ export function ToolManagerPage({
                 }
               >
                 Repair
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={busy || tool.status === "not_installed"}
                 title={
                   tool.status === "not_installed"
@@ -1138,7 +1160,7 @@ export function ToolManagerPage({
                 }
               >
                 Uninstall
-              </button>
+              </Button>
             </div>
           </article>
         ))}
@@ -1166,7 +1188,7 @@ export function ToolManagerPage({
               Dependency resolution is trivial for this adapter because it has
               no external dependencies.
             </p>
-            <button
+            <Button
               disabled={
                 busy ||
                 inventory.some(
@@ -1182,19 +1204,24 @@ export function ToolManagerPage({
                   await load();
                 }, "Official release downloaded, verified and installed")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "This tool is already installed or being changed"
+              }
             >
               Install verified release
-            </button>
+            </Button>
           </div>
         </section>
       )}
       {busy && progress?.phase === "downloading" && installing && (
-        <button
+        <Button
           className="button secondary"
           onClick={() => void cancelStream(`tool:${installing}`)}
         >
           Cancel download
-        </button>
+        </Button>
       )}
       <section className="panel integration-detail">
         <div className="panel-heading">

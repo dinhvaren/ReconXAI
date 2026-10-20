@@ -72,8 +72,8 @@ async function stop(){
   }
 }
 const results=[];
-async function chooseTheme(page,mode,location='Topbar'){
-  await page.getByRole('button',{name:`${location} appearance`,exact:true}).click();
+async function chooseTheme(page,mode,location='Rail'){
+  await page.getByRole('button',{name:'Appearance',exact:true}).click();
   await page.getByRole('menuitemradio',{name:new RegExp('^'+mode,'i')}).click();
   await page.getByText('Saving appearance…',{exact:true}).waitFor({state:'hidden'});
 }
@@ -103,10 +103,10 @@ try{
   results.push('CLI project is visible to the native desktop');
   await page.getByLabel('Current project',{exact:true}).selectOption('');
   assert.equal(await page.getByLabel('Current project',{exact:true}).inputValue(),'');
-  await page.getByRole('heading',{name:'Local workspace',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Projects',exact:true}).waitFor();
   await page.getByLabel('Current project',{exact:true}).selectOption(listed[0].id);
   await page.getByRole('button',{name:'Settings',exact:true}).click();
-  await page.getByLabel('Appearance',{exact:true}).selectOption('reconx');
+  await chooseTheme(page,'ReconX');
   await page.getByText('Saving appearance…',{exact:true}).waitFor({state:'hidden'});
   assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).theme,'reconx');
   await page.emulateMedia({colorScheme:'dark'});
@@ -115,7 +115,7 @@ try{
   await page.locator('html[data-theme="reconx"]').waitFor();
   await page.getByLabel('Security mode').selectOption('lab_research');
   await chooseTheme(page,'Light','Sidebar');
-  assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'light');
+  assert.equal(await page.getByLabel('Current appearance',{exact:true}).innerText(),'Light');
   assert.equal(await page.getByLabel('Security mode').inputValue(),'lab_research');
   assert.equal(JSON.parse((await exec(cli,['--json','settings','show'],{env,windowsHide:true})).stdout).security_mode,'passive_auto');
   await page.getByRole('button',{name:'Save preferences',exact:true}).click();
@@ -161,7 +161,7 @@ try{
   await page.getByRole('heading',{name:'CLI-created project',exact:true}).waitFor();
   await page.screenshot({path:path.join(artifact,'projects.png'),fullPage:true});
   await page.getByRole('button',{name:'Settings',exact:true}).click();
-  assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'light');
+  assert.equal(await page.getByLabel('Current appearance',{exact:true}).innerText(),'Light');
   await page.screenshot({path:path.join(artifact,'settings-light.png'),fullPage:true});
   assert.equal(await page.getByLabel('Security mode').inputValue(),'lab_research');
   await page.getByRole('heading',{name:/^Local fixture gateway/}).waitFor();
@@ -171,21 +171,21 @@ try{
   await page.locator('html[data-theme="dark"]').waitFor();
   await page.evaluate(()=>document.fonts.ready);
   await delay(350);
-  const visualStyles=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,root:getComputedStyle(document.documentElement).getPropertyValue('--rx-surface'),nav:getComputedStyle(document.querySelector('.nav-item')).color,card:getComputedStyle(document.querySelector('.feature-card')).backgroundColor,art:getComputedStyle(document.querySelector('.workspace-feature')).backgroundImage.slice(0,100)}));
+  const visualStyles=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,root:getComputedStyle(document.documentElement).getPropertyValue('--rx-surface'),nav:getComputedStyle(document.querySelector('.nav-item')).color,card:getComputedStyle(document.querySelector('.overview-projects')).backgroundColor,themeControls:document.querySelectorAll('.theme-trigger').length}));
   await writeFile(path.join(artifact,'visual-styles.json'),JSON.stringify(visualStyles,null,2));
   results.push('Exactly Light/Dark/ReconX apply immediately, synchronize with Settings, preserve draft preferences, persist to CLI/restart and do not follow OS appearance');
   await page.screenshot({path:path.join(artifact,'dashboard.png'),fullPage:true});
   if(process.env.RECONX_E2E_VISUAL==='1'){
-    const art=await page.locator('.workspace-feature').evaluate(el=>getComputedStyle(el).backgroundImage);
-    assert.notEqual(art,'none','Workspace artwork must render');
+    assert.equal(await page.locator('.workspace-feature').count(),0,'Decorative dashboard hero removed');
+    assert.equal(await page.locator('.theme-trigger').count(),1);
     const matrix=[];
     for(const [width,height] of [[1920,1080],[1600,900],[1440,900],[1366,768],[1280,720]]){
       await page.setViewportSize({width,height});await delay(250);
       const layout=await page.evaluate(()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,contentWidth:document.querySelector('.workspace-content').clientWidth,contentScrollWidth:document.querySelector('.workspace-content').scrollWidth,railWidth:document.querySelector('.icon-rail').getBoundingClientRect().width,navWidth:document.querySelector('.navigation-sidebar').getBoundingClientRect().width}));
-      assert(layout.documentWidth<=width+1,'No document overflow');assert(layout.contentScrollWidth<=layout.contentWidth+1,'No workspace clipping');assert.equal(layout.railWidth,72);
+      assert(layout.documentWidth<=width+1,'No document overflow');assert(layout.contentScrollWidth<=layout.contentWidth+1,'No workspace clipping');assert.equal(layout.railWidth,48);
       matrix.push({width,height,...layout});await page.screenshot({path:path.join(artifact,`dashboard-${width}x${height}.png`),fullPage:true});
     }
-    await page.getByRole('button',{name:'Hide activity panel',exact:true}).click();
+    if(await page.getByRole('button',{name:'Hide activity panel',exact:true}).count())await page.getByRole('button',{name:'Hide activity panel',exact:true}).last().click();
     await page.getByRole('button',{name:'Collapse navigation',exact:true}).click();
     await delay(200);
     assert.equal(await page.locator('.navigation-sidebar').evaluate(el=>el.getBoundingClientRect().width),0);
@@ -194,8 +194,8 @@ try{
     await page.setViewportSize({width:1440,height:900});
     await page.keyboard.press('Control+k');await page.getByRole('combobox',{name:'Search workspace'}).fill('Reports');await page.keyboard.press('Enter');
     await page.getByRole('heading',{name:'Reports',exact:true}).waitFor();
-    await page.getByRole('button',{name:'Notifications',exact:true}).click();await page.getByRole('dialog',{name:'Notifications',exact:true}).waitFor();await page.keyboard.press('Escape');
-    assert.equal(await page.getByRole('dialog',{name:'Notifications',exact:true}).count(),0);
+    await page.getByRole('complementary',{name:'Workspace activity',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Hide activity panel',exact:true}).last().click();
     for(const module of ['Projects','AI Workspace','Settings','MCP Hub','Tool Manager','Reconnaissance','Findings','Reverse Engineering','Reports']){
       await page.getByRole('button',{name:module,exact:true}).click();
       const slug=module.toLowerCase().replaceAll(' ','-').replaceAll('&','and');
@@ -256,7 +256,7 @@ try{
     const appearanceChecks=[];
     for(const mode of ['Dark','Light','ReconX']){
       await chooseTheme(page,mode);
-      const colors=await page.evaluate(()=>({main:getComputedStyle(document.querySelector('.main-workspace')).backgroundColor,rail:getComputedStyle(document.querySelector('.icon-rail')).backgroundColor,nav:getComputedStyle(document.querySelector('.navigation-sidebar')).backgroundColor,right:getComputedStyle(document.querySelector('.activity-sidebar')).backgroundColor}));
+      const colors=await page.evaluate(()=>({main:getComputedStyle(document.querySelector('.main-workspace')).backgroundColor,rail:getComputedStyle(document.querySelector('.icon-rail')).backgroundColor,nav:getComputedStyle(document.querySelector('.navigation-sidebar')).backgroundColor,right:document.querySelector('.activity-sidebar')?getComputedStyle(document.querySelector('.activity-sidebar')).backgroundColor:null}));
       assert.equal(colors.main,mode==='Light'?'rgb(245, 246, 248)':mode==='Dark'?'rgb(17, 19, 24)':'rgb(49, 0, 25)');
       if(mode==='ReconX'){
         const actual=await page.evaluate(()=>Object.fromEntries([...getComputedStyle(document.documentElement)].filter(key=>key.startsWith('--rx-')).map(key=>[key,getComputedStyle(document.documentElement).getPropertyValue(key).trim()])));
@@ -275,23 +275,23 @@ try{
           await writeFile(path.join(artifact,'typography-last.json'),JSON.stringify(typography,null,2));
           assert.equal(typography.theme,mode.toLowerCase());assert.equal(typography.title,'24px');assert.equal(typography.nav,'14px');
           assert(typography.uiFont.includes('Segoe UI Variable Text'));assert(typography.fonts.some(f=>f.family==='Source Sans 3'));
-          if(module==='Settings'){assert(typography.codeFont.includes('IBM Plex Mono'));assert(typography.fonts.some(f=>f.family==='IBM Plex Mono'&&f.status==='loaded'));assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),mode.toLowerCase());}
+          if(module==='Settings'){assert(typography.codeFont.includes('IBM Plex Mono'));assert(typography.fonts.some(f=>f.family==='IBM Plex Mono'&&f.status==='loaded'));assert.equal(await page.getByLabel('Current appearance',{exact:true}).innerText(),mode);}
           assert.deepEqual(typography.tiny,[],'No visible control or text below 12px');assert.deepEqual(typography.clippedNavigation,[],'Navigation labels fit');assert(typography.documentWidth<=width);
           appearanceChecks.push({page:module,width,height,...typography});
           await capture(page,`theme-${mode.toLowerCase()}-${module.toLowerCase()}-${width}x${height}.png`);
-          await page.getByRole('button',{name:'Topbar appearance',exact:true}).click();
+          await page.getByRole('button',{name:'Appearance',exact:true}).click();
           assert.deepEqual(await page.getByRole('menuitemradio').evaluateAll(items=>items.map(item=>item.querySelector('b').textContent)),['Light','Dark','ReconX']);
           assert.equal(await page.getByRole('menuitemradio',{name:new RegExp('^'+mode)}).getAttribute('aria-checked'),'true');
           await capture(page,`theme-${mode.toLowerCase()}-menu-${width}x${height}.png`);await page.keyboard.press('Escape');
-          await page.getByRole('button',{name:'Topbar appearance',exact:true}).click();await page.keyboard.press('Tab');
-          assert.equal(await page.getByRole('menu').count(),0);assert(await page.getByRole('button',{name:'Notifications',exact:true}).evaluate(el=>el===document.activeElement),'Tab resumes at the next toolbar control');
-          await page.getByRole('button',{name:'Notifications',exact:true}).click();await page.getByRole('dialog',{name:'Notifications'}).waitFor();await capture(page,`theme-${mode.toLowerCase()}-dialog-${width}x${height}.png`);await page.keyboard.press('Escape');
+          await page.getByRole('button',{name:'Appearance',exact:true}).click();await page.keyboard.press('Tab');
+          assert.equal(await page.getByRole('menu').count(),0);
+          await page.getByRole('button',{name:'Show activity panel',exact:true}).click();await page.getByRole('complementary',{name:'Workspace activity',exact:true}).waitFor();await capture(page,`theme-${mode.toLowerCase()}-activity-${width}x${height}.png`);await page.getByRole('button',{name:'Hide activity panel',exact:true}).last().click();
         }
       }
     }
-    await page.getByRole('button',{name:'Sidebar appearance',exact:true}).focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('End');await page.keyboard.press('Enter');
-    assert.equal(await page.getByLabel('Appearance',{exact:true}).inputValue(),'reconx');
-    assert.deepEqual(await page.getByLabel('Appearance',{exact:true}).locator('option').evaluateAll(options=>options.map(option=>option.value)),['light','dark','reconx']);
+    await page.getByRole('button',{name:'Appearance',exact:true}).focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('End');await page.keyboard.press('Enter');
+    assert.equal(await page.getByLabel('Current appearance',{exact:true}).innerText(),'ReconX');
+    assert.equal(await page.locator('.theme-trigger').count(),1);
     await page.emulateMedia({colorScheme:'dark'});assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
     await page.emulateMedia({colorScheme:'light'});assert.equal(await page.locator('html').getAttribute('data-theme'),'reconx');
     await page.getByText('Saving appearance…',{exact:true}).waitFor({state:'hidden'});
@@ -300,7 +300,7 @@ try{
     await chooseTheme(page,'Dark');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
     await chooseTheme(page,'Light');await stop();page=await launch();assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
     await writeFile(path.join(artifact,'appearance-matrix.json'),JSON.stringify(appearanceChecks,null,2));
-    results.push('Native UI/locally bundled Source Sans 3 fallback and IBM Plex Mono; no visible text below 12px or clipped navigation at 1366/1920; Light/Dark/ReconX, both menus, Settings, dialogs, keyboard, OS independence and all three restarts verified');
+    results.push('Native UI/locally bundled Source Sans 3 fallback and IBM Plex Mono; no visible text below 12px or clipped navigation at 1366/1920; Light/Dark/ReconX, one rail menu, informational Settings, activity drawer, keyboard, OS independence and all three restarts verified');
   }
   await writeFile(path.join(artifact,'results.json'),JSON.stringify({status:'passed',platform:process.platform,desktop,cli,results,calls},null,2));
   console.log(JSON.stringify({status:'passed',artifact,checks:results},null,2));

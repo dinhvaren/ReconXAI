@@ -118,6 +118,21 @@ fn decode_job(
 }
 impl Core {
     pub fn enqueue_job(&self, input: JobInput) -> Result<AnalysisJob> {
+        self.enqueue_job_context(input, None)
+    }
+    pub(super) fn enqueue_extension_job(
+        &self,
+        input: JobInput,
+        extension: &str,
+        revision: &str,
+    ) -> Result<AnalysisJob> {
+        self.enqueue_job_context(input, Some((extension, revision)))
+    }
+    fn enqueue_job_context(
+        &self,
+        input: JobInput,
+        extension: Option<(&str, &str)>,
+    ) -> Result<AnalysisJob> {
         if !(1..=3_600_000).contains(&input.timeout_ms) {
             return Err(AppError::new(
                 "INVALID_INPUT",
@@ -161,6 +176,10 @@ impl Core {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
         tx.execute("INSERT INTO analysis_jobs(id,project_id,target_id,file_id,kind,status,created_at,timeout_ms,logs_json) VALUES(?1,?2,?3,?4,?5,'queued',?6,?7,?8)",params![id,project_id,target_id,file_id,input.kind.as_str(),now(),input.timeout_ms as u32,serde_json::to_string(&vec!["Queued for bounded read-only local execution"]).map_err(json_error)?]).map_err(db_error)?;
+        if let Some((extension, revision)) = extension {
+            tx.execute("INSERT INTO extension_invocations(job_id,extension_id,revision,approved_at) VALUES(?1,?2,?3,?4)", params![id,extension,revision,now()]).map_err(db_error)?;
+            Self::require_extension_job(&tx, &id)?;
+        }
         Self::audit(&tx, "job.queued", &id, "queued")?;
         tx.commit().map_err(db_error)?;
         self.job(&id)
@@ -260,6 +279,7 @@ impl Core {
             return Err(AppError::new("JOB_INTERRUPTED", "Worker is shutting down"));
         }
         let current = self.job(&job.id)?;
+        Self::require_extension_job(&self.db.connect()?, &job.id)?;
         if current.status != "running" || current.cancel_requested {
             return Err(AppError::new("CANCELLED", "Local work was cancelled"));
         }
@@ -282,7 +302,7 @@ impl Core {
         if job.kind == "manual_http_replay" {
             self.http_replay_job_plan(job, false)?;
         }
-        if self.project(&job.project_id)?.archived {
+        if job.kind != "extension_install" && self.project(&job.project_id)?.archived {
             return Err(AppError::new(
                 "PROJECT_ARCHIVED",
                 "Project was archived during execution",
@@ -304,6 +324,10 @@ impl Core {
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
+        Self::require_extension_job(&tx, &job.id)?;
+        if job.kind == "extension_install" {
+            self.commit_managed_install(&tx, job)?;
+        }
         let started = chrono::DateTime::parse_from_rfc3339(
             job.started_at.as_deref().unwrap_or(&job.created_at),
         )
@@ -411,6 +435,7 @@ impl Core {
                 "offline_schema_review"=>self.prepare_http_schema(&job,&mut update)?,
                 "manual_http_replay"=>self.prepare_http_replay(&job,&mut update)?,
                 "mcp_tool"=>self.prepare_mcp_job(&job,&mut update)?,
+                "extension_install"=>self.prepare_managed_install(&job,&mut update)?,
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;
                     let file=self.imported_file(id)?;

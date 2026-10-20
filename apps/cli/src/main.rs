@@ -27,6 +27,9 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Compiled, permission-bounded native extensions; installation requires a reviewed plan.
+    #[command(subcommand)]
+    Extensions(ExtensionsCommand),
     /// Saved requests and individually approved loopback replay.
     #[command(subcommand)]
     Http(HttpCommand),
@@ -216,6 +219,9 @@ enum ApiCommand {
     SchemaCheck {
         exchange: String,
         operation: String,
+        /// Enable the bounded supported set of syntactic format assertions.
+        #[arg(long)]
+        assert_formats: bool,
     },
     ImportOpenapi(HttpImportArgs),
     Endpoints {
@@ -576,7 +582,70 @@ enum SettingsCommand {
     Apply { input: PathBuf },
 }
 #[derive(Subcommand)]
+enum ExtensionsCommand {
+    Permissions {
+        id: String,
+        #[arg(long)]
+        tool: Vec<String>,
+        #[arg(long)]
+        approve: bool,
+    },
+    Search {
+        query: Option<String>,
+    },
+    List,
+    Info {
+        id: String,
+    },
+    Plan {
+        id: String,
+        #[arg(long)]
+        version: Option<String>,
+        #[arg(long)]
+        managed_runtime: bool,
+    },
+    Install {
+        id: String,
+        #[arg(long)]
+        version: Option<String>,
+        #[arg(long)]
+        managed_runtime: bool,
+        #[arg(long)]
+        wait: bool,
+        #[arg(long)]
+        fingerprint: String,
+        #[arg(long)]
+        approve: bool,
+    },
+    Update {
+        id: String,
+    },
+    Enable {
+        id: String,
+    },
+    Disable {
+        id: String,
+    },
+    Remove {
+        id: String,
+    },
+    Doctor {
+        id: String,
+    },
+    Invoke {
+        id: String,
+        #[arg(long)]
+        file: String,
+    },
+    History {
+        id: String,
+    },
+}
+#[derive(Subcommand)]
 enum ToolsCommand {
+    Dependencies {
+        extension_id: String,
+    },
     List,
     Search {
         query: String,
@@ -616,6 +685,24 @@ enum ToolsCommand {
 }
 #[derive(Subcommand)]
 enum McpCommand {
+    Install {
+        id: String,
+        #[arg(long, default_value = "2.0.0")]
+        version: String,
+        #[arg(long)]
+        managed_runtime: bool,
+        #[arg(long)]
+        fingerprint: String,
+        #[arg(long)]
+        approve: bool,
+        #[arg(long)]
+        wait: bool,
+    },
+    Doctor {
+        server: Option<String>,
+    },
+    #[command(subcommand)]
+    Catalog(RegistryCommand),
     List,
     /// Register or edit a secret-free server config. Connection executes the reviewed command.
     Add {
@@ -662,6 +749,37 @@ enum McpCommand {
     History {
         server: String,
     },
+}
+#[derive(Subcommand)]
+enum RegistryCommand {
+    Search {
+        query: Option<String>,
+        #[arg(long, value_parser=clap::value_parser!(u16).range(1..=100))]
+        limit: Option<u16>,
+        #[arg(long)]
+        cursor: Option<String>,
+        #[arg(long)]
+        runtime: Option<String>,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        offline: bool,
+        #[arg(long)]
+        updated_since: Option<String>,
+    },
+    Info {
+        id: String,
+        #[arg(long)]
+        version: Option<String>,
+        #[arg(long)]
+        offline: bool,
+    },
+    Versions {
+        id: String,
+        #[arg(long)]
+        offline: bool,
+    },
+    Clear,
 }
 #[derive(Subcommand)]
 enum WorkflowCommand {
@@ -1082,7 +1200,14 @@ async fn execute(cli: &Cli) -> Result<Value> {
             ApiCommand::SchemaCheck {
                 exchange,
                 operation,
-            } => serialize(core.http_schema_enqueue(exchange, operation)?),
+                assert_formats,
+            } => serialize(core.http_schema_enqueue_with_options(
+                exchange,
+                operation,
+                reconx_core::SchemaReviewOptions {
+                    assert_formats: *assert_formats,
+                },
+            )?),
             ApiCommand::ImportOpenapi(args) => http_import_cli(&core, "openapi", args),
             ApiCommand::Endpoints { project, target } => serialize(
                 core.http_workspace(project, target.as_deref(), "", 0)?
@@ -1596,7 +1721,107 @@ async fn execute(cli: &Cli) -> Result<Value> {
                 }
             }
         },
+        Command::Extensions(command) => match command {
+            ExtensionsCommand::Permissions { id, tool, approve } => {
+                if id != reconx_core::MANAGED_MCP_EVERYTHING {
+                    return Err(AppError::new(
+                        "EXTENSION_POLICY",
+                        "Only managed MCP permissions use this command",
+                    ));
+                }
+                serialize(core.managed_allow_tools(tool.clone(), *approve).await?)
+            }
+            ExtensionsCommand::Search { query } => {
+                serialize(core.extension_catalog(query.as_deref())?)
+            }
+            ExtensionsCommand::List => serialize(
+                core.extension_catalog(None)?
+                    .into_iter()
+                    .filter(|e| e.installed.is_some())
+                    .collect::<Vec<_>>(),
+            ),
+            ExtensionsCommand::Info { id } => serialize(core.extension_entry(id)?),
+            ExtensionsCommand::Plan {
+                id,
+                version,
+                managed_runtime,
+            } => serialize(if id == reconx_core::MANAGED_MCP_EVERYTHING {
+                core.managed_install_plan(
+                    id,
+                    version.as_deref().unwrap_or("2.0.0"),
+                    *managed_runtime,
+                )?
+            } else {
+                core.extension_install_plan(id)?
+            }),
+            ExtensionsCommand::Install {
+                id,
+                version,
+                managed_runtime,
+                wait,
+                fingerprint,
+                approve,
+            } if id == reconx_core::MANAGED_MCP_EVERYTHING => {
+                install_managed_package(
+                    &core,
+                    reconx_core::ManagedMcpApproval {
+                        id: id.clone(),
+                        version: version.clone().unwrap_or("2.0.0".into()),
+                        managed_runtime: *managed_runtime,
+                        fingerprint: fingerprint.clone(),
+                        approved: *approve,
+                    },
+                    *wait,
+                )
+                .await
+            }
+            ExtensionsCommand::Install {
+                id,
+                fingerprint,
+                approve,
+                ..
+            } => serialize(
+                core.extension_install(reconx_core::ExtensionApproval {
+                    id: id.clone(),
+                    fingerprint: fingerprint.clone(),
+                    approved: *approve,
+                })
+                .await?,
+            ),
+            ExtensionsCommand::Update { id } => {
+                let entry = core.extension_entry(id)?;
+                if !entry.update_available {
+                    return Err(AppError::new(
+                        "NO_EXTENSION_UPDATE",
+                        "No newer compatible extension is included in this build",
+                    ));
+                }
+                serialize(core.extension_install_plan(id)?)
+            }
+            ExtensionsCommand::Enable { id } if id == reconx_core::MANAGED_MCP_EVERYTHING => {
+                serialize(core.managed_set_enabled(true).await?)
+            }
+            ExtensionsCommand::Disable { id } if id == reconx_core::MANAGED_MCP_EVERYTHING => {
+                serialize(core.managed_set_enabled(false).await?)
+            }
+            ExtensionsCommand::Remove { id } if id == reconx_core::MANAGED_MCP_EVERYTHING => {
+                core.managed_remove().await?;
+                Ok(Value::Null)
+            }
+            ExtensionsCommand::Enable { id } => serialize(core.extension_set_enabled(id, true)?),
+            ExtensionsCommand::Disable { id } => serialize(core.extension_set_enabled(id, false)?),
+            ExtensionsCommand::Remove { id } => {
+                core.extension_remove(id)?;
+                Ok(Value::Null)
+            }
+            ExtensionsCommand::Doctor { id } => serialize(core.extension_doctor(id).await?),
+            ExtensionsCommand::Invoke { id, file } => serialize(core.extension_invoke(id, file)?),
+            ExtensionsCommand::History { id } => serialize(core.extension_history(id)?),
+        },
         Command::Tools(command) => match command {
+            ToolsCommand::Dependencies { extension_id } => {
+                serialize(core.extension_install_plan(extension_id)?)
+            }
             ToolsCommand::List => serialize(core.tool_inventory()?),
             ToolsCommand::Search { query } => serialize(
                 core.tool_catalog()?
@@ -1664,6 +1889,81 @@ async fn execute(cli: &Cli) -> Result<Value> {
             }
         },
         Command::Mcp(command) => match command {
+            McpCommand::Install {
+                id,
+                version,
+                managed_runtime,
+                fingerprint,
+                approve,
+                wait,
+            } => {
+                install_managed_package(
+                    &core,
+                    reconx_core::ManagedMcpApproval {
+                        id: id.clone(),
+                        version: version.clone(),
+                        managed_runtime: *managed_runtime,
+                        fingerprint: fingerprint.clone(),
+                        approved: *approve,
+                    },
+                    *wait,
+                )
+                .await
+            }
+            McpCommand::Doctor { server } => {
+                let servers = if let Some(id) = server {
+                    vec![core.mcp_server(id)?]
+                } else {
+                    core.mcp_servers()?
+                };
+                let mut results = vec![];
+                for server in servers {
+                    if !server.config.enabled {
+                        results.push(json!({"id":server.config.id,"status":"disabled"}));
+                        continue;
+                    }
+                    match core.mcp_connect(&server.config.id).await{Ok(checked)=>results.push(json!({"id":checked.config.id,"status":"ready","tools":checked.tools.len()})),Err(error)=>results.push(json!({"id":server.config.id,"status":"failed","error":error}))}
+                }
+                Ok(json!(results))
+            }
+            McpCommand::Catalog(command) => match command {
+                RegistryCommand::Search {
+                    query,
+                    limit,
+                    cursor,
+                    runtime,
+                    refresh,
+                    offline,
+                    updated_since,
+                } => serialize(
+                    core.registry_search(reconx_core::RegistryQuery {
+                        search: query.clone().unwrap_or_default(),
+                        limit: *limit,
+                        cursor: cursor.clone(),
+                        runtime: runtime.clone(),
+                        refresh: *refresh,
+                        offline: *offline,
+                        updated_since: updated_since.clone(),
+                        platform: None,
+                    })
+                    .await?,
+                ),
+                RegistryCommand::Info {
+                    id,
+                    version,
+                    offline,
+                } => serialize(
+                    core.registry_detail(id, version.as_deref(), *offline)
+                        .await?,
+                ),
+                RegistryCommand::Versions { id, offline } => {
+                    serialize(core.registry_versions(id, *offline).await?)
+                }
+                RegistryCommand::Clear => {
+                    core.registry_clear_cache()?;
+                    Ok(Value::Null)
+                }
+            },
             McpCommand::List => serialize(core.mcp_servers()?),
             McpCommand::Add { input } => {
                 let config: McpServerConfig =
@@ -1758,6 +2058,41 @@ async fn execute(cli: &Cli) -> Result<Value> {
         Command::Completions { .. } => unreachable!(),
     }
 }
+async fn install_managed_package(
+    core: &Core,
+    approval: reconx_core::ManagedMcpApproval,
+    wait: bool,
+) -> Result<Value> {
+    let id = approval.id.clone();
+    let job = core.managed_enqueue_install(approval)?;
+    if wait {
+        let worker = core.clone();
+        let job_id = job.id.clone();
+        tokio::task::spawn_blocking(move || worker.execute_job(&job_id))
+            .await
+            .map_err(|_| AppError::new("WORKER_ERROR", "Installation worker stopped"))??;
+        loop {
+            let state = core.job(&job.id)?;
+            if !matches!(state.status.as_str(), "queued" | "running") {
+                if state.status != "completed" {
+                    return Err(AppError::new(
+                        state.error_code.as_deref().unwrap_or("INSTALL_FAILED"),
+                        state
+                            .error_message
+                            .as_deref()
+                            .unwrap_or("Managed package installation failed"),
+                    ));
+                }
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+        serialize(core.extension_entry(&id)?)
+    } else {
+        serialize(job)
+    }
+}
+
 #[tokio::main]
 async fn main() {
     use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
@@ -1789,7 +2124,11 @@ async fn main() {
         }
     };
     match execute(&cli).await {
-        Ok(Value::Null) => {}
+        Ok(Value::Null) => {
+            if cli.json {
+                println!("null");
+            }
+        }
         Ok(value) => {
             if cli.json {
                 println!("{}", value);

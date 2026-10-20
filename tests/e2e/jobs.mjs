@@ -480,9 +480,7 @@ try {
   assert(validEvents.some((j) => j.status === "cancelled"));
   assert(validEvents.some((j) => j.status === "failed"));
   for (const theme of ["Light", "Dark", "ReconX"]) {
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
       .click();

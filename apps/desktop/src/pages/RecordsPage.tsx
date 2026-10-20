@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { selectPaths } from "../research";
@@ -327,7 +328,7 @@ export default function RecordsPage({
         }
         action={
           page === "Evidence" ? (
-            <button
+            <Button
               className="button primary"
               disabled={!project || busy}
               onClick={() => {
@@ -339,17 +340,27 @@ export default function RecordsPage({
                 setEvKind("user_note");
                 setEvTarget("");
               }}
+              disabledReason={
+                !project
+                  ? "Select a project first"
+                  : "An operation is in progress"
+              }
             >
               Add Evidence
-            </button>
+            </Button>
           ) : page === "Findings" ? (
-            <button
+            <Button
               className="button primary"
               disabled={!project || busy}
               onClick={() => openFinding(null)}
+              disabledReason={
+                !project
+                  ? "Select a project first"
+                  : "An operation is in progress"
+              }
             >
               Create Finding
-            </button>
+            </Button>
           ) : undefined
         }
       />
@@ -397,13 +408,14 @@ export default function RecordsPage({
             </select>
           </label>
         )}
-        <button
+        <Button
           className="button secondary"
           disabled={busy}
           onClick={() => void act(load, "Records refreshed")}
+          disabledReason={"An operation is in progress"}
         >
           Refresh records
-        </button>
+        </Button>
       </section>
       {!project && (
         <p className="empty">
@@ -428,7 +440,7 @@ export default function RecordsPage({
                   ))}
               </select>
             </label>
-            <button
+            <Button
               className="button secondary"
               disabled={!job || busy}
               onClick={() =>
@@ -437,9 +449,12 @@ export default function RecordsPage({
                   "Job evidence collected",
                 )
               }
+              disabledReason={
+                !job ? "Select a completed job" : "An operation is in progress"
+              }
             >
               Collect job evidence
-            </button>
+            </Button>
             <p>
               New completed jobs create evidence automatically. Older results
               can be collected here.
@@ -481,7 +496,7 @@ export default function RecordsPage({
                         <small className="record-meta">{e.sensitivity}</small>
                       </td>
                       <td className="record-actions">
-                        <button
+                        <Button
                           className="text-button"
                           onClick={() =>
                             void act(async () => {
@@ -496,8 +511,8 @@ export default function RecordsPage({
                           }
                         >
                           Open evidence
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="text-button"
                           onClick={() =>
                             void act(
@@ -507,7 +522,7 @@ export default function RecordsPage({
                           }
                         >
                           Verify integrity
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -564,18 +579,18 @@ export default function RecordsPage({
                         ))}
                       </td>
                       <td className="record-actions">
-                        <button
+                        <Button
                           className="text-button"
                           onClick={() => openFinding(f)}
                         >
                           Open / edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="text-button"
                           onClick={() => setRemove(f)}
                         >
                           Delete finding
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -609,7 +624,7 @@ export default function RecordsPage({
                   </select>
                 </label>
               ))}
-              <button
+              <Button
                 className="button secondary"
                 disabled={
                   !compareA || !compareB || compareA === compareB || busy
@@ -630,9 +645,18 @@ export default function RecordsPage({
                     "Comparison opened",
                   )
                 }
+                disabledReason={
+                  !compareA
+                    ? "Select the first finding to compare"
+                    : !compareB
+                      ? "Select the second finding to compare"
+                      : compareA === compareB
+                        ? "Select two different findings"
+                        : "An operation is in progress"
+                }
               >
                 Compare findings
-              </button>
+              </Button>
             </div>
           </section>
         </>
@@ -739,9 +763,13 @@ export default function RecordsPage({
                 automatically. Binary/image content is excluded; its hash and
                 metadata are retained.
               </p>
-              <button className="button primary" disabled={busy}>
+              <Button
+                className="button primary"
+                disabled={busy}
+                disabledReason={"An operation is in progress"}
+              >
                 Prepare preview
-              </button>
+              </Button>
             </form>
           </section>
           <section className="panel records-panel">
@@ -759,12 +787,12 @@ export default function RecordsPage({
                       {new Date(r.created_at).toLocaleString()}
                     </small>
                   </span>
-                  <button
+                  <Button
                     className="button secondary"
                     onClick={() => void openReport(r.id)}
                   >
                     Open report preview
-                  </button>
+                  </Button>
                 </div>
               ))}
             {!reports.length && <p>No saved report snapshots.</p>}
@@ -826,7 +854,7 @@ export default function RecordsPage({
               ))}
             </select>
           </label>
-          <button
+          <Button
             type="button"
             className="button secondary"
             onClick={() =>
@@ -838,7 +866,7 @@ export default function RecordsPage({
             }
           >
             {evKind === "screenshot" ? "Import Screenshot" : "Attach File"}
-          </button>
+          </Button>
           {evPath ? (
             <p className="technical break-value">{evPath}</p>
           ) : !["screenshot", "attachment"].includes(evKind) ? (
@@ -854,14 +882,19 @@ export default function RecordsPage({
           ) : (
             <p>Select a local file. No data is uploaded.</p>
           )}
-          <button
+          <Button
             className="button primary"
             disabled={
               busy || (["screenshot", "attachment"].includes(evKind) && !evPath)
             }
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : "Choose the attachment file first"
+            }
           >
             Save evidence
-          </button>
+          </Button>
         </form>
       </Modal>
       <Modal
@@ -912,7 +945,7 @@ export default function RecordsPage({
                 onChange={(e) => setReview(e.target.value)}
               />
             </label>
-            <button
+            <Button
               className="button secondary"
               disabled={
                 busy || !review.trim() || view.evidence.kind === "ai_summary"
@@ -937,7 +970,7 @@ export default function RecordsPage({
               }
             >
               Mark evidence reviewed
-            </button>
+            </Button>
             <label className="check">
               <input
                 type="checkbox"
@@ -946,7 +979,7 @@ export default function RecordsPage({
               />
               I approve exporting original sensitive bytes without redaction.
             </label>
-            <button
+            <Button
               className="button secondary"
               disabled={busy}
               onClick={() =>
@@ -962,9 +995,10 @@ export default function RecordsPage({
                   `evidence-${view.evidence.id}.${view.evidence.media_type === "application/json" || view.evidence.kind === "structured_json" ? "json" : view.evidence.media_type === "text/plain" ? "txt" : view.evidence.media_type === "image/png" ? "png" : view.evidence.media_type === "image/jpeg" ? "jpg" : "bin"}`,
                 )
               }
+              disabledReason={"An operation is in progress"}
             >
               Export evidence
-            </button>
+            </Button>
           </div>
         )}
       </Modal>
@@ -1061,7 +1095,7 @@ export default function RecordsPage({
               </label>
             ))}
           </div>
-          <button
+          <Button
             type="button"
             className="button secondary"
             disabled={busy || (!draft.cvss_v3 && !draft.cvss_v4)}
@@ -1075,9 +1109,14 @@ export default function RecordsPage({
                 setCvss(JSON.stringify(scores, null, 2));
               }, "CVSS calculated from supplied metrics")
             }
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : "Enter a CVSS 3.1 or 4.0 vector"
+            }
           >
             Calculate CVSS
-          </button>
+          </Button>
           {cvss && <pre className="hex-preview">{cvss}</pre>}
           <label>
             References (one per line)
@@ -1118,9 +1157,13 @@ export default function RecordsPage({
             Verified requires reviewed source evidence and a verification note.
             CVSS is calculated only from metrics you provide.
           </p>
-          <button className="button primary" disabled={busy}>
+          <Button
+            className="button primary"
+            disabled={busy}
+            disabledReason={"An operation is in progress"}
+          >
             Save finding
-          </button>
+          </Button>
         </form>
       </Modal>
       <Modal
@@ -1136,7 +1179,7 @@ export default function RecordsPage({
               Delete {remove.input.title}? Original evidence and saved report
               snapshots are retained.
             </p>
-            <button
+            <Button
               className="button primary"
               disabled={busy}
               onClick={() =>
@@ -1148,9 +1191,10 @@ export default function RecordsPage({
                   setRemove(null);
                 }, "Finding deleted")
               }
+              disabledReason={"An operation is in progress"}
             >
               Confirm deletion
-            </button>
+            </Button>
           </div>
         )}
       </Modal>
@@ -1166,7 +1210,7 @@ export default function RecordsPage({
           Merging retains the source finding as Duplicate, preserves its content
           and links its evidence to the primary finding.
         </p>
-        <button
+        <Button
           className="button secondary"
           disabled={busy}
           onClick={() =>
@@ -1178,9 +1222,10 @@ export default function RecordsPage({
               setComparison("");
             }, "Duplicate merged with provenance retained")
           }
+          disabledReason={"An operation is in progress"}
         >
           Approve duplicate merge
-        </button>
+        </Button>
       </Modal>
       <Modal
         dismissDisabled={busy}
@@ -1233,7 +1278,7 @@ export default function RecordsPage({
               />
               I reviewed this redacted snapshot and approve exporting it.
             </label>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !approved}
               onClick={() =>
@@ -1250,9 +1295,14 @@ export default function RecordsPage({
                   `report-${report.report.id}.${format === "markdown" ? "md" : format}`,
                 )
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "Review and approve the current plan or report"
+              }
             >
               Export reviewed report
-            </button>
+            </Button>
           </div>
         )}
       </Modal>

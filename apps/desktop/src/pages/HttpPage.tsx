@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { request, errorText, type Snapshot } from "../api";
@@ -112,6 +113,7 @@ export default function HttpPage({
   const [replaySource, setReplaySource] = useState<string | null>(null);
   const [testIdentity, setTestIdentity] = useState<AuthProfile | null>(null);
   const [schemaOperation, setSchemaOperation] = useState("");
+  const [assertFormats, setAssertFormats] = useState(false);
   const [comparison, setComparison] = useState<HttpComparison | null>(null);
   const [aiReview, setAiReview] = useState<{
     job_id: string;
@@ -289,7 +291,7 @@ export default function HttpPage({
         description="Inspect captured traffic and API definitions. Imports never send requests; manual loopback replay requires separate review and approval."
         action={
           <div className="form-actions">
-            <button
+            <Button
               className="button secondary"
               disabled={busy || !project}
               onClick={() => {
@@ -297,30 +299,42 @@ export default function HttpPage({
                 setTestIdentity(null);
                 setReplayOpen(true);
               }}
+              disabledReason={
+                busy ? "An operation is in progress" : "Select a project first"
+              }
             >
               Saved requests
-            </button>
-            <button
+            </Button>
+            <Button
               className="button secondary"
               disabled={busy || !project}
               onClick={() => setAuthOpen(true)}
+              disabledReason={
+                busy ? "An operation is in progress" : "Select a project first"
+              }
             >
               Authentication profiles
-            </button>
-            <button
+            </Button>
+            <Button
               className="button secondary"
               disabled={busy || !project}
               onClick={() => void pick("har")}
+              disabledReason={
+                busy ? "An operation is in progress" : "Select a project first"
+              }
             >
               Import HAR
-            </button>
-            <button
+            </Button>
+            <Button
               className="button primary"
               disabled={busy || !project}
               onClick={() => void pick("openapi")}
+              disabledReason={
+                busy ? "An operation is in progress" : "Select a project first"
+              }
             >
               Import OpenAPI
-            </button>
+            </Button>
           </div>
         }
       />
@@ -371,14 +385,21 @@ export default function HttpPage({
               ))}
           </select>
         </label>
-        <button
+        <Button
           className="button secondary"
           disabled={!project || busy || loading}
           onClick={() => void load()}
+          disabledReason={
+            !project
+              ? "Select a project first"
+              : busy
+                ? "An operation is in progress"
+                : "Workspace data is loading"
+          }
         >
           Refresh HTTP workspace
-        </button>
-        <button
+        </Button>
+        <Button
           className="button secondary"
           disabled={!workspace || busy}
           onClick={() =>
@@ -392,9 +413,14 @@ export default function HttpPage({
                 await request("http_export", { project, path: paths[0] });
             }, "Redacted HTTP export saved")
           }
+          disabledReason={
+            !workspace
+              ? "Import or load HTTP traffic first"
+              : "An operation is in progress"
+          }
         >
           Export redacted inventory
-        </button>
+        </Button>
       </section>
       {error && <p role="alert">{error}</p>}
       {!project ? (
@@ -517,22 +543,24 @@ export default function HttpPage({
                         ))
                       )}
                       <div className="form-actions">
-                        <button
+                        <Button
                           className="button ghost"
                           disabled={offset === 0}
                           onClick={() => setOffset(Math.max(0, offset - 100))}
+                          disabledReason={"Already on the first page"}
                         >
                           Previous captures
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           className="button ghost"
                           disabled={
                             offset + workspace.page_size >= workspace.total
                           }
                           onClick={() => setOffset(offset + 100)}
+                          disabledReason={"Already on the last page"}
                         >
                           Next captures
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -596,7 +624,7 @@ export default function HttpPage({
                             {i.kind} · {new Date(i.created_at).toLocaleString()}
                           </p>
                           <code>{i.sha256}</code>
-                          <button
+                          <Button
                             className="button ghost"
                             disabled={busy}
                             onClick={() =>
@@ -606,9 +634,10 @@ export default function HttpPage({
                                 });
                               }, "Original import integrity verified")
                             }
+                            disabledReason={"An operation is in progress"}
                           >
                             Verify original integrity
-                          </button>
+                          </Button>
                           <details>
                             <summary>Import metadata and components</summary>
                             <pre className="http-pre">{pretty(i.summary)}</pre>
@@ -843,7 +872,7 @@ export default function HttpPage({
                               onChange={(e) => setNote(e.target.value)}
                             />
                           </label>
-                          <button
+                          <Button
                             className="button secondary"
                             disabled={busy}
                             onClick={() =>
@@ -856,9 +885,10 @@ export default function HttpPage({
                                 );
                               }, "HTTP analysis note saved")
                             }
+                            disabledReason={"An operation is in progress"}
                           >
                             Save HTTP note
-                          </button>
+                          </Button>
                         </>
                       )}
                       {tab === "Diff" && (
@@ -896,7 +926,7 @@ export default function HttpPage({
                               onChange={(e) => setOwner(e.target.value)}
                             />
                           </label>
-                          <button
+                          <Button
                             className="button secondary"
                             disabled={busy || !right}
                             onClick={() =>
@@ -915,9 +945,14 @@ export default function HttpPage({
                                 );
                               }, "Offline comparison saved as evidence")
                             }
+                            disabledReason={
+                              busy
+                                ? "An operation is in progress"
+                                : "Select a second capture to compare"
+                            }
                           >
                             Compare captured responses
-                          </button>
+                          </Button>
                           {right && (
                             <div className="http-diff">
                               <div>
@@ -965,7 +1000,23 @@ export default function HttpPage({
                             ))}
                         </select>
                       </label>
-                      <button
+                      <label className="helper">
+                        <input
+                          type="checkbox"
+                          checked={assertFormats}
+                          disabled={busy}
+                          onChange={(event) =>
+                            setAssertFormats(event.target.checked)
+                          }
+                        />
+                        Assert supported formats
+                      </label>
+                      <p className="helper">
+                        Off by default. Checks bounded syntax only; it does not
+                        verify that an address, email account or resource
+                        exists.
+                      </p>
+                      <Button
                         className="button secondary"
                         disabled={busy || !schemaOperation}
                         onClick={() =>
@@ -973,18 +1024,24 @@ export default function HttpPage({
                             await request("http_schema_enqueue", {
                               exchange: exchange.id,
                               operation: schemaOperation,
+                              options: { assert_formats: assertFormats },
                             });
                           }, "Offline schema observation job queued")
                         }
+                        disabledReason={
+                          busy
+                            ? "An operation is in progress"
+                            : "Select an imported OpenAPI operation"
+                        }
                       >
                         Check documented schema
-                      </button>
+                      </Button>
                       <p className="helper">
                         Uses captured JSON and metadata only. Exact target and
                         absolute server origin must match; redacted values and
                         unsupported constraints stay inconclusive.
                       </p>
-                      <button
+                      <Button
                         className="button secondary"
                         disabled={busy}
                         onClick={() =>
@@ -994,9 +1051,10 @@ export default function HttpPage({
                             });
                           }, "Captured-header review job queued")
                         }
+                        disabledReason={"An operation is in progress"}
                       >
                         Analyze captured headers
-                      </button>
+                      </Button>
                       {workspace.analysis_jobs
                         ?.filter((j) => j.exchange_id === exchange.id)
                         .map(({ job }) => (
@@ -1014,7 +1072,7 @@ export default function HttpPage({
                               <p role="alert">{job.error_message}</p>
                             )}
                             {["queued", "running"].includes(job.status) && (
-                              <button
+                              <Button
                                 className="button ghost"
                                 disabled={busy}
                                 onClick={() =>
@@ -1022,9 +1080,10 @@ export default function HttpPage({
                                     await request("job_cancel", { id: job.id });
                                   }, "Cancellation requested")
                                 }
+                                disabledReason={"An operation is in progress"}
                               >
                                 Cancel capture review
-                              </button>
+                              </Button>
                             )}
                             <details>
                               <summary>Actual result and execution log</summary>
@@ -1039,7 +1098,7 @@ export default function HttpPage({
                                 />
                               )}
                             {job.status === "completed" && (
-                              <button
+                              <Button
                                 className="button ghost"
                                 disabled={busy}
                                 onClick={() =>
@@ -1050,11 +1109,12 @@ export default function HttpPage({
                                     navigate("Evidence");
                                   })
                                 }
+                                disabledReason={"An operation is in progress"}
                               >
                                 Open result evidence
-                              </button>
+                              </Button>
                             )}
-                            <button
+                            <Button
                               className="button ghost"
                               disabled={
                                 busy ||
@@ -1079,16 +1139,23 @@ export default function HttpPage({
                                   setAiReply("");
                                 })
                               }
+                              disabledReason={
+                                busy
+                                  ? "An operation is in progress"
+                                  : job.status !== "completed"
+                                    ? "Wait for the job to complete"
+                                    : "Configure and enable an AI provider"
+                              }
                             >
                               Review result with AI
-                            </button>
+                            </Button>
                             <p className="helper">
                               AI review needs a configured model and separate
                               approval of the exact preview.
                             </p>
                           </article>
                         ))}
-                      <button
+                      <Button
                         className="button secondary"
                         disabled={busy}
                         onClick={() => {
@@ -1096,9 +1163,10 @@ export default function HttpPage({
                           setTestIdentity(null);
                           setReplayOpen(true);
                         }}
+                        disabledReason={"An operation is in progress"}
                       >
                         Edit request / replay to loopback
-                      </button>
+                      </Button>
                       <p className="helper">
                         Imported credentials and traffic are never automatically
                         sent to a target or AI provider.
@@ -1123,7 +1191,7 @@ export default function HttpPage({
                         Evidence: <code>{comparison.evidence_id}</code>.
                         Original captures are linked by record ID.
                       </p>
-                      <button
+                      <Button
                         className="button primary"
                         disabled={busy}
                         onClick={() =>
@@ -1133,21 +1201,22 @@ export default function HttpPage({
                             });
                           }, "Finding saved as Needs Verification")
                         }
+                        disabledReason={"An operation is in progress"}
                       >
                         Create review finding
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="button ghost"
                         onClick={() => navigate("Findings")}
                       >
                         Open Findings
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="button ghost"
                         onClick={() => navigate("Reports")}
                       >
                         Open Reports
-                      </button>
+                      </Button>
                     </section>
                   )}
                 </section>
@@ -1203,7 +1272,7 @@ export default function HttpPage({
               />
               I approve sending this preview to the selected gateway.
             </label>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !consent || !aiProvider}
               onClick={() =>
@@ -1223,9 +1292,16 @@ export default function HttpPage({
                   setAiReply(reply.text);
                 }, "AI interpretation saved as unverified")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : !consent
+                    ? "Review the preview and grant the required approval"
+                    : "Select an AI provider"
+              }
             >
               Analyze preview with selected model
-            </button>
+            </Button>
             {aiReply && (
               <section aria-label="Unverified HTTP AI interpretation">
                 <h3>AI interpretation · Unverified</h3>
@@ -1323,9 +1399,15 @@ export default function HttpPage({
             and target are those selected above.
           </p>
           {error && <p role="alert">{error}</p>}
-          <button className="button primary" disabled={busy || !project}>
+          <Button
+            className="button primary"
+            disabled={busy || !project}
+            disabledReason={
+              busy ? "An operation is in progress" : "Select a project first"
+            }
+          >
             Import selected files
-          </button>
+          </Button>
         </form>
       </Modal>
       <HttpRequestWorkspace

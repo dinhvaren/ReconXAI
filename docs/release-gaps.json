@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-18",
+  "date": "2026-10-19",
   "version": "0.1.0",
   "release_ready": false,
   "source_base_revision": "0e496ed",
@@ -61,7 +61,11 @@
         "crates/reconx-core/src/http/schema.rs"
       ],
       "runtime_evidence": [
-        "artifacts/security-current-verification.json"
+        "artifacts/security-current-verification.json",
+        "artifacts/schema-arrays-current-verification.json",
+        "artifacts/schema-pattern-current-verification.json",
+        "artifacts/schema-format-current-verification.json",
+        "artifacts/schema-conditional-current-verification.json"
       ],
       "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
     },
@@ -74,7 +78,11 @@
         "crates/reconx-core/src/http/schema.rs"
       ],
       "runtime_evidence": [
-        "artifacts/security-current-verification.json"
+        "artifacts/security-current-verification.json",
+        "artifacts/schema-arrays-current-verification.json",
+        "artifacts/schema-pattern-current-verification.json",
+        "artifacts/schema-format-current-verification.json",
+        "artifacts/schema-conditional-current-verification.json"
       ],
       "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
     },
@@ -247,6 +255,22 @@
       ],
       "runtime_evidence": [],
       "limitations": "No dedicated workspace implemented"
+    },
+    {
+      "module": "Desktop UX",
+      "status": "PARTIAL",
+      "runtime_evidence": [
+        "artifacts/ux-extensions-current-verification.json"
+      ],
+      "limitations": "Windows native 120 captures/three themes; Linux GUI and physical DPI unverified"
+    },
+    {
+      "module": "Extensions",
+      "status": "PARTIAL",
+      "runtime_evidence": [
+        "artifacts/ux-extensions-current-verification.json"
+      ],
+      "limitations": "First-party YARA-X native adapter runtime verified; official MCP registry/community updates/setup incomplete"
     }
   ],
   "release_blockers": [
@@ -274,5 +298,20 @@
     "runtime_evidence": [
       "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
     ]
+  },
+  "current_schema_array_verification": "artifacts/schema-arrays-current-verification.json",
+  "current_schema_pattern_verification": "artifacts/schema-pattern-current-verification.json",
+  "current_schema_format_verification": "artifacts/schema-format-current-verification.json",
+  "current_schema_conditional_verification": "artifacts/schema-conditional-current-verification.json",
+  "current_mcp_registry_verification": {
+    "version": "0.1.0",
+    "database_schema": 16,
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE; subsequent runtime-selection fix pending acceptance",
+    "proof": "artifacts/mcp-current-verification.json",
+    "windows_rust": "180/0/2",
+    "linux_core_cli_rust": "180/0/2",
+    "frontend_tests": 36,
+    "linux_desktop": "UNVERIFIED",
+    "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
   }
 }

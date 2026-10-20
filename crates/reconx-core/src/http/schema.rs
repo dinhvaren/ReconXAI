@@ -4,6 +4,18 @@ use serde_json::Map;
 
 const MAX_CHECKS: usize = 10_000;
 const MAX_OBSERVATIONS: usize = 200;
+const MAX_PATTERN_BYTES: usize = 1024;
+const MAX_PATTERNS: usize = 64;
+const MAX_PATTERN_WORK: usize = 8 * 1024 * 1024;
+const PATTERN_MEMORY: usize = 128 * 1024;
+const MAX_FORMAT_INPUT: usize = 4096;
+const MAX_FORMAT_WORK: usize = 1024 * 1024;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct SchemaReviewOptions {
+    pub assert_formats: bool,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchemaObservation {
@@ -26,6 +38,8 @@ pub struct SchemaReview {
     pub checks: usize,
     pub coverage: String,
     pub network_requests: u8,
+    #[serde(default)]
+    pub options: SchemaReviewOptions,
 }
 fn pointer(parent: &str, key: &str) -> String {
     format!("{parent}/{}", key.replace('~', "~0").replace('/', "~1"))
@@ -65,6 +79,10 @@ struct Review<'a> {
     capture_root: String,
     active: BTreeSet<(String, String)>,
     output_bytes: usize,
+    patterns: BTreeMap<String, Option<Arc<jsonschema::Validator>>>,
+    pattern_work: usize,
+    formats: BTreeMap<String, Arc<jsonschema::Validator>>,
+    format_work: usize,
     update: &'a mut dyn FnMut(u8, &str) -> Result<()>,
 }
 
@@ -76,6 +94,292 @@ enum Branch {
 }
 
 impl Review<'_> {
+    fn format(
+        &mut self,
+        declaration: &Value,
+        value: &Value,
+        at: &str,
+        body: &str,
+        instance: &str,
+    ) -> Result<()> {
+        if !self.step(body, instance, at)? {
+            return Ok(());
+        }
+        let Some(format) = declaration.as_str() else {
+            self.observe(
+                "unsupported_validation_case",
+                "invalid_format",
+                "Format declaration must be a string",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        };
+        if format.contains("[REDACTED]") || format.starts_with("[Body withheld:") {
+            self.observe(
+                "insufficient_evidence",
+                "format_evaluation",
+                "Redacted format declaration cannot be evaluated",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        }
+        if !self.report.options.assert_formats {
+            self.observe(
+                "format_annotation",
+                "format_annotation",
+                "Format recorded as an annotation; assertions are disabled for this job",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        }
+        // A fixed allowlist prevents executing imported regex formats or silently
+        // accepting unknown/custom attributes. These are syntactic checks only.
+        if ![
+            "date",
+            "time",
+            "date-time",
+            "duration",
+            "email",
+            "hostname",
+            "ipv4",
+            "ipv6",
+            "uri",
+            "uri-reference",
+            "uri-template",
+            "uuid",
+            "json-pointer",
+            "relative-json-pointer",
+        ]
+        .contains(&format)
+        {
+            self.observe(
+                "unsupported_validation_case",
+                "unsupported_format",
+                "This format is outside the supported syntactic assertion set",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        }
+        let Some(text) = value.as_str() else {
+            return Ok(());
+        };
+        if text.contains("[REDACTED]") || text.starts_with("[Body withheld:") {
+            self.observe(
+                "insufficient_evidence",
+                "format_evaluation",
+                "Redacted value cannot be checked against a format",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        }
+        if text.len() > MAX_FORMAT_INPUT
+            || self.format_work.saturating_add(text.len().max(1)) > MAX_FORMAT_WORK
+        {
+            self.observe(
+                "unsupported_validation_case",
+                "format_budget",
+                "Format input exceeds 4096 bytes or the shared 1 MiB input budget",
+                body,
+                instance,
+                at,
+            );
+            return Ok(());
+        }
+        self.format_work += text.len().max(1);
+        if !self.formats.contains_key(format) {
+            match jsonschema::options()
+                .with_draft(jsonschema::Draft::Draft202012)
+                .should_validate_formats(true)
+                .should_ignore_unknown_formats(false)
+                .build(&json!({"format":format}))
+            {
+                Ok(validator) => {
+                    self.formats.insert(format.into(), Arc::new(validator));
+                }
+                Err(_) => {
+                    self.observe(
+                        "unsupported_validation_case",
+                        "format_evaluation",
+                        "Format validator is unavailable in this build",
+                        body,
+                        instance,
+                        at,
+                    );
+                    return Ok(());
+                }
+            }
+        }
+        let validator = self.formats.get(format).cloned().expect("inserted above");
+        if let Err(error) = validator.validate(value) {
+            if matches!(
+                error.kind(),
+                jsonschema::error::ValidationErrorKind::Format { .. }
+            ) {
+                self.observe(
+                    "confirmed_documented_mismatch",
+                    "string_format",
+                    "Captured string violates a supported syntactic format assertion",
+                    body,
+                    instance,
+                    at,
+                );
+            } else {
+                self.observe(
+                    "unsupported_validation_case",
+                    "format_evaluation",
+                    "Format engine could not evaluate this input; no mismatch inferred",
+                    body,
+                    instance,
+                    at,
+                );
+            }
+        }
+        self.step(body, instance, at)?;
+        Ok(())
+    }
+    /// Only a closed {pattern: string} schema enters the library. Resource
+    /// resolution, annotations and arbitrary subschemas cannot run here.
+    fn pattern(
+        &mut self,
+        pattern: &Value,
+        value: &Value,
+        at: &str,
+        body: &str,
+        instance: &str,
+    ) -> Result<Branch> {
+        if !self.step(body, instance, at)? {
+            return Ok(Branch::Unknown);
+        }
+        let Some(pattern) = pattern.as_str() else {
+            self.observe(
+                "unsupported_validation_case",
+                "invalid_pattern",
+                "Pattern declaration must be a string",
+                body,
+                instance,
+                at,
+            );
+            return Ok(Branch::Unknown);
+        };
+        if pattern.contains("[REDACTED]") || pattern.starts_with("[Body withheld:") {
+            self.observe(
+                "insufficient_evidence",
+                "pattern_evaluation",
+                "Redacted pattern cannot establish a match",
+                body,
+                instance,
+                at,
+            );
+            return Ok(Branch::Unknown);
+        }
+        // The engine accepts extensions beyond our advertised schema subset.
+        // Conservative rejection also covers escaped/character-class spellings;
+        // an explicit unsupported result is preferable to a different meaning.
+        if pattern.replace("(?:", "").contains("(?")
+            || [r"\A", r"\z", r"\Z", r"\<", r"\>"]
+                .iter()
+                .any(|syntax| pattern.contains(syntax))
+        {
+            self.observe("unsupported_validation_case", "invalid_pattern", "Specialized group constructs or engine-only anchors are outside the supported regex subset", body, instance, at);
+            return Ok(Branch::Unknown);
+        }
+        if pattern.len() > MAX_PATTERN_BYTES
+            || (!self.patterns.contains_key(pattern) && self.patterns.len() >= MAX_PATTERNS)
+        {
+            self.observe(
+                "unsupported_validation_case",
+                "pattern_budget",
+                "Pattern exceeds the 1024-byte or 64-compiled-pattern budget",
+                body,
+                instance,
+                at,
+            );
+            return Ok(Branch::Unknown);
+        }
+        if !self.patterns.contains_key(pattern) {
+            let validator = jsonschema::options()
+                .with_draft(jsonschema::Draft::Draft202012)
+                .should_validate_formats(false)
+                .with_pattern_options(
+                    jsonschema::PatternOptions::regex()
+                        .size_limit(PATTERN_MEMORY)
+                        .dfa_size_limit(PATTERN_MEMORY),
+                )
+                .build(&json!({"pattern":pattern}))
+                .ok()
+                .map(Arc::new);
+            self.patterns.insert(pattern.to_owned(), validator);
+        }
+        let Some(validator) = self.patterns.get(pattern).cloned().flatten() else {
+            self.observe("unsupported_validation_case", "invalid_pattern", "Pattern is invalid, requires unsupported regex features or exceeds compilation memory limits", body, instance, at);
+            return Ok(Branch::Unknown);
+        };
+        let Some(text) = value.as_str() else {
+            return Ok(Branch::Matches);
+        };
+        if text.contains("[REDACTED]") || text.starts_with("[Body withheld:") {
+            self.observe(
+                "insufficient_evidence",
+                "pattern_evaluation",
+                "Redacted value cannot establish a pattern match",
+                body,
+                instance,
+                at,
+            );
+            return Ok(Branch::Unknown);
+        }
+        let work = pattern.len().max(1).saturating_mul(text.len().max(1));
+        if self.pattern_work.saturating_add(work) > MAX_PATTERN_WORK {
+            self.observe(
+                "unsupported_validation_case",
+                "pattern_budget",
+                "Pattern matching reached the shared 8 MiB pattern/input work budget",
+                body,
+                instance,
+                at,
+            );
+            return Ok(Branch::Unknown);
+        }
+        self.pattern_work += work;
+        // validate exposes engine failures; is_valid would collapse them into a
+        // false result and could manufacture an extra-property mismatch.
+        let outcome = match validator.validate(value) {
+            Ok(()) => Branch::Matches,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    jsonschema::error::ValidationErrorKind::Pattern { .. }
+                ) =>
+            {
+                Branch::Mismatch
+            }
+            Err(_) => {
+                self.observe(
+                    "unsupported_validation_case",
+                    "pattern_evaluation",
+                    "Regex engine could not evaluate this input; no mismatch inferred",
+                    body,
+                    instance,
+                    at,
+                );
+                Branch::Unknown
+            }
+        };
+        if !self.step(body, instance, at)? {
+            return Ok(Branch::Unknown);
+        }
+        Ok(outcome)
+    }
     /// Branch diagnostics are speculative. Keep their work charged to the shared
     /// budget, but never leak failed alternatives into the final observation list.
     fn branch(
@@ -97,7 +401,11 @@ impl Review<'_> {
             .any(|o| o.classification == "confirmed_documented_mismatch")
         {
             Ok(Branch::Mismatch)
-        } else if !diagnostics.is_empty() || self.report.checks >= MAX_CHECKS {
+        } else if diagnostics
+            .iter()
+            .any(|o| o.classification != "format_annotation")
+            || self.report.checks >= MAX_CHECKS
+        {
             Ok(Branch::Unknown)
         } else {
             Ok(Branch::Matches)
@@ -163,6 +471,7 @@ impl Review<'_> {
             "maxLength",
             "minItems",
             "maxItems",
+            "uniqueItems",
             "minProperties",
             "maxProperties",
         ] {
@@ -197,6 +506,21 @@ impl Review<'_> {
                 );
                 continue;
             }
+            if keyword == "uniqueItems"
+                && constraint == true
+                && value.is_array()
+                && !self.equality_data(value, body, instance, at)?
+            {
+                self.observe(
+                    "insufficient_evidence",
+                    "equality_constraint",
+                    "Array uniqueness contains redacted data or exceeded its work budget",
+                    body,
+                    instance,
+                    &pointer(at, keyword),
+                );
+                continue;
+            }
             flat.insert(keyword.into(), constraint.clone());
         }
         if flat.is_empty() {
@@ -222,7 +546,7 @@ impl Review<'_> {
             self.observe(
                 "confirmed_documented_mismatch",
                 "schema_constraint",
-                "Captured value violates the documented scalar or size constraint",
+                "Captured value violates the documented scalar, size or uniqueness constraint",
                 body,
                 instance,
                 &format!("{at}{}", error.schema_path()),
@@ -448,6 +772,7 @@ impl Review<'_> {
             "maxLength",
             "minItems",
             "maxItems",
+            "uniqueItems",
             "minProperties",
             "maxProperties",
             "allOf",
@@ -455,6 +780,15 @@ impl Review<'_> {
             "oneOf",
             "not",
             "additionalProperties",
+            "prefixItems",
+            "dependentRequired",
+            "dependentSchemas",
+            "pattern",
+            "patternProperties",
+            "format",
+            "if",
+            "then",
+            "else",
         ];
         if object
             .keys()
@@ -518,6 +852,44 @@ impl Review<'_> {
             }
         }
         self.constraints(value, schema, at, body, instance)?;
+        if let Some(pattern) = object.get("pattern") {
+            let location = pointer(at, "pattern");
+            if self.pattern(pattern, value, &location, body, instance)? == Branch::Mismatch {
+                self.observe(
+                    "confirmed_documented_mismatch",
+                    "string_pattern",
+                    "Captured string does not match the documented pattern",
+                    body,
+                    instance,
+                    &location,
+                );
+            }
+        }
+        if let Some(format) = object.get("format") {
+            self.format(format, value, &pointer(at, "format"), body, instance)?;
+        }
+        if self.version30 && object.contains_key("patternProperties") {
+            self.observe(
+                "unsupported_validation_case",
+                "schema_dialect",
+                "patternProperties is outside the OpenAPI 3.0 Schema Object subset",
+                body,
+                instance,
+                &pointer(at, "patternProperties"),
+            );
+        } else if object
+            .get("patternProperties")
+            .is_some_and(|v| !v.is_object())
+        {
+            self.observe(
+                "unsupported_validation_case",
+                "invalid_pattern_properties",
+                "patternProperties must be an object of schemas",
+                body,
+                instance,
+                &pointer(at, "patternProperties"),
+            );
+        }
         for keyword in ["allOf", "anyOf", "oneOf"] {
             let Some(alternatives) = object.get(keyword) else {
                 continue;
@@ -595,6 +967,205 @@ impl Review<'_> {
                 Branch::Mismatch => (),
             }
         }
+        // Predicates are speculative: their diagnostics must not become failures
+        // of the enclosing schema. Only the selected adjacent branch applies.
+        // Orphan then/else never interact across allOf or reference boundaries.
+        if self.version30 {
+            for keyword in ["if", "then", "else"] {
+                if object.contains_key(keyword) {
+                    self.observe(
+                        "unsupported_validation_case",
+                        "schema_dialect",
+                        "Conditional keywords are outside the OpenAPI 3.0 Schema Object subset",
+                        body,
+                        instance,
+                        &pointer(at, keyword),
+                    );
+                }
+            }
+        } else if object.contains_key("if")
+            && (object.contains_key("then") || object.contains_key("else"))
+        {
+            let condition_at = pointer(at, "if");
+            let selected = match self.branch(
+                value,
+                &condition_at,
+                body,
+                instance,
+                response,
+                depth + 1,
+            )? {
+                Branch::Matches => Some("then"),
+                Branch::Mismatch => Some("else"),
+                Branch::Unknown => {
+                    self.observe(
+                        "insufficient_evidence",
+                        "conditional_branch",
+                        "Condition contains unsupported, redacted or budget-limited data; neither branch was selected",
+                        body,
+                        instance,
+                        &condition_at,
+                    );
+                    None
+                }
+            };
+            if let Some(keyword) = selected.filter(|keyword| object.contains_key(*keyword)) {
+                self.schema(
+                    value,
+                    &pointer(at, keyword),
+                    body,
+                    instance,
+                    response,
+                    depth + 1,
+                )?;
+            }
+        } else if object
+            .get("if")
+            .is_some_and(|condition| !condition.is_object() && !condition.is_boolean())
+        {
+            self.observe(
+                "unsupported_validation_case",
+                "invalid_conditional",
+                "Condition must be a schema object or boolean",
+                body,
+                instance,
+                &pointer(at, "if"),
+            );
+        }
+        let mut hidden_names = false;
+        if (object.contains_key("dependentRequired") || object.contains_key("dependentSchemas"))
+            && let Some(data) = value.as_object()
+        {
+            for name in data.keys() {
+                if !self.step(body, instance, at)? {
+                    return Ok(());
+                }
+                hidden_names |= name.contains("[REDACTED]");
+            }
+        }
+        for keyword in ["dependentRequired", "dependentSchemas"] {
+            let Some(dependencies) = object.get(keyword) else {
+                continue;
+            };
+            let location = pointer(at, keyword);
+            if self.version30 {
+                self.observe(
+                    "unsupported_validation_case",
+                    "schema_dialect",
+                    "Dependent keywords are outside the OpenAPI 3.0 Schema Object subset",
+                    body,
+                    instance,
+                    &location,
+                );
+                continue;
+            }
+            let Some(dependencies) = dependencies.as_object() else {
+                self.observe(
+                    "unsupported_validation_case",
+                    "invalid_dependency",
+                    "Dependent declaration must be an object",
+                    body,
+                    instance,
+                    &location,
+                );
+                continue;
+            };
+            for (trigger, dependency) in dependencies {
+                let child_at = pointer(&location, trigger);
+                if !self.step(body, instance, &child_at)? {
+                    break;
+                }
+                let required = if keyword == "dependentRequired" {
+                    let Some(names) = dependency.as_array() else {
+                        self.observe(
+                            "unsupported_validation_case",
+                            "invalid_dependency",
+                            "dependentRequired entries must be arrays of unique property names",
+                            body,
+                            instance,
+                            &child_at,
+                        );
+                        continue;
+                    };
+                    let mut seen = BTreeSet::new();
+                    let mut valid = true;
+                    for name in names {
+                        if !self.step(body, instance, &child_at)? {
+                            return Ok(());
+                        }
+                        if let Some(name) = name.as_str() {
+                            valid &= seen.insert(name);
+                        } else {
+                            valid = false;
+                        }
+                    }
+                    if !valid {
+                        self.observe(
+                            "unsupported_validation_case",
+                            "invalid_dependency",
+                            "dependentRequired entries must be arrays of unique property names",
+                            body,
+                            instance,
+                            &child_at,
+                        );
+                        continue;
+                    }
+                    Some(seen)
+                } else if dependency.is_object() || dependency.is_boolean() {
+                    None
+                } else {
+                    self.observe(
+                        "unsupported_validation_case",
+                        "invalid_dependency",
+                        "dependentSchemas entries must be schemas",
+                        body,
+                        instance,
+                        &child_at,
+                    );
+                    continue;
+                };
+                let Some(data) = value.as_object() else {
+                    continue;
+                };
+                if trigger.contains("[REDACTED]") || (!data.contains_key(trigger) && hidden_names) {
+                    self.observe(
+                        "insufficient_evidence",
+                        "dependent_property",
+                        "Redacted property names prevent deciding whether a dependency applies",
+                        body,
+                        instance,
+                        &child_at,
+                    );
+                    continue;
+                }
+                if !data.contains_key(trigger) {
+                    continue;
+                }
+                if let Some(names) = required {
+                    for name in names {
+                        if !self.step(body, instance, &child_at)? {
+                            break;
+                        }
+                        if name.contains("[REDACTED]") || (!data.contains_key(name) && hidden_names)
+                        {
+                            self.observe(
+                                "insufficient_evidence",
+                                "dependent_property",
+                                "Redacted property names prevent checking a required dependency",
+                                body,
+                                instance,
+                                &child_at,
+                            );
+                        } else if !data.contains_key(name) {
+                            self.observe("confirmed_documented_mismatch", "dependent_required", "Captured object lacks a property required by a present dependency trigger", body, &pointer(instance, name), &child_at);
+                        }
+                    }
+                } else {
+                    // dependentSchemas applies to the entire object, not the trigger's value.
+                    self.schema(value, &child_at, body, instance, response, depth + 1)?;
+                }
+            }
+        }
         if let Some(data) = value.as_object() {
             if let Some(required) = object.get("required") {
                 if let Some(required) = required
@@ -665,12 +1236,74 @@ impl Review<'_> {
                     }
                 }
             }
+            let mut matched_names = BTreeSet::new();
+            let mut unknown_names = BTreeSet::new();
+            let mut patterns_incomplete = false;
+            if let Some(patterns) = object.get("patternProperties") {
+                let location = pointer(at, "patternProperties");
+                if self.version30 {
+                    patterns_incomplete = true;
+                } else if let Some(patterns) = patterns.as_object() {
+                    for (pattern, child_schema) in patterns {
+                        let child_at = pointer(&location, pattern);
+                        if !child_schema.is_object() && !child_schema.is_boolean() {
+                            patterns_incomplete = true;
+                            self.observe(
+                                "unsupported_validation_case",
+                                "invalid_pattern_properties",
+                                "patternProperties members must be schemas",
+                                body,
+                                instance,
+                                &child_at,
+                            );
+                            continue;
+                        }
+                        let declaration = Value::String(pattern.clone());
+                        // Validate/cache even an unused declaration, without matching data.
+                        if self.pattern(&declaration, &Value::Null, &child_at, body, instance)?
+                            == Branch::Unknown
+                        {
+                            patterns_incomplete = true;
+                            continue;
+                        }
+                        for (name, child) in data {
+                            if !self.step(body, instance, &child_at)? {
+                                return Ok(());
+                            }
+                            let child_instance = pointer(instance, name);
+                            match self.pattern(
+                                &declaration,
+                                &Value::String(name.clone()),
+                                &child_at,
+                                body,
+                                &child_instance,
+                            )? {
+                                Branch::Matches => {
+                                    matched_names.insert(name.as_str());
+                                    self.schema(
+                                        child,
+                                        &child_at,
+                                        body,
+                                        &child_instance,
+                                        response,
+                                        depth + 1,
+                                    )?;
+                                }
+                                Branch::Unknown => {
+                                    unknown_names.insert(name.as_str());
+                                }
+                                Branch::Mismatch => (),
+                            }
+                        }
+                    }
+                } else {
+                    patterns_incomplete = true;
+                }
+            }
             if let Some(additional) = object.get("additionalProperties") {
                 let location = pointer(at, "additionalProperties");
                 if object.get("properties").is_some_and(|p| !p.is_object()) {
                     self.observe("unsupported_validation_case", "additional_properties", "Invalid properties declaration prevents additional-property classification", body, instance, &location);
-                } else if object.contains_key("patternProperties") {
-                    self.observe("unsupported_validation_case", "additional_properties", "patternProperties must be evaluated before deciding which properties are additional", body, instance, &location);
                 } else if !additional.is_boolean() && !additional.is_object() {
                     self.observe(
                         "unsupported_validation_case",
@@ -690,6 +1323,13 @@ impl Review<'_> {
                             .and_then(Value::as_object)
                             .is_some_and(|p| p.contains_key(name))
                         {
+                            continue;
+                        }
+                        if matched_names.contains(name.as_str()) {
+                            continue;
+                        }
+                        if patterns_incomplete || unknown_names.contains(name.as_str()) {
+                            self.observe("insufficient_evidence", "additional_properties", "An incomplete pattern evaluation prevents deciding whether this property is additional", body, &pointer(instance,name), &location);
                             continue;
                         }
                         if name.contains("[REDACTED]") {
@@ -712,15 +1352,72 @@ impl Review<'_> {
                 }
             }
         }
-        if let Some(data) = value.as_array() {
-            if object
-                .get("items")
-                .is_some_and(|v| v.is_object() || v.is_boolean())
-            {
-                for (i, child) in data.iter().enumerate() {
+        let mut prefix_len = Some(0);
+        if let Some(prefix) = object.get("prefixItems") {
+            let location = pointer(at, "prefixItems");
+            if self.version30 {
+                prefix_len = None;
+                self.observe(
+                    "unsupported_validation_case",
+                    "schema_dialect",
+                    "prefixItems is outside the OpenAPI 3.0 Schema Object subset",
+                    body,
+                    instance,
+                    &location,
+                );
+            } else if let Some(prefix) = prefix.as_array().filter(|a| !a.is_empty()) {
+                prefix_len = Some(prefix.len());
+                for (i, child_schema) in prefix.iter().enumerate() {
+                    let child_at = pointer(&location, &i.to_string());
+                    if !self.step(body, instance, &child_at)? {
+                        return Ok(());
+                    }
+                    if !child_schema.is_object() && !child_schema.is_boolean() {
+                        prefix_len = None;
+                        self.observe(
+                            "unsupported_validation_case",
+                            "invalid_tuple",
+                            "prefixItems members must be schemas; tail evaluation is inconclusive",
+                            body,
+                            instance,
+                            &child_at,
+                        );
+                    } else if let Some(child) = value.as_array().and_then(|a| a.get(i)) {
+                        self.schema(
+                            child,
+                            &child_at,
+                            body,
+                            &pointer(instance, &i.to_string()),
+                            response,
+                            depth + 1,
+                        )?;
+                    }
+                }
+            } else {
+                prefix_len = None;
+                self.observe("unsupported_validation_case", "invalid_tuple", "prefixItems must be a nonempty array of schemas; tail evaluation is inconclusive", body, instance, &location);
+            }
+        }
+        if let Some(items) = object.get("items") {
+            let location = pointer(at, "items");
+            if !items.is_object() && !items.is_boolean() {
+                self.observe("unsupported_validation_case", "array_items", "items must be a schema; legacy tuple arrays are not supported by OpenAPI 3.0/3.1", body, instance, &location);
+            } else if self.version30 && items.is_boolean() {
+                self.observe(
+                    "unsupported_validation_case",
+                    "boolean_schema",
+                    "OpenAPI 3.0 items must be a Schema Object",
+                    body,
+                    instance,
+                    &location,
+                );
+            } else if let Some(data) = value.as_array() {
+                // Unknown tuple boundaries must not apply a tail schema to prefix elements.
+                let start = if self.version30 { Some(0) } else { prefix_len };
+                for (i, child) in data.iter().enumerate().skip(start.unwrap_or(data.len())) {
                     self.schema(
                         child,
-                        &pointer(at, "items"),
+                        &location,
                         body,
                         &pointer(instance, &i.to_string()),
                         response,
@@ -730,15 +1427,6 @@ impl Review<'_> {
                         break;
                     }
                 }
-            } else if object.contains_key("items") {
-                self.observe(
-                    "unsupported_validation_case",
-                    "array_items",
-                    "Tuple or invalid items schema is unsupported",
-                    body,
-                    instance,
-                    &pointer(at, "items"),
-                );
             }
         }
         Ok(())
@@ -956,10 +1644,19 @@ impl Core {
         ))
     }
     pub fn http_schema_enqueue(&self, exchange: &str, operation: &str) -> Result<AnalysisJob> {
+        self.http_schema_enqueue_with_options(exchange, operation, SchemaReviewOptions::default())
+    }
+    pub fn http_schema_enqueue_with_options(
+        &self,
+        exchange: &str,
+        operation: &str,
+        options: SchemaReviewOptions,
+    ) -> Result<AnalysisJob> {
         let capture = self.http_exchange(exchange)?;
         let operation = self.api_operation(operation)?;
         let (_, sources) = self.schema_sources(&capture, &operation)?;
-        let fingerprint = self.schema_fingerprint(&capture, &operation, &sources)?;
+        let fingerprint =
+            self.schema_options_fingerprint(&capture, &operation, &sources, Some(options))?;
         let job = Uuid::new_v4().to_string();
         let mut conn = self.db.connect()?;
         let tx = conn
@@ -978,30 +1675,52 @@ impl Core {
             params![job, exchange, operation.id, fingerprint],
         )
         .map_err(db_error)?;
+        tx.execute(
+            "INSERT INTO http_schema_job_options VALUES(?1,?2)",
+            params![job, serde_json::to_string(&options).map_err(json_error)?],
+        )
+        .map_err(db_error)?;
         Self::audit(&tx, "http.schema_queued", &job, "offline")?;
         tx.commit().map_err(db_error)?;
         self.job(&job)
+    }
+    fn schema_options_fingerprint(
+        &self,
+        capture: &HttpExchange,
+        operation: &ApiOperation,
+        sources: &Value,
+        options: Option<SchemaReviewOptions>,
+    ) -> Result<String> {
+        let legacy = self.schema_fingerprint(capture, operation, sources)?;
+        match options {
+            None => Ok(legacy),
+            Some(options) => Ok(super::super::evidence::digest(
+                &serde_json::to_vec(&json!([legacy, options])).map_err(json_error)?,
+            )),
+        }
+    }
+    fn schema_job_context(&self, id: &str) -> Result<(String, String, String, Option<String>)> {
+        self.db.connect()?.query_row("SELECT s.exchange_id,s.operation_id,s.fingerprint,o.options_json FROM http_schema_jobs s LEFT JOIN http_schema_job_options o ON o.job_id=s.job_id WHERE s.job_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).map_err(db_error)
     }
     pub(crate) fn prepare_http_schema(
         &self,
         job: &AnalysisJob,
         update: &mut dyn FnMut(u8, &str) -> Result<()>,
     ) -> Result<super::super::jobs::PreparedJob> {
-        let (capture_id, operation_id, fingerprint): (String, String, String) = self
-            .db
-            .connect()?
-            .query_row(
-                "SELECT exchange_id,operation_id,fingerprint FROM http_schema_jobs WHERE job_id=?1",
-                [&job.id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-            )
-            .map_err(db_error)?;
+        let binding = self.schema_job_context(&job.id)?;
+        let (capture_id, operation_id, fingerprint, options_json) = binding.clone();
+        let options = options_json
+            .as_deref()
+            .map(serde_json::from_str::<SchemaReviewOptions>)
+            .transpose()
+            .map_err(json_error)?;
         let capture = self.http_exchange(&capture_id)?;
         let operation = self.api_operation(&operation_id)?;
         let (doc, sources) = self.schema_sources(&capture, &operation)?;
         if capture.project_id != job.project_id
             || capture.target_id != job.target_id
-            || self.schema_fingerprint(&capture, &operation, &sources)? != fingerprint
+            || self.schema_options_fingerprint(&capture, &operation, &sources, options)?
+                != fingerprint
         {
             return Err(AppError::new(
                 "SOURCE_CHANGED",
@@ -1013,7 +1732,7 @@ impl Core {
             "Both source hashes and exact target/origin binding checked",
         )?;
         let capture_root = self.schema_capture_pointer(&capture)?;
-        let report = SchemaReview { exchange_id:capture.id.clone(), operation_id:operation.id.clone(), sources, observations:Vec::new(), checks:0, coverage:"partial: bounded structure, scalar/size constraints, composition and HTTP metadata; patterns/formats/resource resolution remain unsupported; no vulnerability verdict".into(), network_requests:0 };
+        let report = SchemaReview { exchange_id:capture.id.clone(), operation_id:operation.id.clone(), sources, observations:Vec::new(), checks:0, coverage:"partial: bounded structure, scalar/size/uniqueness constraints, string patterns, opt-in syntactic formats, 3.1 patternProperties/tuples/dependencies/conditionals, composition and HTTP metadata; advanced regex/custom formats/resource resolution remain unsupported; no vulnerability verdict".into(), network_requests:0, options:options.unwrap_or_default() };
         let mut review = Review {
             doc: &doc,
             capture: &capture,
@@ -1024,6 +1743,10 @@ impl Core {
             capture_root,
             active: BTreeSet::new(),
             output_bytes: 0,
+            patterns: BTreeMap::new(),
+            pattern_work: 0,
+            formats: BTreeMap::new(),
+            format_work: 0,
             update,
         };
         review.operation(&operation)?;
@@ -1032,6 +1755,12 @@ impl Core {
             "Offline observations completed; unsupported cases remain explicit",
         )?;
         self.schema_sources(&capture, &operation)?;
+        if self.schema_job_context(&job.id)? != binding {
+            return Err(AppError::new(
+                "SOURCE_CHANGED",
+                "Schema job policy changed during execution",
+            ));
+        }
         Ok(super::super::jobs::PreparedJob {
             result: safe_value(serde_json::to_value(review.report).map_err(json_error)?),
             analysis: None,

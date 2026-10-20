@@ -67,6 +67,7 @@ export interface SchemaObservation {
   openapi_evidence_id: string;
 }
 export interface SchemaReview {
+  options?: { assert_formats: boolean };
   observations: SchemaObservation[];
   checks: number;
   coverage: string;

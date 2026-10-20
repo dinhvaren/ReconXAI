@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useState } from "react";
 import { request, type Snapshot, type Reply } from "../api";
 import { Heading, Modal, type Perform } from "../components/ui";
@@ -174,7 +175,7 @@ export function OrchestrationPage({
           . MCP tools remain available for separately reviewed manual calls in
           MCP Hub.
         </p>
-        <button
+        <Button
           className="button secondary"
           disabled={busy || !file || !config}
           onClick={() =>
@@ -185,9 +186,16 @@ export function OrchestrationPage({
               setConsent(false);
             })
           }
+          disabledReason={
+            busy
+              ? "An operation is in progress"
+              : !file
+                ? "Select a local file first"
+                : "Select a configured AI provider"
+          }
         >
           Preview planning context
-        </button>
+        </Button>
         {preview && config && (
           <>
             <pre className="technical-output">{preview}</pre>
@@ -206,7 +214,7 @@ export function OrchestrationPage({
               I approve transmitting this exact planning context to this
               provider.
             </label>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !consent}
               onClick={() =>
@@ -225,9 +233,14 @@ export function OrchestrationPage({
                   await load();
                 }, "Structured plan validated and saved for review")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "Review the preview and grant the required approval"
+              }
             >
               Generate structured plan
-            </button>
+            </Button>
           </>
         )}
       </section>
@@ -257,7 +270,7 @@ export function OrchestrationPage({
                 </li>
               ))}
             </ol>
-            <button
+            <Button
               className="button secondary"
               disabled={busy || !!p.executed_at}
               onClick={() =>
@@ -269,11 +282,16 @@ export function OrchestrationPage({
                   await load();
                 }, "Reviewed plan queued through the shared Job Engine")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "This plan has already executed; create a new plan"
+              }
             >
               {p.executed_at
                 ? "Approval consumed"
                 : "Approve local plan and queue"}
-            </button>
+            </Button>
           </article>
         ))}
       </section>
@@ -295,7 +313,7 @@ export function OrchestrationPage({
           .map((j) => (
             <div className="integration-evidence" key={j.id}>
               <span>{j.kind.replaceAll("_", " ")}</span>
-              <button
+              <Button
                 className="text-button"
                 disabled={busy || !config}
                 onClick={() =>
@@ -318,9 +336,14 @@ export function OrchestrationPage({
                     });
                   })
                 }
+                disabledReason={
+                  busy
+                    ? "An operation is in progress"
+                    : "Select a configured AI provider"
+                }
               >
                 Review evidence with AI
-              </button>
+              </Button>
             </div>
           ))}
         <p className="helper">
@@ -348,7 +371,7 @@ export function OrchestrationPage({
               I approve sending this displayed evidence to the selected
               provider.
             </label>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !consent}
               onClick={() =>
@@ -366,9 +389,14 @@ export function OrchestrationPage({
                   setConsent(false);
                 }, "AI interpretation saved")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "Review the preview and grant the required approval"
+              }
             >
               Interpret evidence
-            </button>
+            </Button>
             {reply && (
               <div className="connection-result">
                 <p className="helper">AI interpretation · unverified</p>

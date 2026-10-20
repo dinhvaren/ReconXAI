@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useEffect, useState } from "react";
 import { request, errorText, type Project } from "../api";
 import {
@@ -202,14 +203,15 @@ export default function TargetDialog({
           "firmware",
           "apk",
         ].includes(draft.kind) && (
-          <button
+          <Button
             type="button"
             className="button secondary"
             disabled={saving}
             onClick={() => void browse()}
+            disabledReason={"Saving changes"}
           >
             Browse local path
-          </button>
+          </Button>
         )}
         <label>
           Description
@@ -273,17 +275,24 @@ export default function TargetDialog({
           Exclusions take precedence.
         </p>
         <div className="inline-actions">
-          <button className="button" disabled={saving || !draft.project_id}>
+          <Button
+            className="button"
+            disabled={saving || !draft.project_id}
+            disabledReason={
+              saving ? "Saving changes" : "Select a project first"
+            }
+          >
             {saving ? "Saving target…" : "Save target"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className="button secondary"
             disabled={saving}
             onClick={onClose}
+            disabledReason={"Saving changes"}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

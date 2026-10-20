@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-18",
+  "updated": "2026-10-19",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -128,7 +128,7 @@
       "status": "PARTIAL",
       "verification": "artifacts/security-current-verification.json",
       "remaining": [
-        "full JSON Schema including patterns/formats/URI resource and multi-file references",
+        "full JSON Schema including advanced regex/custom formats/unevaluated keywords/URI resource and multi-file references",
         "stateful testing and active authorization matrix beyond captured/manual comparison",
         "project-export filtering and large workspace improvements"
       ],
@@ -141,6 +141,22 @@
         "four-format reports and restart",
         "bounded offline schema observations with hash/pointer provenance and exact target/origin isolation"
       ]
+    },
+    {
+      "id": "desktop_ux",
+      "status": "PARTIAL",
+      "runtime_evidence": [
+        "artifacts/ux-extensions-current-verification.json"
+      ],
+      "limitations": "Windows native 120 captures/three themes; Linux GUI and physical DPI unverified"
+    },
+    {
+      "id": "extensions",
+      "status": "PARTIAL",
+      "runtime_evidence": [
+        "artifacts/ux-extensions-current-verification.json"
+      ],
+      "limitations": "First-party YARA-X native adapter runtime verified; official MCP registry/community updates/setup incomplete"
     }
   ],
   "modules": [
@@ -385,8 +401,8 @@
     {
       "id": "linux_core_cli",
       "status": "TESTED",
-      "verification": "143 passed/1 ignored Core-CLI; optimized CLI ELF/evidence/finding/four-format reports acceptance on Parrot/WSL",
-      "evidence": "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
+      "verification": "167 passed/1 ignored Core-CLI; optimized offline conditional/format schema, real schema-12 upgrade, evidence/four-format reports on Parrot/WSL; no Desktop claim",
+      "evidence": "artifacts/schema-conditional-cli-linux/acceptance.json"
     },
     {
       "id": "ai_provider_manager",
@@ -407,8 +423,8 @@
     {
       "id": "offline_schema_consistency",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/security-current-verification.json",
-      "scope": "Bounded structure, enum/3.1 const, scalar/count constraints, allOf/anyOf/oneOf/not and additionalProperties; unsupported/redacted cases stay inconclusive",
+      "verification": "artifacts/schema-conditional-current-verification.json",
+      "scope": "Bounded structure, scalar/count/uniqueItems constraints, 3.1 prefixItems/items and dependentRequired/dependentSchemas, composition/additionalProperties; unsupported/redacted cases stay inconclusive; bounded string patterns and 3.1 patternProperties with explicit syntax/work/memory limits; default-off per-job bounded syntactic formats, durable policy and legacy queued-job upgrade; bounded OpenAPI 3.1 if/then/else with three-way predicates and selected-branch provenance",
       "limitations": [
         "unsupported schema constraints/dialects remain explicit",
         "redacted/serialized parameter values are inconclusive",
@@ -600,7 +616,7 @@
       "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
     ]
   },
-  "database_schema_version": 12,
+  "database_schema_version": 16,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -746,7 +762,9 @@
     "scope": "64-page local DOCX; Times New Roman, all-black text; Word-rendered and inspected",
     "source": "docs/PROJECT_DOCUMENTATION.vi.md",
     "generator": "scripts/build_project_document.py",
-    "evidence": "artifacts/project-document-delivery.json"
+    "evidence": "artifacts/project-document-delivery.json",
+    "source_updated_after_docx_export": true,
+    "note": "Previously delivered DOCX is a historical snapshot; source documentation includes the new schema slice. No user document overwritten."
   },
   "current_ci_followup": {
     "production_changed": false,
@@ -756,5 +774,42 @@
     "document_tests": 3,
     "proof": "artifacts/documentation-current-verification.json",
     "remote_ci": "New source verification pending; known glib gate remains blocked"
+  },
+  "current_schema_array_verification": {
+    "record": "artifacts/schema-arrays-current-verification.json",
+    "status": "RUNTIME_VERIFIED",
+    "phase_1_status": "PARTIAL",
+    "release_ready": false
+  },
+  "current_schema_pattern_verification": {
+    "record": "artifacts/schema-pattern-current-verification.json",
+    "status": "RUNTIME_VERIFIED",
+    "phase_1_status": "PARTIAL",
+    "release_ready": false
+  },
+  "current_schema_format_verification": {
+    "record": "artifacts/schema-format-current-verification.json",
+    "status": "RUNTIME_VERIFIED",
+    "phase_1_status": "PARTIAL",
+    "release_ready": false,
+    "schema_version": 13
+  },
+  "current_schema_conditional_verification": {
+    "record": "artifacts/schema-conditional-current-verification.json",
+    "status": "RUNTIME_VERIFIED",
+    "phase_1_status": "PARTIAL",
+    "release_ready": false,
+    "schema_version": 13
+  },
+  "current_mcp_registry_verification": {
+    "version": "0.1.0",
+    "database_schema": 16,
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE; subsequent runtime-selection fix pending acceptance",
+    "proof": "artifacts/mcp-current-verification.json",
+    "windows_rust": "180/0/2",
+    "linux_core_cli_rust": "180/0/2",
+    "frontend_tests": 36,
+    "linux_desktop": "UNVERIFIED",
+    "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
   }
 }

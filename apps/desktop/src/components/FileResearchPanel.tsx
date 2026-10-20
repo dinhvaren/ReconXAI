@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useEffect, useState } from "react";
 import { request, errorText, type Snapshot, type Reply } from "../api";
 import type { ImportedFile } from "../research";
@@ -88,7 +89,7 @@ export default function FileResearchPanel({
             onChange={(e) => setNote(e.target.value)}
             placeholder="Observations and questions; kept locally."
           />
-          <button
+          <Button
             className="button secondary"
             disabled={busy}
             onClick={() =>
@@ -97,9 +98,10 @@ export default function FileResearchPanel({
                 "Research notes saved",
               )
             }
+            disabledReason={"An operation is in progress"}
           >
             Save notes
-          </button>
+          </Button>
           {error && <p role="alert">{error}</p>}
           <h3>AI artifact review</h3>
           <p className="helper">
@@ -155,7 +157,7 @@ export default function FileResearchPanel({
             I approve sending this preview to the selected AI gateway. Sample
             strings may contain sensitive data.
           </label>
-          <button
+          <Button
             className="button"
             disabled={
               busy || !preview || !consent || !selectedProvider?.enabled
@@ -178,9 +180,18 @@ export default function FileResearchPanel({
                 "AI review received; interpretation is unverified",
               )
             }
+            disabledReason={
+              busy
+                ? "An operation is in progress"
+                : !preview
+                  ? "Generate and review a preview first"
+                  : !consent
+                    ? "Review the preview and grant the required approval"
+                    : "Select an enabled AI provider"
+            }
           >
             Explain selected artifacts
-          </button>
+          </Button>
           {reply && (
             <div className="chat-message">
               <small>AI interpretation · unverified</small>

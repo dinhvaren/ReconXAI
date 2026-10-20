@@ -1,0 +1,296 @@
+/* One control scale for native elements and shared React components. Legacy
+   .button/.text-button call sites use the same tokens while being migrated. */
+:root {
+  --control-compact: 30px;
+  --control-standard: 34px;
+  --control-large: 38px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-control: 5px;
+  --radius-panel: 7px;
+  --icon-size: 18px;
+}
+.button,
+.text-button,
+.icon-button {
+  --control-height: var(--control-standard);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-height);
+  min-height: var(--control-height);
+  max-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--radius-control);
+  font: var(--weight-medium) var(--text-sm)/var(--line-control) var(--font-ui);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.button,
+.button.secondary {
+  background: var(--rx-surface-raised);
+  color: var(--rx-text);
+}
+.button.primary {
+  background: var(--rx-accent);
+  border-color: var(--rx-accent);
+  color: var(--rx-on-accent);
+}
+.button.ghost,
+.text-button,
+.icon-button {
+  background: transparent;
+  color: var(--rx-text-muted);
+  border-color: transparent;
+}
+.button.destructive {
+  color: var(--rx-error);
+  background: var(--rx-surface);
+  border-color: var(--rx-error-border);
+}
+.button:hover:not(:disabled),
+.text-button:hover:not(:disabled),
+.icon-button:hover:not(:disabled) {
+  background: var(--rx-hover);
+  color: var(--rx-text);
+  border-color: var(--rx-input-border);
+}
+.button.primary:hover:not(:disabled) {
+  background: var(--rx-accent-hover);
+  color: var(--rx-on-accent);
+  border-color: var(--rx-accent-hover);
+}
+.button.small,
+.control-compact,
+.text-button {
+  --control-height: var(--control-compact);
+}
+.control-large {
+  --control-height: var(--control-large);
+}
+.icon-button {
+  width: var(--control-height);
+  padding: 0;
+}
+.rx-icon {
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+.button .rx-icon,
+.text-button .rx-icon,
+.icon-button .rx-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.control-hint:focus-visible {
+  outline: 2px solid var(--rx-focus);
+  outline-offset: 2px;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select {
+  height: var(--control-standard);
+  min-height: var(--control-standard);
+  padding: 0 10px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-base);
+  line-height: var(--line-control);
+}
+select {
+  padding-right: 28px;
+}
+textarea {
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+}
+.rx-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.control-hint {
+  display: inline-flex;
+  position: relative;
+  min-width: 0;
+  align-items: center;
+}
+.control-wrap {
+  display: contents;
+}
+.control-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 150;
+  left: 0;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--rx-input-border);
+  border-radius: 5px;
+  background: var(--rx-surface-raised);
+  color: var(--rx-text);
+  font: 400 12px/1.5 var(--font-ui);
+  white-space: normal;
+  box-shadow: 0 4px 16px var(--rx-shadow);
+  pointer-events: none;
+}
+.control-hint:hover > .control-tooltip,
+.control-hint:focus-within > .control-tooltip {
+  display: block;
+}
+.rx-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  border: 1px dashed var(--rx-border);
+  border-radius: var(--radius-panel);
+  margin: 16px 0;
+}
+.rx-empty > .rx-icon {
+  color: var(--rx-text-muted);
+}
+.rx-empty h2 {
+  margin: 0 0 4px;
+}
+.rx-empty p {
+  margin: 0;
+  color: var(--rx-text-muted);
+  max-width: 65ch;
+}
+.rx-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+}
+.rx-loading svg {
+  animation: rx-spin 1.4s linear infinite;
+}
+@keyframes rx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.rx-search,
+.rx-password {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+}
+.rx-search > svg {
+  position: absolute;
+  left: 10px;
+  color: var(--rx-text-muted);
+  pointer-events: none;
+}
+.rx-search input {
+  padding-left: 34px !important;
+  width: 100%;
+}
+.rx-password input {
+  padding-right: 40px !important;
+  width: 100%;
+}
+.rx-password > button {
+  position: absolute;
+  right: 1px;
+}
+.rx-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+.rx-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--rx-border);
+  margin-bottom: 16px;
+}
+.rx-tabs button {
+  height: var(--control-standard);
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--rx-text-muted);
+}
+.rx-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--rx-accent);
+  color: var(--rx-text);
+}
+.rx-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+.rx-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  min-width: 200px;
+  padding: 5px;
+  border: 1px solid var(--rx-input-border);
+  background: var(--rx-surface);
+  box-shadow: 0 6px 20px var(--rx-shadow);
+  border-radius: 6px;
+  z-index: 80;
+}
+.rx-menu .control-hint {
+  display: flex;
+}
+.rx-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--control-standard);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+}
+.rx-menu-item:hover,
+.rx-menu-item:focus-visible {
+  background: var(--rx-hover);
+}
+.rx-split {
+  display: inline-flex;
+  gap: 1px;
+}
+.rx-drawer {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 54px 0 32px auto;
+  width: min(360px, calc(100vw - 56px));
+  background: var(--rx-surface);
+  border-left: 1px solid var(--rx-border);
+  z-index: 25;
+  overflow: auto;
+  box-shadow: -8px 0 24px var(--rx-shadow);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rx-loading svg {
+    animation: none;
+  }
+}

@@ -172,9 +172,7 @@ async function waitJob(id) {
   throw Error("Job did not finish: " + id);
 }
 async function theme(name) {
-  await page
-    .getByRole("button", { name: "Topbar appearance", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page
     .getByRole("menuitemradio", { name: new RegExp("^" + name) })
     .click();

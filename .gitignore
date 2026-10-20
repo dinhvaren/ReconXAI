@@ -33,3 +33,5 @@ tests/
 !/tests/e2e/http-workspace.mjs
 !/tests/e2e/http-replay.mjs
 !/tests/e2e/https-replay.mjs
+!/tests/e2e/ux.mjs
+!/tests/e2e/extensions.mjs

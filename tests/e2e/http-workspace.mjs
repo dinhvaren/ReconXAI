@@ -293,8 +293,37 @@ try {
   checks.push(
     "Actual captured-header job uses the existing worker/evidence; separately approved local mock AI interpretation persists and never sees raw HAR credentials",
   );
-  const extendedSpec = JSON.parse(await readFile(path.join(fixture, "openapi30.json"), "utf8"));
+  const extendedSpec = JSON.parse(
+    await readFile(path.join(fixture, "openapi30.json"), "utf8"),
+  );
+  extendedSpec.openapi = "3.1.1";
   extendedSpec.components.schemas.User.allOf = [{ minProperties: 99 }];
+  extendedSpec.components.schemas.User.dependentRequired = {
+    id: ["reviewMarker"],
+  };
+  extendedSpec.components.schemas.User.dependentSchemas = {
+    id: { properties: { owner: { minLength: 99 } } },
+  };
+  extendedSpec.components.schemas.User.if = { required: ["id"] };
+  extendedSpec.components.schemas.User.then = {
+    required: ["conditionalMarker"],
+  };
+  extendedSpec.components.schemas.User.else = false;
+  extendedSpec.components.schemas.User.properties.owner.pattern = "^team-";
+  extendedSpec.components.schemas.User.properties.published = {
+    type: "string",
+    format: "date",
+  };
+  extendedSpec.components.schemas.User.properties.labels = {
+    patternProperties: { "^x-": { type: "string" } },
+    additionalProperties: { type: "boolean" },
+  };
+  extendedSpec.components.schemas.User.properties.samples = {
+    type: "array",
+    uniqueItems: true,
+    prefixItems: [{ type: "integer" }, { type: "boolean" }],
+    items: false,
+  };
   const extendedSpecPath = path.join(artifact, "extended-openapi.json");
   await writeFile(extendedSpecPath, JSON.stringify(extendedSpec));
   await importFile(extendedSpecPath, "openapi");
@@ -329,10 +358,47 @@ try {
     await command(["jobs", "list", "--project", project.id])
   ).find((j) => j.kind === "offline_schema_review");
   assert.equal(schemaJob.status, "completed");
+  assert.equal(schemaJob.result.options.assert_formats, false);
   assert.equal(schemaJob.result.network_requests, 0);
   assert(schemaJob.result.coverage.startsWith("partial"));
   assert(schemaJob.result.observations.length > 0);
-  assert(schemaJob.result.observations.some((o) => o.rule === "schema_constraint" && o.openapi_pointer === "/components/schemas/User/allOf/0/minProperties"));
+  assert(
+    schemaJob.result.observations.some(
+      (o) =>
+        o.rule === "schema_constraint" &&
+        o.openapi_pointer === "/components/schemas/User/allOf/0/minProperties",
+    ),
+  );
+  assert(
+    schemaJob.result.observations.some(
+      (o) =>
+        o.rule === "dependent_required" &&
+        o.openapi_pointer === "/components/schemas/User/dependentRequired/id",
+    ),
+  );
+  assert(
+    schemaJob.result.observations.some(
+      (o) =>
+        o.rule === "schema_constraint" &&
+        o.openapi_pointer ===
+          "/components/schemas/User/dependentSchemas/id/properties/owner/minLength",
+    ),
+  );
+  assert(
+    schemaJob.result.observations.some(
+      (o) =>
+        o.rule === "string_pattern" &&
+        o.openapi_pointer ===
+          "/components/schemas/User/properties/owner/pattern",
+    ),
+  );
+  await page
+    .getByRole("region", { name: "Offline schema observations" })
+    .getByText(
+      "Captured object lacks a property required by a present dependency trigger",
+      { exact: true },
+    )
+    .waitFor();
   for (const observation of schemaJob.result.observations) {
     assert(observation.capture_pointer.startsWith("/log/entries/"));
     assert(observation.openapi_pointer.startsWith("/"));
@@ -528,9 +594,7 @@ try {
     .click();
   await page.getByRole("tab", { name: "Body", exact: true }).click();
   for (const theme of ["Light", "Dark", "ReconX"]) {
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
       .click();
@@ -652,11 +716,19 @@ try {
     "Overlapping targets remain separate in native inventory and identity matrix; target-bound API definitions never label another target as documented",
   );
   await page.getByLabel("HTTP target", { exact: true }).selectOption(target.id);
-  await importFile(
-    path.join(fixture, "schema-mismatch.har"),
-    "har",
-    "schema-fixture",
+  const tupleCapture = JSON.parse(
+    await readFile(path.join(fixture, "schema-mismatch.har"), "utf8"),
   );
+  const tupleBody = JSON.parse(
+    tupleCapture.log.entries[0].response.content.text,
+  );
+  tupleBody.samples = [1, 1.0, 7];
+  tupleBody.labels = { "x-name": 1, other: true };
+  tupleBody.published = "2026-02-30";
+  tupleCapture.log.entries[0].response.content.text = JSON.stringify(tupleBody);
+  const tupleCapturePath = path.join(artifact, "schema-array-mismatch.har");
+  await writeFile(tupleCapturePath, JSON.stringify(tupleCapture));
+  await importFile(tupleCapturePath, "har", "schema-fixture");
   await page.getByRole("tab", { name: "Traffic", exact: true }).click();
   await page
     .locator(".http-explorer button.http-item")
@@ -665,6 +737,11 @@ try {
   await page
     .getByLabel("Schema operation", { exact: true })
     .selectOption(schemaOperation.id);
+  const formatToggle = page.getByRole("checkbox", {
+    name: "Assert supported formats",
+  });
+  assert.equal(await formatToggle.isChecked(), false);
+  await formatToggle.check();
   await page
     .getByRole("button", { name: "Check documented schema", exact: true })
     .click();
@@ -685,9 +762,7 @@ try {
     path: path.join(artifact, "schema-mismatch-detail.png"),
   });
   for (const theme of ["Light", "Dark", "ReconX"]) {
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
       .click();
@@ -726,6 +801,112 @@ try {
     latestSchema.result.observations.some((o) => o.rule === "required_field"),
   );
   assert(!JSON.stringify(latestSchema).includes("synthetic-schema-secret"));
+  assert.equal(latestSchema.result.options.assert_formats, true);
+  assert(
+    latestSchema.result.observations.some(
+      (o) =>
+        o.rule === "string_format" &&
+        o.openapi_pointer ===
+          "/components/schemas/User/properties/published/format" &&
+        o.instance_pointer === "/published",
+    ),
+  );
+  await schemaRegion
+    .getByText("Format assertions: on", { exact: true })
+    .waitFor();
+  const formatCard = schemaRegion.locator(".http-item").filter({
+    hasText: "/components/schemas/User/properties/published/format",
+  });
+  await formatCard.getByText("Source evidence and schema location").click();
+  await formatCard.scrollIntoViewIfNeeded();
+  await formatCard.screenshot({
+    path: path.join(artifact, "schema-format-date.png"),
+  });
+  checks.push(
+    "Native default-off format checkbox enables a real bounded date assertion with durable policy and original evidence pointers",
+  );
+  const conditionalObservation = latestSchema.result.observations.find(
+    (o) =>
+      o.rule === "required_field" &&
+      o.openapi_pointer === "/components/schemas/User/then/required",
+  );
+  assert(
+    conditionalObservation,
+    "Missing actual selected conditional branch observation",
+  );
+  assert.equal(conditionalObservation.instance_pointer, "/conditionalMarker");
+  assert(
+    !latestSchema.result.observations.some((o) =>
+      o.openapi_pointer.startsWith("/components/schemas/User/else"),
+    ),
+  );
+  const conditionalCard = schemaRegion
+    .locator(".http-item")
+    .filter({ hasText: conditionalObservation.openapi_pointer });
+  if (
+    !(await conditionalCard
+      .locator("details")
+      .evaluate((element) => element.open))
+  ) {
+    await conditionalCard
+      .getByText("Source evidence and schema location")
+      .click();
+  }
+  await conditionalCard.scrollIntoViewIfNeeded();
+  await conditionalCard.screenshot({
+    path: path.join(artifact, "schema-conditional-branch.png"),
+  });
+  checks.push(
+    "Native OpenAPI 3.1 if/then/else uses a real captured predicate and only the selected branch, preserving original evidence pointers and restart state",
+  );
+  for (const [rule, suffix, instance] of [
+    ["schema_constraint", "uniqueItems", "/samples"],
+    ["json_type", "prefixItems/1/type", "/samples/1"],
+    ["false_schema", "items", "/samples/2"],
+  ]) {
+    const observation = latestSchema.result.observations.find(
+      (o) =>
+        o.rule === rule &&
+        o.openapi_pointer ===
+          `/components/schemas/User/properties/samples/${suffix}`,
+    );
+    assert(observation, `Missing actual ${suffix} observation`);
+    assert.equal(observation.instance_pointer, instance);
+    const card = schemaRegion
+      .locator(".http-item")
+      .filter({ hasText: observation.openapi_pointer });
+    if (!(await card.locator("details").evaluate((element) => element.open))) {
+      await card.getByText("Source evidence and schema location").click();
+    }
+    await schemaRegion
+      .getByText(observation.openapi_pointer, { exact: true })
+      .waitFor();
+    await card.scrollIntoViewIfNeeded();
+    await card.screenshot({
+      path: path.join(
+        artifact,
+        `schema-array-${suffix.replaceAll("/", "-")}.png`,
+      ),
+    });
+  }
+  await page.screenshot({
+    path: path.join(artifact, "schema-arrays-dependencies.png"),
+  });
+  const patternObservation = latestSchema.result.observations.find(
+    (o) =>
+      o.openapi_pointer ===
+      "/components/schemas/User/properties/labels/patternProperties/^x-/type",
+  );
+  assert(patternObservation);
+  assert.equal(patternObservation.instance_pointer, "/labels/x-name");
+  const patternCard = schemaRegion
+    .locator(".http-item")
+    .filter({ hasText: patternObservation.openapi_pointer });
+  await patternCard.getByText("Source evidence and schema location").click();
+  await patternCard.scrollIntoViewIfNeeded();
+  await patternCard.screenshot({
+    path: path.join(artifact, "schema-pattern-properties.png"),
+  });
   await writeFile(
     path.join(artifact, "schema-mismatch-job.json"),
     JSON.stringify(latestSchema, null, 2),

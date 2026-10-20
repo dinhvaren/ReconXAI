@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useState } from "react";
 import { request, errorText } from "../api";
 import { activeJob, type AnalysisJob } from "../research";
@@ -54,31 +55,33 @@ export default function JobHistory({
           />
           <div className="inline-actions">
             {onCancel && activeJob(job) && (
-              <button
+              <Button
                 className="button secondary"
                 disabled={job.cancel_requested}
                 onClick={() => onCancel(job.id)}
                 aria-label={`Cancel job ${job.id}`}
+                disabledReason={"Cancellation has already been requested"}
               >
                 {job.cancel_requested ? "Cancellation requested" : "Cancel job"}
-              </button>
+              </Button>
             )}
             {job.status === "completed" && (
-              <button
+              <Button
                 className="button secondary"
                 disabled={loading === job.id}
                 onClick={() => void showResult(job.id)}
+                disabledReason={"This job result is loading"}
               >
                 View result
-              </button>
+              </Button>
             )}
             {onOpenFile && job.file_id && (
-              <button
+              <Button
                 className="text-button"
                 onClick={() => onOpenFile(job.file_id!, job.project_id)}
               >
                 Open file
-              </button>
+              </Button>
             )}
           </div>
           <details>

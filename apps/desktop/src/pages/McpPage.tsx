@@ -1,3 +1,4 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useState } from "react";
 import { request, type Snapshot } from "../api";
 import { Heading, Modal, type Perform } from "../components/ui";
@@ -149,13 +150,14 @@ export function McpPage({
         title="MCP Hub"
         description="Discover capabilities from explicitly trusted servers. Review exact inputs before every invocation."
         action={
-          <button
+          <Button
             className="button primary"
             disabled={busy}
             onClick={() => edit(blank())}
+            disabledReason={"An operation is in progress"}
           >
             Add MCP Server
-          </button>
+          </Button>
         }
       />
       {loadError && (
@@ -167,13 +169,14 @@ export function McpPage({
         <section className="panel integration-list" aria-label="MCP servers">
           <div className="panel-heading">
             <h2>Servers</h2>
-            <button
+            <Button
               className="text-button"
               disabled={busy}
               onClick={() => void perform(load)}
+              disabledReason={"An operation is in progress"}
             >
               Refresh
-            </button>
+            </Button>
           </div>
           {!servers.length && (
             <p className="helper">
@@ -229,7 +232,7 @@ export function McpPage({
                 .
               </p>
               <div className="card-actions">
-                <button
+                <Button
                   className="button primary"
                   disabled={
                     busy || !server.config.enabled || !server.config.trusted
@@ -243,8 +246,8 @@ export function McpPage({
                   }
                 >
                   Connect / Discover
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button secondary"
                   disabled={busy || states[selected] !== "connected"}
                   onClick={() =>
@@ -253,10 +256,15 @@ export function McpPage({
                       await load();
                     })
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : "Connect this MCP server first"
+                  }
                 >
                   Disconnect
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button"
                   disabled={
                     busy || !server.config.enabled || !server.config.trusted
@@ -268,17 +276,25 @@ export function McpPage({
                       await load();
                     }, "MCP server reconnected and tools discovered")
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : !server.config.enabled
+                        ? "Enable this MCP server first"
+                        : "Review this server and grant trust before connecting"
+                  }
                 >
                   Reconnect
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button"
                   disabled={busy}
                   onClick={() => edit(server.config)}
+                  disabledReason={"An operation is in progress"}
                 >
                   Configure / Permissions
-                </button>
-                <button
+                </Button>
+                <Button
                   className="text-button danger"
                   disabled={busy}
                   onClick={() =>
@@ -288,9 +304,10 @@ export function McpPage({
                       await load();
                     }, "Server removed; execution history retained")
                   }
+                  disabledReason={"An operation is in progress"}
                 >
                   Remove server
-                </button>
+                </Button>
               </div>
               {!server.config.trusted && (
                 <p className="helper">
@@ -339,12 +356,17 @@ export function McpPage({
                       onChange={(e) => setSecret(e.target.value)}
                     />
                   </label>
-                  <button
+                  <Button
                     className="button secondary"
                     disabled={busy || !secret}
+                    disabledReason={
+                      busy
+                        ? "An operation is in progress"
+                        : "Enter the credential first"
+                    }
                   >
                     Store credential
-                  </button>
+                  </Button>
                 </form>
               )}
               <div className="panel-heading">
@@ -426,7 +448,7 @@ export function McpPage({
                         ))}
                     </select>
                   </label>
-                  <button
+                  <Button
                     className="button primary"
                     disabled={
                       busy ||
@@ -444,9 +466,16 @@ export function McpPage({
                         ),
                       )
                     }
+                    disabledReason={
+                      busy
+                        ? "An operation is in progress"
+                        : !project
+                          ? "Select a project first"
+                          : "Grant permission for this tool in the MCP server configuration"
+                    }
                   >
                     Review invocation
-                  </button>
+                  </Button>
                 </>
               )}
               <div className="panel-heading">
@@ -658,9 +687,13 @@ export function McpPage({
               adapter permits manually approved read-only, closed-world tools
               only.
             </p>
-            <button className="button primary" disabled={busy}>
+            <Button
+              className="button primary"
+              disabled={busy}
+              disabledReason={"An operation is in progress"}
+            >
               Save server
-            </button>
+            </Button>
           </form>
         )}
       </Modal>
@@ -675,7 +708,7 @@ export function McpPage({
             <pre className="technical-output">
               {JSON.stringify(preview, null, 2)}
             </pre>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !project}
               onClick={() =>
@@ -694,9 +727,12 @@ export function McpPage({
                   await load();
                 }, "Approved MCP job queued; results appear in history")
               }
+              disabledReason={
+                busy ? "An operation is in progress" : "Select a project first"
+              }
             >
               Approve and queue
-            </button>
+            </Button>
           </>
         )}
       </Modal>

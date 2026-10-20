@@ -430,9 +430,7 @@ try {
     "Native restart preserves assets, success/cancel/failure logs, evidence and report snapshot; CLI reads identical IDs",
   );
   for (const theme of ["Light", "Dark", "ReconX"]) {
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + theme) })
       .click();

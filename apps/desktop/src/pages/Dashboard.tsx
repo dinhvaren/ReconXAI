@@ -1,14 +1,10 @@
 import type { Project, Snapshot, ToolInventory } from "../api";
-import {
-  ActivityItem,
-  Icon,
-  SectionTitle,
-  StatusIndicator,
-} from "../components/ui";
+import { ActivityItem, Heading, Icon } from "../components/ui";
+import { Button, EmptyState, PanelHeader } from "../components/controls";
+
 export default function Dashboard({
   data,
   currentProject,
-  tools,
   navigate,
   selectProject,
   onAddTarget,
@@ -20,308 +16,109 @@ export default function Dashboard({
   selectProject: (id: string) => void;
   onAddTarget: () => void;
 }) {
-  const projects = data.projects.filter((p) => !p.archived);
-  const featured = currentProject
-    ? [
-        currentProject,
-        ...projects.filter((p) => p.id !== currentProject.id),
-      ].slice(0, 2)
-    : projects.slice(0, 2);
-  const cards = featured.map((project, index) => ({
-    title: project.name,
-    description: project.description || "Add research notes to this project.",
-    art: index ? "prism" : "orbital",
-    project,
-  }));
-  const configured = data.providers.filter((p) => p.enabled);
+  const projects = data.projects.filter((project) => !project.archived);
+  const jobs = (data.jobs ?? []).filter(
+    (job) => !currentProject || job.project_id === currentProject.id,
+  );
   return (
     <div className="dashboard">
-      <div className="dashboard-intro">
-        <div>
-          <p className="eyebrow">ReconX / Your workspace</p>
-          <h1>Workspace overview</h1>
-        </div>
-        <button className="button" onClick={onAddTarget}>
-          + Add Target
-        </button>
-        <span className="dashboard-summary">
-          {projects.length} projects <i /> {configured.length} enabled models
-        </span>
-      </div>
-      <section className="workspace-feature" aria-label="Featured workspace">
-        <div className="feature-content">
-          <span className="feature-kicker">
-            {currentProject ? "Current project" : "Local workspace"}
-          </span>
-          <h2>{currentProject?.name ?? "Research workspace"}</h2>
-          <p>
-            {currentProject
-              ? currentProject.description ||
-                "Targets, local files and analysis history."
-              : "Create a project to organize targets and local analyses."}
-          </p>
-          <div className="feature-actions">
-            <button
-              className="button feature-button"
-              onClick={() => navigate("Projects")}
-            >
-              {currentProject ? "Open project" : "Create a project"}
-              <Icon name="arrow" size={16} />
-            </button>
-            <button
-              className="feature-link"
-              onClick={() => navigate("AI Workspace")}
-            >
-              Open AI workspace
-            </button>
-          </div>
-        </div>
-        <span className="feature-tag">
-          <Icon name="shield" size={13} />
-          {data.settings.security_mode.replaceAll("_", " ")}
-        </span>
-      </section>
-      <SectionTitle
-        title="Featured projects"
+      <Heading
+        eyebrow="Workspace"
+        title="Workspace overview"
+        description={
+          currentProject?.name ??
+          "Your local research projects and recent work."
+        }
         action={
-          <button className="text-button" onClick={() => navigate("Projects")}>
-            See all
-            <Icon name="arrow" size={13} />
-          </button>
+          currentProject ? (
+            <Button variant="primary" onClick={onAddTarget}>
+              <Icon name="plus" />
+              Add Target
+            </Button>
+          ) : undefined
         }
       />
-      <div className="featured-projects">
-        {cards.map(({ title, description, art, project }) => (
-          <button
-            className="feature-card"
-            key={project.id}
-            onClick={() => {
-              selectProject(project.id);
-              navigate("Projects");
-            }}
-          >
-            <div className={`feature-card-image cover-${art}`}>
-              <span className="cover-label">Research project</span>
-            </div>
-            <div className="project-card-emblem">
-              <Icon name="folder" size={22} />
-            </div>
-            <div className="feature-card-body">
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <div className="project-card-metadata">
-                <span>
-                  <Icon name="shield" size={12} />
-                  {data.targets?.filter((t) => t.project_id === project.id)
-                    .length ?? 0}{" "}
-                  registered targets
+      {!projects.length ? (
+        <EmptyState
+          title="Create your first project"
+          description="Keep targets, evidence and research history together in a local workspace."
+          action={
+            <Button variant="primary" onClick={() => navigate("Projects")}>
+              <Icon name="plus" />
+              Create project
+            </Button>
+          }
+        />
+      ) : (
+        <section className="panel overview-projects">
+          <PanelHeader title="Projects" />
+          {projects.slice(0, 6).map((project) => (
+            <button
+              key={project.id}
+              className="overview-project"
+              onClick={() => {
+                selectProject(project.id);
+                navigate("Projects");
+              }}
+            >
+              <Icon name="folder" size={20} />
+              <span>
+                <b>{project.name}</b>
+                <small>{project.description || "No project notes"}</small>
+                <span className="overview-counts">
+                  <span>
+                    {data.targets?.filter(
+                      (target) => target.project_id === project.id,
+                    ).length ?? 0}{" "}
+                    targets
+                  </span>
+                  <span>
+                    Updated {new Date(project.updated_at).toLocaleDateString()}
+                  </span>
                 </span>
-                <span>{new Date(project.updated_at).toLocaleDateString()}</span>
-              </div>
-              <div className="profile-progress">
-                <span>Project profile</span>
-                <span>{project.description ? 2 : 1}/2</span>
-                <progress
-                  aria-label={`${title} project profile completeness`}
-                  value={project.description ? 2 : 1}
-                  max={2}
-                />
-              </div>
-            </div>
-          </button>
-        ))}
-        {cards.length === 0 && (
-          <button className="feature-card" onClick={() => navigate("Projects")}>
-            <div className="feature-card-image cover-orbital">
-              <span className="cover-label">Start a project</span>
-            </div>
-            <div className="project-card-emblem">
-              <Icon name="folder" size={22} />
-            </div>
-            <div className="feature-card-body">
-              <h3>Your next investigation</h3>
-              <p>
-                Keep research notes and project history together in a persistent
-                local workspace.
-              </p>
-              <span className="card-cta">
-                Create your first project
-                <Icon name="arrow" size={14} />
               </span>
-            </div>
-          </button>
-        )}
-        {cards.length < 2 && (
-          <button
-            className="feature-card model-card"
-            onClick={() => navigate("Settings")}
-          >
-            <div className="feature-card-image cover-prism">
-              <span className="cover-label">Your models, your choice</span>
-            </div>
-            <div className="project-card-emblem">
-              <Icon name="ai" size={22} />
-            </div>
-            <div className="feature-card-body">
-              <h3>
-                {configured.length
-                  ? "Your analysis companions"
-                  : "Connect your preferred model"}
-              </h3>
-              <p>
-                {configured.length
-                  ? `${configured.length} enabled model configurations. Manage providers, gateways and local inference.`
-                  : "Bring a cloud gateway, Ollama or LM Studio to your research."}
-              </p>
-              <span className="card-cta">
-                Configure AI
-                <Icon name="arrow" size={14} />
-              </span>
-            </div>
-          </button>
-        )}
-      </div>
-      <SectionTitle
-        title="Active research"
-        action={<span className="section-caption">Pick up a thread</span>}
-      />
-      <div className="research-shortcuts">
-        {[
-          {
-            title: "Reconnaissance",
-            icon: "globe",
-            page: "Reconnaissance",
-            detail: "Target intelligence",
-            status: "Planned",
-            tone: "gold",
-          },
-          {
-            title: "API Security",
-            icon: "api",
-            page: "API Security",
-            detail: "Traffic & endpoint review",
-            status: "Planned",
-            tone: "pink",
-          },
-          {
-            title: "Reverse Engineering",
-            icon: "binary",
-            page: "Reverse Engineering",
-            detail: "Local binary workspace",
-            status: "Planned",
-            tone: "violet",
-          },
-          {
-            title: "AI Analysis",
-            icon: "ai",
-            page: "AI Workspace",
-            detail: configured.length
-              ? "Use a configured model"
-              : "Select a model to begin",
-            status: configured.length ? "Configured" : "Not configured",
-            tone: "rose",
-          },
-        ].map((item) => (
-          <button
-            key={item.page}
-            className={`research-card ${item.tone}`}
-            onClick={() => navigate(item.page)}
-          >
-            <div className="research-art">
-              <Icon name={item.icon} size={28} />
-              <i />
-              <i />
-            </div>
-            <div>
-              <h3>{item.title}</h3>
-              <p>{item.detail}</p>
-              <span>{item.status}</span>
-            </div>
-            <Icon name="chevron" size={14} />
-          </button>
-        ))}
-      </div>
-      <div className="dashboard-lower">
-        <section className="activity-feed">
-          <SectionTitle
-            title="Recent activity"
-            action={
-              <span className="section-caption">Persisted audit history</span>
-            }
-          />
-          {data.audit.length ? (
-            data.audit
-              .slice(0, 5)
-              .map((event) => <ActivityItem event={event} key={event.id} />)
-          ) : (
-            <div className="inline-empty">
-              <Icon name="clock" />
-              <div>
-                <b>A fresh research workspace</b>
-                <p>Project, model and tool actions appear here as you work.</p>
-              </div>
-            </div>
-          )}
+              <Icon name="chevron" size={16} />
+            </button>
+          ))}
         </section>
-        <section className="workspace-tools">
-          <SectionTitle
-            title="Local toolkit"
-            action={
-              <button
-                className="text-button"
-                onClick={() => navigate("Tool Manager")}
-              >
-                Manage
-                <Icon name="arrow" size={13} />
-              </button>
-            }
-          />
-          {tools.length ? (
-            tools.map((tool) => (
-              <button
-                key={tool.manifest.id}
-                className="tool-overview"
-                onClick={() => navigate("Tool Manager")}
-              >
-                <div className="tool-emblem">
-                  <Icon name="terminal" size={23} />
-                </div>
-                <div>
-                  <h3>{tool.manifest.name}</h3>
-                  <p>
-                    {tool.manifest.version} · {tool.manifest.platform}
-                  </p>
-                  <StatusIndicator
-                    label={tool.status.replaceAll("_", " ")}
-                    tone={tool.status === "tested" ? "good" : "neutral"}
-                  />
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className="inline-empty">
-              <Icon name="terminal" />
-              <p>Open Tool Manager to inspect supported local utilities.</p>
-            </div>
-          )}
-          <div className="jobs-empty">
-            <Icon name="workflow" size={15} />
-            <div>
-              <b>Recent jobs</b>
-              {(data.jobs ?? []).length ? (
-                (data.jobs ?? []).slice(0, 3).map((j) => (
-                  <button
-                    key={j.id}
-                    className="text-button"
-                    onClick={() => navigate("Analysis Jobs")}
-                  >
-                    {j.kind.replaceAll("_", " ")} · {j.status}
-                  </button>
-                ))
-              ) : (
-                <p>No local analysis jobs yet. Import a binary to start.</p>
-              )}
-            </div>
+      )}
+      <div className="overview-grid">
+        <section className="panel">
+          <PanelHeader title="Recent jobs" />
+          <div className="overview-list">
+            {jobs.slice(0, 6).map((job) => (
+              <div className="overview-job" key={job.id}>
+                <span>
+                  {job.kind.replaceAll("_", " ")}
+                  <small>{job.id.slice(0, 8)}</small>
+                </span>
+                <span className="badge muted">{job.status}</span>
+              </div>
+            ))}
+            {!jobs.length && (
+              <p className="overview-help">
+                No analysis jobs yet. Import a file or select a target to begin.
+              </p>
+            )}
+            {!!jobs.length && (
+              <Button variant="ghost" onClick={() => navigate("Analysis Jobs")}>
+                View job history
+                <Icon name="arrow" />
+              </Button>
+            )}
+          </div>
+        </section>
+        <section className="panel">
+          <PanelHeader title="Recent activity" />
+          <div className="overview-list">
+            {data.audit.slice(0, 5).map((event) => (
+              <ActivityItem event={event} key={event.id} compact />
+            ))}
+            {!data.audit.length && (
+              <p className="overview-help">
+                Project and configuration changes will appear here.
+              </p>
+            )}
           </div>
         </section>
       </div>

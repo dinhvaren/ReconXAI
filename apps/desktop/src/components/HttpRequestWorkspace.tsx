@@ -1,3 +1,4 @@
+import { Button } from "./controls";
 import { useEffect, useRef, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { useJobEvents, type AnalysisJob } from "../research";
@@ -409,7 +410,7 @@ export default function HttpRequestWorkspace({
               never followed.
             </p>
             <div className="form-actions">
-              <button
+              <Button
                 className="button secondary"
                 disabled={busy}
                 onClick={() =>
@@ -417,10 +418,11 @@ export default function HttpRequestWorkspace({
                     await save();
                   })
                 }
+                disabledReason={"An operation is in progress"}
               >
                 Save request
-              </button>
-              <button
+              </Button>
+              <Button
                 className="button primary"
                 disabled={busy}
                 onClick={() =>
@@ -434,9 +436,10 @@ export default function HttpRequestWorkspace({
                     setConsent(false);
                   })
                 }
+                disabledReason={"An operation is in progress"}
               >
                 Review send
-              </button>
+              </Button>
             </div>
             {plan && (
               <section aria-label="HTTP execution review" className="panel">
@@ -468,7 +471,7 @@ export default function HttpRequestWorkspace({
                   I own this local service and approve this exact request and
                   any state change.
                 </label>
-                <button
+                <Button
                   className="button primary"
                   disabled={busy || !consent}
                   onClick={() =>
@@ -492,9 +495,14 @@ export default function HttpRequestWorkspace({
                       );
                     })
                   }
+                  disabledReason={
+                    busy
+                      ? "An operation is in progress"
+                      : "Review the preview and grant the required approval"
+                  }
                 >
                   Send approved request
-                </button>
+                </Button>
               </section>
             )}
             <section aria-label="HTTP replay history">
@@ -525,7 +533,7 @@ export default function HttpRequestWorkspace({
                       </p>
                     )}
                     {["queued", "running"].includes(job.status) && (
-                      <button
+                      <Button
                         className="button secondary"
                         disabled={busy}
                         onClick={() =>
@@ -539,12 +547,13 @@ export default function HttpRequestWorkspace({
                             );
                           })
                         }
+                        disabledReason={"An operation is in progress"}
                       >
                         Cancel request
-                      </button>
+                      </Button>
                     )}
                     {result?.exchange_id && (
-                      <button
+                      <Button
                         className="button primary"
                         onClick={() => {
                           onResponse(result.exchange_id!);
@@ -552,10 +561,10 @@ export default function HttpRequestWorkspace({
                         }}
                       >
                         Open captured response
-                      </button>
+                      </Button>
                     )}
                     {job.status === "completed" && (
-                      <button
+                      <Button
                         className="button secondary"
                         disabled={busy}
                         onClick={() =>
@@ -567,9 +576,10 @@ export default function HttpRequestWorkspace({
                             setNotice(`Result evidence saved: ${evidence.id}`);
                           })
                         }
+                        disabledReason={"An operation is in progress"}
                       >
                         Save result evidence
-                      </button>
+                      </Button>
                     )}
                     <details>
                       <summary>Result and execution log</summary>

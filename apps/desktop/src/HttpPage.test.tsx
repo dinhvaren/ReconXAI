@@ -213,12 +213,18 @@ it("queues the selected capture/operation through the shared backend and shows i
     "operation",
   );
   expect(queued).toBeUndefined();
+  const formats = screen.getByRole("checkbox", {
+    name: "Assert supported formats",
+  });
+  expect(formats).not.toBeChecked();
+  await user.click(formats);
   await user.click(button);
   await screen.findByRole("region", { name: "Offline schema observations" });
   expect(queued).toEqual({
     op: "http_schema_enqueue",
     exchange: "capture",
     operation: "operation",
+    options: { assert_formats: true },
   });
   expect(screen.getByText("Insufficient evidence")).toBeInTheDocument();
   await user.click(screen.getByText("Source evidence and schema location"));

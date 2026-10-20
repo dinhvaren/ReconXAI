@@ -463,9 +463,7 @@ try {
     "Actual Desktop restart preserves evidence, manual review, verified finding links and immutable report snapshot; CLI reads the same records",
   );
   for (const mode of ["Light", "Dark", "ReconX"]) {
-    await page
-      .getByRole("button", { name: "Topbar appearance", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Appearance", exact: true }).click();
     await page
       .getByRole("menuitemradio", { name: new RegExp("^" + mode) })
       .click();

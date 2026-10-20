@@ -17,13 +17,19 @@ mod ai_manager;
 pub use ai_manager::*;
 mod capabilities;
 mod evidence;
+mod extensions;
+pub use extensions::*;
 mod findings;
 mod http;
 mod jobs;
+mod managed_mcp;
 mod mcp;
 mod mcp_http;
 mod recon;
+mod registry;
+pub use managed_mcp::{MANAGED_MCP_EVERYTHING, ManagedMcpApproval, ManagedMcpSummary};
 mod reporting;
+pub use registry::*;
 mod reverse;
 mod targets;
 mod tooling;
@@ -149,6 +155,7 @@ impl Core {
         };
         core.migrate_theme_preference()?;
         core.reconcile_jobs()?;
+        core.managed_reconcile()?;
         Ok(core)
     }
     fn migrate_theme_preference(&self) -> Result<()> {
@@ -664,6 +671,21 @@ impl Core {
         result
     }
     pub fn tool_uninstall(&self, id: &str) -> Result<()> {
+        let retained: bool = self
+            .db
+            .connect()?
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM extension_requirements WHERE tool_id=?1)",
+                [id],
+                |r| r.get(0),
+            )
+            .map_err(db_error)?;
+        if retained {
+            return Err(AppError::new(
+                "TOOL_REQUIRED_BY_EXTENSION",
+                "Uninstall dependent extensions before removing this shared managed tool",
+            ));
+        }
         let result = self.tool_manager().uninstall(id);
         self.persist_tool_state(id)?;
         Self::audit(

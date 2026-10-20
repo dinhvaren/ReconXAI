@@ -28,13 +28,8 @@ const choices: {
     icon: "palette",
   },
 ];
-export default function ThemeMenu({
-  location,
-  rail = false,
-}: {
-  location: string;
-  rail?: boolean;
-}) {
+export default function ThemeMenu() {
+  const location = "Appearance";
   const theme = useTheme();
   const open = theme.activeMenu === location;
   const trigger = useRef<HTMLButtonElement>(null);
@@ -49,15 +44,11 @@ export default function ThemeMenu({
     if (!open) return;
     const rect = trigger.current!.getBoundingClientRect();
     setPosition({
-      left: Math.max(8, Math.min(rect.left, window.innerWidth - 288)),
-      top: rail
-        ? Math.max(
-            8,
-            rect.top -
-              (menu.current?.getBoundingClientRect().height ?? 245) -
-              8,
-          )
-        : rect.bottom + 8,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - 228)),
+      top: Math.max(
+        8,
+        rect.top - (menu.current?.getBoundingClientRect().height ?? 245) - 8,
+      ),
     });
     items.current[
       choices.findIndex((c) => c.value === theme.preference)
@@ -76,16 +67,14 @@ export default function ThemeMenu({
       document.removeEventListener("pointerdown", dismiss);
       window.removeEventListener("resize", resize);
     };
-  }, [open, theme.preference, theme.setActiveMenu, rail]);
+  }, [open, theme.preference, theme.setActiveMenu]);
   return (
     <>
       <button
         ref={trigger}
         type="button"
-        className={
-          rail ? "rail-item theme-trigger" : "icon-button theme-trigger"
-        }
-        aria-label={`${location} appearance`}
+        className="rail-item theme-trigger"
+        aria-label="Appearance"
         title={`Appearance: ${theme.preference}`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -98,16 +87,7 @@ export default function ThemeMenu({
           }
         }}
       >
-        <Icon
-          name={
-            theme.preference === "reconx"
-              ? "palette"
-              : theme.preference === "dark"
-                ? "moon"
-                : "sun"
-          }
-          size={rail ? 21 : 19}
-        />
+        <Icon name="palette" size={19} />
       </button>
       {open &&
         createPortal(

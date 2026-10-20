@@ -1,7 +1,9 @@
+import { Button } from "../components/controls";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { useJobEvents, type AnalysisJob } from "../research";
 import { Heading, Modal, type Perform } from "../components/ui";
+import { EmptyState } from "../components/controls";
 import JobHistory from "../components/JobHistory";
 interface Plan {
   target_id: string;
@@ -111,11 +113,13 @@ export default function ReconPage({
       <Heading
         eyebrow="Owned local inventory"
         title="Reconnaissance"
-        description="Manually approved loopback HTTP availability. This adapter sends one HEAD request; it performs no vulnerability checks."
+        description="Plan and review an owned local HTTP observation."
         action={
-          <button className="button primary" onClick={onAddTarget}>
-            + Add Target
-          </button>
+          target ? (
+            <Button className="button primary" onClick={onAddTarget}>
+              + Add Target
+            </Button>
+          ) : undefined
         }
       />
       {error && <p role="alert">{error}</p>}
@@ -158,130 +162,167 @@ export default function ReconPage({
             </select>
           </label>
         </div>
-        <p>
-          Requirements: an authorized loopback URL, matching scope, and
-          Authorized Auto or Lab Research selected in both Settings and the
-          target. The current application mode is{" "}
-          {data.settings.security_mode.replaceAll("_", " ")}. This operation
-          always requires manual approval.
-        </p>
-        <p>
-          No external tools, authentication, proxy, redirects or response-body
-          download. At most 20 approved requests per project per minute; two
-          running jobs across clients.
-        </p>
-        <div className="inline-actions">
-          <button
-            className="button primary"
-            disabled={!target || busy}
-            onClick={() =>
-              void act(async () => {
-                setPlan(await request<Plan>("recon_preview", { id: target }));
-                setApproved(false);
-              }, "Local execution plan ready")
+        {!target ? (
+          <EmptyState
+            title="No target selected"
+            icon="radar"
+            description="Select an existing target or add a new target to begin reconnaissance."
+            action={
+              <Button variant="primary" onClick={onAddTarget}>
+                Add Target
+              </Button>
             }
-          >
-            Preview local HEAD plan
-          </button>
-          <button
-            className="button secondary"
-            onClick={() => navigate("Settings", project)}
-          >
-            Open security settings
-          </button>
-        </div>
-      </section>
-      <section className="panel records-panel">
-        <h2>Observed endpoints</h2>
-        <p>
-          Actual completed observations. HTTP status and reported server names
-          do not establish a vulnerability.
-        </p>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Endpoint</th>
-                <th>HTTP</th>
-                <th>Reported metadata</th>
-                <th>Last observed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assets.map((a) => (
-                <tr key={a.id}>
-                  <td className="break-value">
-                    {a.value}
-                    <small className="record-meta">{a.id}</small>
-                  </td>
-                  <td>
-                    {a.facts.status}
-                    <small className="record-meta">
-                      {a.facts.http_version}
-                    </small>
-                  </td>
-                  <td>
-                    {a.facts.reported_server ?? "Not available"}
-                    <small className="record-meta">
-                      {a.facts.content_type ?? "Content type not supplied"}
-                    </small>
-                  </td>
-                  <td>
-                    {new Date(a.last_seen).toLocaleString()}
-                    <small className="record-meta">Job {a.job_id}</small>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!assets.length && (
-          <p>
-            No observed endpoints yet. Nothing is contacted until you approve a
-            plan.
-          </p>
+            secondary={
+              <Button
+                variant="ghost"
+                onClick={() => navigate("Targets & Scope", project)}
+              >
+                Open Targets
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <details className="module-details">
+              <summary>Execution policy and adapter limits</summary>
+              <p>
+                Requirements: an authorized loopback URL, matching scope, and
+                Authorized Auto or Lab Research selected in both Settings and
+                the target. The current application mode is{" "}
+                {data.settings.security_mode.replaceAll("_", " ")}. This
+                operation always requires manual approval.
+              </p>
+              <p>
+                No external tools, authentication, proxy, redirects or
+                response-body download. At most 20 approved requests per project
+                per minute; two running jobs across clients.
+              </p>
+            </details>
+            <div className="inline-actions">
+              <Button
+                className="button primary"
+                disabled={!target || busy}
+                onClick={() =>
+                  void act(async () => {
+                    setPlan(
+                      await request<Plan>("recon_preview", { id: target }),
+                    );
+                    setApproved(false);
+                  }, "Local execution plan ready")
+                }
+                disabledReason={
+                  !target
+                    ? "Select a target first"
+                    : "An operation is in progress"
+                }
+              >
+                Preview local HEAD plan
+              </Button>
+              <Button
+                className="button secondary"
+                onClick={() => navigate("Settings", project)}
+              >
+                Open security settings
+              </Button>
+            </div>
+          </>
         )}
-        <div className="inline-actions">
-          <button
-            className="button secondary"
-            onClick={() => void act(load, "Inventory refreshed")}
-          >
-            Refresh inventory
-          </button>
-          <button
-            className="button secondary"
-            onClick={() => navigate("Evidence", project)}
-          >
-            Open inventory evidence
-          </button>
-          <button
-            className="button secondary"
-            onClick={() => navigate("Reports", project)}
-          >
-            Prepare research report
-          </button>
-        </div>
       </section>
-      <section className="panel records-panel">
-        <h2>Local inventory jobs</h2>
-        <JobHistory
-          jobs={jobs}
-          onCancel={(id) =>
-            void act(
-              () => request("job_cancel", { id }),
-              "Cancellation requested",
-            )
-          }
-        />
-      </section>
-      <section className="panel records-panel">
-        <h2>Additional reconnaissance adapters</h2>
+      {(!!assets.length || !!jobs.length || !!target) && (
+        <>
+          <section className="panel records-panel">
+            <h2>Observed endpoints</h2>
+            <p>
+              Actual completed observations. HTTP status and reported server
+              names do not establish a vulnerability.
+            </p>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Endpoint</th>
+                    <th>HTTP</th>
+                    <th>Reported metadata</th>
+                    <th>Last observed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.map((a) => (
+                    <tr key={a.id}>
+                      <td className="break-value">
+                        {a.value}
+                        <small className="record-meta">{a.id}</small>
+                      </td>
+                      <td>
+                        {a.facts.status}
+                        <small className="record-meta">
+                          {a.facts.http_version}
+                        </small>
+                      </td>
+                      <td>
+                        {a.facts.reported_server ?? "Not available"}
+                        <small className="record-meta">
+                          {a.facts.content_type ?? "Content type not supplied"}
+                        </small>
+                      </td>
+                      <td>
+                        {new Date(a.last_seen).toLocaleString()}
+                        <small className="record-meta">Job {a.job_id}</small>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!assets.length && (
+              <p>
+                No observed endpoints yet. Nothing is contacted until you
+                approve a plan.
+              </p>
+            )}
+            <div className="inline-actions">
+              <Button
+                className="button secondary"
+                onClick={() => void act(load, "Inventory refreshed")}
+              >
+                Refresh inventory
+              </Button>
+              <Button
+                className="button secondary"
+                onClick={() => navigate("Evidence", project)}
+              >
+                Open inventory evidence
+              </Button>
+              <Button
+                className="button secondary"
+                onClick={() => navigate("Reports", project)}
+              >
+                Prepare research report
+              </Button>
+            </div>
+          </section>
+          <section className="panel records-panel">
+            <h2>Local inventory jobs</h2>
+            <JobHistory
+              jobs={jobs}
+              onCancel={(id) =>
+                void act(
+                  () => request("job_cancel", { id }),
+                  "Cancellation requested",
+                )
+              }
+            />
+          </section>
+        </>
+      )}
+      <details className="module-details">
+        <summary>Available reconnaissance adapters</summary>
         <p>
           DNS/RDAP/certificate transparency, historical URLs, crawling and
           external scanner adapters remain unimplemented. Registering those
           target types does not make them executable through this page.
         </p>
-      </section>
+      </details>
       <Modal
         dismissDisabled={busy}
         title="Approve local HTTP plan"
@@ -319,7 +360,7 @@ export default function ReconPage({
               />
               I approve this exact request to my authorized local service.
             </label>
-            <button
+            <Button
               className="button primary"
               disabled={busy || !approved}
               onClick={() =>
@@ -332,9 +373,14 @@ export default function ReconPage({
                   setPlan(null);
                 }, "Approved local inventory queued")
               }
+              disabledReason={
+                busy
+                  ? "An operation is in progress"
+                  : "Review and approve the current plan or report"
+              }
             >
               Approve and queue HEAD
-            </button>
+            </Button>
           </div>
         )}
       </Modal>

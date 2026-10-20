@@ -581,7 +581,10 @@ fn large_responses_timeouts_and_cancellation_are_genuine_job_failures() {
     for endpoint in ["large", "chunked-large", "slow"] {
         let s = setup();
         let mut input = input(&s, endpoint);
-        input.timeout_ms = if endpoint == "slow" { 500 } else { 3000 };
+        // Size rejection includes real per-chunk policy/SQLite checkpoints.
+        // Give that distinct assertion room on a loaded Windows runner; the
+        // slow fixture still independently verifies the actual 500 ms deadline.
+        input.timeout_ms = if endpoint == "slow" { 500 } else { 10_000 };
         let draft = s.core.http_draft_save(None, input, None).unwrap();
         let done = s.core.execute_job(&queue(&s.core, &draft).id).unwrap();
         assert_eq!(done.status, "failed", "{:?}", done.error_message);

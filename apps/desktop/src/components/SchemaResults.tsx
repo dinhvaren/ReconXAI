@@ -5,12 +5,18 @@ const labels: Record<string, string> = {
   possible_mismatch: "Possible mismatch",
   insufficient_evidence: "Insufficient evidence",
   unsupported_validation_case: "Unsupported validation",
+  format_annotation: "Format annotation",
 };
 export default function SchemaResults({ result }: { result: SchemaReview }) {
   return (
     <section aria-label="Offline schema observations">
       <p>
         {result.checks} checks · {result.network_requests} network requests
+      </p>
+      <p className="helper">
+        {result.options
+          ? `Format assertions: ${result.options.assert_formats ? "on" : "off"}`
+          : "Format policy not recorded for this legacy result"}
       </p>
       <p className="helper">
         {result.coverage}. These observations do not establish a security

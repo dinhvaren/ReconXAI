@@ -1,3 +1,9 @@
+Current format continuation audit (2026-10-19): fresh cargo-audit retains one glib unsound warning and six maintenance warnings; npm audit reports zero findings. Deny-unsound exits 1; schema-format-dependency-readiness.json stays BLOCKED. GitHub export is historical input. No advisory was suppressed or dependency changed.
+
+Current regex continuation recheck (2026-10-19): fresh cargo-audit still reports one glib unsound warning and six maintenance warnings; npm audit reports zero advisories. Deny-unsound exits 1 and artifacts/schema-pattern-dependency-readiness.json stays BLOCKED. Earlier GitHub state is historical input, not a fresh remote query. No warning/advisory suppression or dependency update.
+
+Current offline-schema continuation recheck (2026-10-18): fresh cargo-audit 0.22.2 reports zero entries in the vulnerability list, one glib unsound warning and six maintenance warnings; npm audit reports zero advisories. `--deny unsound` exits 1, and `artifacts/schema-arrays-dependency-readiness.json` remains BLOCKED. GitHub state in that assessment comes from the earlier recorded export; no new authenticated remote query, push or dismissal occurred. The dependency paths and remediation limitations below still apply.
+
 # Dependency security assessment — 2026-10-18
 
 Actual repository advisories were retrieved with GitHub's authenticated Dependabot

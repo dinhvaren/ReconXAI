@@ -1,3 +1,100 @@
+## UX/extension checkpoint — 2026-10-19
+
+Windows UX and one first-party YARA-X extension lifecycle are runtime verified;
+the full marketplace/setup/updater/billing/OAuth assignment remains PARTIAL.
+Windows and Linux Core/CLI Rust171/0/1 each; frontend33; final native25 checkpoints;
+120 page/theme/size captures; actual CLI dependency lifecycle28 commands per host.
+Schema014 preserves actual schema13 queued work/backups. Version0.1.0, v1 NOT READY.
+Evidence: artifacts/ux-extensions-current-verification.json. Exact commands/files,
+failures and continuation: MASTER_EXECUTION_PROGRESS.md. Next: bounded official MCP
+Registry client/cache/pagination in Extensions, then approved verified package setup.
+The live registry probe timed out; no registry connection/readiness is claimed.
+Signed updater, account billing/OAuth, Linux GUI, installer and security gates stay open.
+
+---
+
+## Current conditional-schema checkpoint - 2026-10-19
+
+Bounded OpenAPI 3.1 if/then/else now uses real captured predicates, selected-branch
+provenance and the existing shared budgets/format policy. Windows and Parrot/WSL
+Core+CLI Rust: 167/0/1 each; schema 41/storage 11; frontend 26; native HTTP/schema
+and outputs: 20 fresh checkpoints. Optimized binaries, real schema-12 upgrades,
+evidence/four-format reports, PDF inspection and restart pass on both CLI hosts.
+Proof: artifacts/schema-conditional-current-verification.json; exact commands,
+files, candidates and next multi-file-import action: MASTER_EXECUTION_PROGRESS.md.
+No new migration; schema 013/version 0.1.0. v1.0 NOT READY: glib, Linux GUI,
+installer/signing, full schema coverage and unfinished research modules remain.
+No commit, push or release publication.
+
+---
+
+## Current opt-in format checkpoint - 2026-10-19
+
+Default-off per-job syntactic formats, durable fingerprint policy and additive
+schema-013 migration are runtime-verified. Windows and Parrot/WSL Core+CLI Rust:
+163/0/1 each; schema 37/storage 11; frontend 26; native HTTP/schema+outputs: 19
+fresh checkpoints. Real old-binary queued-job upgrades, consistent backups,
+evidence, four report formats, independent PDF parsing and restart pass on both
+hosts. Proof: artifacts/schema-format-current-verification.json; exact commands,
+files, candidates, limitations and next action: MASTER_EXECUTION_PROGRESS.md.
+Version 0.1.0; v1.0 NOT READY. glib/maintenance, Linux GUI, installer/signing and
+unfinished modules remain unresolved. No commit, push or release publication.
+
+---
+
+## Current offline regex checkpoint - 2026-10-19
+
+Bounded pattern and 3.1 patternProperties now run through shared jobs, evidence,
+Desktop and CLI. Specialized/unsupported regex syntax and limits stay explicit.
+Final Windows and Parrot/WSL Core-CLI Rust: 157/0/1 each; frontend 26; native
+HTTP/schema+outputs: 18 fresh checkpoints; optimized CLI/evidence/four-format
+reports pass on both hosts. Exact scope/failures/commands/next action:
+MASTER_EXECUTION_PROGRESS.md and artifacts/schema-pattern-current-verification.json.
+No migration; schema 012/version 0.1.0. v1.0 remains NOT READY. Next: explicit,
+default-off durable format assertion policy; Linux GUI/installers/signing and
+glib/maintenance review remain unresolved. No push or release publication.
+
+---
+
+## Current checkpoint: bounded offline tuples, uniqueness and dependencies - 2026-10-18
+
+Phase 1.5 advanced safely through the existing shared Core/Job Engine/Desktop/CLI.
+uniqueItems now uses numeric/structural equality; OpenAPI 3.1 prefixItems/items
+and dependentRequired/dependentSchemas retain exact source locations. Redacted,
+invalid, cyclic and budget-limited cases remain explicit/inconclusive. No network
+resolver, external replay, automatic finding verification or migration was added.
+The schema remains 012, version 0.1.0, and v1.0 is NOT READY.
+
+Current proof: `artifacts/schema-arrays-current-verification.json`. Windows Rust
+150 passed/0 failed/1 ignored; Parrot/WSL Core+CLI 150/0/1; frontend 26 passed;
+format, warning-denied Clippy, TypeScript/Vite and optimized Windows Desktop/CLI
+and Linux CLI builds pass. Fresh native HTTP/schema, output and replay acceptance
+passes 29 checkpoints across three suites. Other suites retain their earlier
+historical proof and were not reclassified as freshly rerun. Native screenshots
+of actual uniqueness/tuple observations were inspected. Separate optimized CLI
+processes on Windows and Linux verified jobs, source evidence, persistence and
+all four exports; pypdf 6.19.0 independently parsed both five-page PDFs/redaction.
+Linux Desktop/Secret Service/packages and Windows installer lifecycle/signing
+remain unverified; this checkpoint produced portable binaries, no new installer.
+
+Fresh cargo-audit still reports one glib unsound warning and six maintenance
+warnings; npm audit reports zero advisories. The explicit deny-unsound check exits
+1 and dependency readiness stays BLOCKED. Earlier GitHub alert export is retained
+as historical input, not a new remote verification. No advisory was suppressed.
+
+Current unfinished task: complete remaining safe offline schema coverage
+(patterns/patternProperties, formats with explicit assertion policy, resource/
+multi-file resolution) with bounded CPU/memory and original evidence provenance.
+Next exact action: inspect the existing JSON Schema library's regex limits and
+dialect semantics, then implement the next bounded offline validator slice with
+positive/negative/redaction/budget cases. Broader Web/API, recon, AI, tool/MCP,
+reverse/mobile/cloud/network and release requirements remain PARTIAL/NOT_STARTED
+as recorded in module-status.json and RELEASE_READINESS.md.
+
+Exact changed files, commands, retained failures and next action: MASTER_EXECUTION_PROGRESS.md.
+
+---
+
 ## Current followup: CI fixture reliability and complete project DOCX — 2026-10-18
 
 Preserved the tested production source, schema 012, user DBs, credentials, typography

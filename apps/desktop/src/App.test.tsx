@@ -58,7 +58,8 @@ function operation(args: unknown) {
 async function mockService(command: string, args: unknown) {
   if (command !== "service") return null;
   const request = operation(args)!;
-  if(request.op==="ai_manager")return {catalog:[],profiles:[],routing:[],agents:[]};
+  if (request.op === "ai_manager")
+    return { catalog: [], profiles: [], routing: [], agents: [] };
   if (request.op === "set_theme") {
     current.settings.theme = request.theme;
     return structuredClone(current.settings);
@@ -86,6 +87,7 @@ async function mockService(command: string, args: unknown) {
 }
 beforeEach(() => {
   cleanup();
+  localStorage.clear();
   current = structuredClone(snapshot);
   vi.mocked(invoke).mockReset();
   vi.mocked(invoke).mockImplementation(mockService);
@@ -253,7 +255,7 @@ it("target validation errors keep the dialog and user input available for correc
   });
   render(<App />);
   await screen.findByText("Workspace overview");
-  await user.click(screen.getByRole("button", { name: "+ Add Target" }));
+  await user.click(screen.getByRole("button", { name: "Add Target" }));
   await user.type(screen.getByLabelText("Target name"), "Lab IP");
   await user.selectOptions(screen.getByLabelText("Target type"), "ipv4");
   await user.type(screen.getByLabelText("Target value"), "invalid");
@@ -289,44 +291,44 @@ describe("Desktop interactions", () => {
     await user.click(
       screen.getByRole("button", { name: "Collapse navigation" }),
     );
-    await user.click(screen.getByRole("button", { name: "Open AI Workspace" }));
+    await user.click(screen.getByRole("button", { name: "AI Workspace" }));
     expect(
       await screen.findByRole("heading", { name: "AI Workspace" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Send message/ })).toBeDisabled();
   });
-  it("synchronizes both menus with immediate persisted Settings appearance", async () => {
+  it("keeps exactly one global rail menu with informational Settings appearance", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Workspace overview");
-    await user.click(screen.getByRole("button", { name: "Topbar appearance" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     expect(menuChoice("Dark")).toHaveAttribute("aria-checked", "true");
     await user.click(menuChoice("Light"));
     expect(document.documentElement.dataset.theme).toBe("light");
     await waitFor(() => expect(current.settings.theme).toBe("light"));
-    await user.click(
-      screen.getByRole("button", { name: "Sidebar appearance" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     expect(menuChoice("Light")).toHaveAttribute("aria-checked", "true");
     await user.keyboard("{End}{Enter}");
     await waitFor(() => expect(current.settings.theme).toBe("reconx"));
     await user.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByLabelText("Appearance")).toHaveValue("reconx");
+    expect(screen.getAllByRole("button", { name: "Appearance" })).toHaveLength(
+      1,
+    );
     expect(
-      [...screen.getByLabelText("Appearance").querySelectorAll("option")].map(
-        (option) => option.value,
-      ),
-    ).toEqual(["light", "dark", "reconx"]);
-    await user.selectOptions(screen.getByLabelText("Appearance"), "dark");
+      screen.queryByRole("combobox", { name: "Appearance" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Current appearance")).toHaveTextContent(
+      "ReconX",
+    );
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
+    await user.click(menuChoice("Dark"));
     expect(document.documentElement.dataset.theme).toBe("dark");
     await waitFor(() => expect(current.settings.theme).toBe("dark"));
-    await user.click(screen.getByRole("button", { name: "Topbar appearance" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     expect(menuChoice("Dark")).toHaveAttribute("aria-checked", "true");
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Topbar appearance" }),
-    ).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Appearance" })).toHaveFocus();
   });
   it("keeps explicit appearance unchanged when operating system appearance changes", async () => {
     const user = userEvent.setup();
@@ -345,14 +347,16 @@ describe("Desktop interactions", () => {
     render(<App />);
     await screen.findByText("Workspace overview");
     await user.click(screen.getByRole("button", { name: "Settings" }));
-    await user.selectOptions(screen.getByLabelText("Appearance"), "reconx");
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
+    await user.click(menuChoice("ReconX"));
     expect(document.documentElement.dataset.theme).toBe("reconx");
     await act(async () => {
       media.matches = true;
       change?.();
     });
     expect(document.documentElement.dataset.theme).toBe("reconx");
-    await user.selectOptions(screen.getByLabelText("Appearance"), "light");
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
+    await user.click(menuChoice("Light"));
     expect(media.addEventListener).not.toHaveBeenCalled();
     expect(window.matchMedia).not.toHaveBeenCalled();
     expect(document.documentElement.dataset.theme).toBe("light");
@@ -366,7 +370,7 @@ describe("Desktop interactions", () => {
       screen.getByLabelText("Security mode"),
       "lab_research",
     );
-    await user.click(screen.getByRole("button", { name: "Topbar appearance" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(menuChoice("Light"));
     await waitFor(() => expect(current.settings.theme).toBe("light"));
     expect(current.settings.security_mode).toBe("passive_auto");
@@ -386,7 +390,7 @@ describe("Desktop interactions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Workspace overview");
-    await user.click(screen.getByRole("button", { name: "Topbar appearance" }));
+    await user.click(screen.getByRole("button", { name: "Appearance" }));
     await user.click(menuChoice("Light"));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Appearance was not saved. Database is read-only",
@@ -413,9 +417,7 @@ describe("Desktop interactions", () => {
     await screen.findByText("Workspace overview");
     try {
       for (const mode of ["Light", "ReconX", "Dark"]) {
-        await user.click(
-          screen.getByRole("button", { name: "Topbar appearance" }),
-        );
+        await user.click(screen.getByRole("button", { name: "Appearance" }));
         await user.click(menuChoice(mode));
       }
       expect(document.documentElement.dataset.theme).toBe("dark");

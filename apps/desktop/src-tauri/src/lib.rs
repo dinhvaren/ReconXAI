@@ -105,6 +105,67 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    ManagedMcpPlan {
+        id: String,
+        version: String,
+        #[serde(default)]
+        managed_runtime: bool,
+    },
+    ManagedMcpInstall {
+        approval: reconx_core::ManagedMcpApproval,
+    },
+    ManagedMcpHistory {
+        id: String,
+    },
+    ManagedMcpTools {
+        tools: Vec<String>,
+        approved: bool,
+    },
+    ManagedMcpEnable {
+        enabled: bool,
+    },
+    ManagedMcpRemove,
+    RegistrySearch {
+        query: reconx_core::RegistryQuery,
+    },
+    RegistryDetail {
+        id: String,
+        version: Option<String>,
+        #[serde(default)]
+        offline: bool,
+    },
+    RegistryVersions {
+        id: String,
+        #[serde(default)]
+        offline: bool,
+    },
+    RegistryClearCache,
+    ExtensionsCatalog {
+        query: Option<String>,
+    },
+    ExtensionsPlan {
+        id: String,
+    },
+    ExtensionsInstall {
+        approval: reconx_core::ExtensionApproval,
+    },
+    ExtensionsDoctor {
+        id: String,
+    },
+    ExtensionsEnable {
+        id: String,
+        enabled: bool,
+    },
+    ExtensionsRemove {
+        id: String,
+    },
+    ExtensionsInvoke {
+        id: String,
+        file_id: String,
+    },
+    ExtensionsHistory {
+        id: String,
+    },
     HttpDraftSeed {
         exchange: String,
         target: Option<String>,
@@ -148,6 +209,8 @@ enum Request {
     HttpSchemaEnqueue {
         exchange: String,
         operation: String,
+        #[serde(default)]
+        options: reconx_core::SchemaReviewOptions,
     },
     HttpReviewEnqueue {
         id: String,
@@ -579,7 +642,8 @@ fn local(core: Core, request: Request) -> Result<Value> {
         Request::HttpSchemaEnqueue {
             exchange,
             operation,
-        } => value(core.http_schema_enqueue(&exchange, &operation)?),
+            options,
+        } => value(core.http_schema_enqueue_with_options(&exchange, &operation, options)?),
         Request::HttpReviewEnqueue { id } => value(core.http_review_enqueue(&id)?),
         Request::HttpImport { kind, input, path } => value(core.http_import(&kind, input, &path)?),
         Request::HttpWorkspace {
@@ -765,6 +829,28 @@ fn local(core: Core, request: Request) -> Result<Value> {
             core.cancel_job(&id)?;
             Ok(Value::Null)
         }
+        Request::ManagedMcpPlan {
+            id,
+            version,
+            managed_runtime,
+        } => value(core.managed_install_plan(&id, &version, managed_runtime)?),
+        Request::ManagedMcpInstall { approval } => value(core.managed_enqueue_install(approval)?),
+        Request::ManagedMcpHistory { id } => value(core.managed_install_history(&id)?),
+        Request::RegistryClearCache => {
+            core.registry_clear_cache()?;
+            Ok(Value::Null)
+        }
+        Request::ExtensionsCatalog { query } => value(core.extension_catalog(query.as_deref())?),
+        Request::ExtensionsPlan { id } => value(core.extension_install_plan(&id)?),
+        Request::ExtensionsEnable { id, enabled } => {
+            value(core.extension_set_enabled(&id, enabled)?)
+        }
+        Request::ExtensionsRemove { id } => {
+            core.extension_remove(&id)?;
+            Ok(Value::Null)
+        }
+        Request::ExtensionsInvoke { id, file_id } => value(core.extension_invoke(&id, &file_id)?),
+        Request::ExtensionsHistory { id } => value(core.extension_history(&id)?),
         Request::Snapshot => value(core.snapshot()?),
         Request::GetTheme => value(core.settings()?.theme),
         Request::SetTheme { theme } => value(core.set_theme(theme)?),
@@ -839,6 +925,28 @@ fn local(core: Core, request: Request) -> Result<Value> {
 async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value> {
     let core = core.inner().clone();
     match request {
+        Request::ManagedMcpTools { tools, approved } => {
+            value(core.managed_allow_tools(tools, approved).await?)
+        }
+        Request::ManagedMcpEnable { enabled } => value(core.managed_set_enabled(enabled).await?),
+        Request::ManagedMcpRemove => {
+            core.managed_remove().await?;
+            Ok(Value::Null)
+        }
+        Request::RegistrySearch { query } => value(core.registry_search(query).await?),
+        Request::RegistryDetail {
+            id,
+            version,
+            offline,
+        } => value(
+            core.registry_detail(&id, version.as_deref(), offline)
+                .await?,
+        ),
+        Request::RegistryVersions { id, offline } => {
+            value(core.registry_versions(&id, offline).await?)
+        }
+        Request::ExtensionsInstall { approval } => value(core.extension_install(approval).await?),
+        Request::ExtensionsDoctor { id } => value(core.extension_doctor(&id).await?),
         Request::McpSave { server } => value(core.mcp_save(server).await?),
         Request::McpRemove { id } => {
             core.mcp_remove(&id).await?;
