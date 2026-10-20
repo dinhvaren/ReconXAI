@@ -58,6 +58,18 @@ function operation(args: unknown) {
 async function mockService(command: string, args: unknown) {
   if (command !== "service") return null;
   const request = operation(args)!;
+  if (request.op === "workspace_selection")
+    return {
+      revision: 1,
+      project_id: current.projects[0]?.id ?? null,
+      target_id: null,
+    };
+  if (request.op === "workspace_select")
+    return {
+      revision: 2,
+      project_id: (request as unknown as { project: string }).project,
+      target_id: null,
+    };
   if (request.op === "ai_manager")
     return { catalog: [], profiles: [], routing: [], agents: [] };
   if (request.op === "set_theme") {

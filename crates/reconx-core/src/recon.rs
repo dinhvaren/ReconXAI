@@ -112,15 +112,26 @@ impl Core {
         fingerprint: &str,
         approved: bool,
     ) -> Result<AnalysisJob> {
+        let mut conn = self.db.connect()?;
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(db_error)?;
+        let id = self.local_http_enqueue_in_tx(&tx, target, fingerprint, approved)?;
+        tx.commit().map_err(db_error)?;
+        self.job(&id)
+    }
+    pub(super) fn local_http_enqueue_in_tx(
+        &self,
+        tx: &Connection,
+        target: &str,
+        fingerprint: &str,
+        approved: bool,
+    ) -> Result<String> {
         if !approved {
             return Err(denied(
                 "Review the exact local HEAD plan and explicitly approve it",
             ));
         }
-        let mut conn = self.db.connect()?;
-        let tx = conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)
-            .map_err(db_error)?;
         let plan = self.local_http_preview(target)?;
         if plan.fingerprint != fingerprint {
             return Err(AppError::new(
@@ -142,9 +153,8 @@ impl Core {
             params![id, fingerprint, stamp],
         )
         .map_err(db_error)?;
-        Self::audit(&tx, "recon.local.queued", &id, "manually_approved")?;
-        tx.commit().map_err(db_error)?;
-        self.job(&id)
+        Self::audit(tx, "recon.local.queued", &id, "manually_approved")?;
+        Ok(id)
     }
     pub(super) fn local_http_job_plan(&self, job: &AnalysisJob) -> Result<LocalHttpPlan> {
         let fp: String = self

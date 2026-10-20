@@ -46,6 +46,51 @@ pub fn hash(bytes: &[u8]) -> String {
         .map(|b| format!("{b:02x}"))
         .collect()
 }
+/// Signatures are observations, not a claim that an entire executable is valid.
+pub fn signature_label(bytes: &[u8]) -> String {
+    if bytes.starts_with(b"MZ") {
+        "PE/DOS signature (deep analysis deferred)"
+    } else if bytes.starts_with(b"\x7fELF") {
+        "ELF signature (deep analysis deferred)"
+    } else if [
+        b"\xcf\xfa\xed\xfe",
+        b"\xfe\xed\xfa\xcf",
+        b"\xce\xfa\xed\xfe",
+        b"\xfe\xed\xfa\xce",
+        b"\xca\xfe\xba\xbe",
+    ]
+    .iter()
+    .any(|m| bytes.starts_with(*m))
+    {
+        "Mach-O signature (deep analysis deferred)"
+    } else if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
+        "ZIP container signature (contents not inspected)"
+    } else {
+        "Raw binary (unrecognized format)"
+    }
+    .into()
+}
+/// Full-file hash/entropy supplied by a streaming verifier; strings/hex are prefix-only.
+pub fn inspect_metadata_prefix(
+    prefix: &[u8],
+    size: u64,
+    sha: &str,
+    full_entropy: f64,
+) -> Result<BinaryAnalysis> {
+    if prefix.len() > 1024 * 1024
+        || prefix.len() as u64 > size
+        || sha.len() != 64
+        || !sha.bytes().all(|b| b.is_ascii_hexdigit())
+        || !(0.0..=8.0000001).contains(&full_entropy)
+    {
+        return Err(AppError::new(
+            "INPUT_LIMIT",
+            "Invalid bounded streaming metadata input",
+        ));
+    }
+    let strings = extract_strings(prefix, &mut |_, _| Ok(()))?;
+    Ok(BinaryAnalysis{format:signature_label(prefix),architecture:None,size,sha256:sha.into(),entry_point:None,little_endian:None,entropy:full_entropy,sections:vec![],segments:vec![],imports:vec![],exports:vec![],package_entries:vec![],strings,hex_preview:prefix.iter().take(512).enumerate().map(|(i,b)|format!("{}{:02x}{}",if i%16==0 {format!("{i:08x}  ")}else{String::new()},b,if i%16==15 {"\n"}else{" "})).collect(),warnings:vec!["Large-file metadata mode: the complete file was streamed and hashed. Strings and hex use only the first 1 MiB. Sections, imports, exports, functions and package contents were not deeply parsed.".into()]})
+}
 pub fn entropy(bytes: &[u8]) -> f64 {
     if bytes.is_empty() {
         return 0.0;

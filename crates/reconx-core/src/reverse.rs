@@ -98,7 +98,7 @@ fn read_bounded(path: &Path, limit: usize) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 impl Core {
-    fn artifact_directory(&self) -> Result<PathBuf> {
+    pub(super) fn artifact_directory(&self) -> Result<PathBuf> {
         let parent = self
             .db
             .path()
@@ -122,7 +122,7 @@ impl Core {
         }
         Ok(path)
     }
-    fn blob_path(&self, sha: &str) -> Result<PathBuf> {
+    pub(super) fn blob_path(&self, sha: &str) -> Result<PathBuf> {
         if sha.len() != 64 || !sha.bytes().all(|c| c.is_ascii_hexdigit()) {
             return Err(AppError::new("INVALID_DATA", "Invalid artifact identifier"));
         }
@@ -134,100 +134,35 @@ impl Core {
         path: &Path,
         authorized: bool,
     ) -> Result<ImportedFile> {
-        let project = self.project(project)?;
-        if project.archived {
-            return Err(AppError::new(
-                "PROJECT_ARCHIVED",
-                "Restore the project before importing files",
-            ));
-        }
-        let bytes = read_bounded(path, MAX_FILE_BYTES)?;
-        let analysis = inspect(&bytes)?;
-        let canonical = path
-            .canonicalize()
-            .map_err(|_| file_error())?
-            .to_string_lossy()
-            .into_owned();
-        let target = match self
-            .list_targets(Some(&project.id))?
-            .into_iter()
-            .find(|t| t.input.kind.local_file() && t.input.value == canonical)
-        {
-            Some(t) => t,
-            None => self.create_target(TargetInput {
-                project_id: project.id.clone(),
-                name: path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .chars()
-                    .take(120)
-                    .collect(),
-                kind: if analysis.format == "Android APK" {
-                    TargetKind::Apk
-                } else {
-                    TargetKind::Binary
-                },
-                value: canonical.clone(),
-                description: "Local file registered through Reverse Engineering import".into(),
-                tags: vec!["local-import".into()],
-                allowed_scope: vec![],
-                excluded_scope: vec![],
-                authorized,
-                mode: SecurityMode::PassiveAuto,
-            })?,
-        };
-        let destination = self.blob_path(&analysis.sha256)?;
-        match OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&destination)
-        {
-            Ok(mut f) => {
-                f.write_all(&bytes).map_err(|_| file_error())?;
-                f.sync_all().map_err(|_| file_error())?;
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                if hash(&read_bounded(&destination, MAX_FILE_BYTES)?) != analysis.sha256 {
-                    return Err(AppError::new(
-                        "INTEGRITY_ERROR",
-                        "Existing managed sample does not match its content hash",
-                    ));
-                }
-            }
-            Err(_) => return Err(file_error()),
-        }
-        let imported = ImportedFile {
-            id: Uuid::new_v4().to_string(),
-            project_id: project.id,
-            target_id: Some(target.id),
-            source_path: canonical.clone(),
-            name: path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .chars()
-                .take(255)
-                .collect(),
-            sha256: analysis.sha256,
-            size: bytes.len() as u64,
-            format: analysis.format,
-            created_at: now(),
-        };
-        let mut conn = self.db.connect()?;
-        let tx = conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)
-            .map_err(db_error)?;
-        tx.execute("INSERT INTO imported_files(id,project_id,target_id,name,sha256,size,format,created_at,source_value) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)",params![imported.id,imported.project_id,imported.target_id,imported.name,imported.sha256,imported.size as u32,imported.format,imported.created_at,canonical]).map_err(db_error)?;
-        Self::audit(&tx, "file.imported", &imported.id, "completed")?;
-        tx.commit().map_err(db_error)?;
-        Ok(imported)
+        self.import_file_with_progress(
+            project,
+            path,
+            authorized,
+            FileImportLimits::default(),
+            |_| Ok(()),
+        )
     }
     pub fn import_folder(
         &self,
         project: &str,
         path: &Path,
         authorized: bool,
+    ) -> Result<ImportBatch> {
+        self.import_folder_with_progress(
+            project,
+            path,
+            authorized,
+            FileImportLimits::default(),
+            |_| Ok(()),
+        )
+    }
+    pub fn import_folder_with_progress(
+        &self,
+        project: &str,
+        path: &Path,
+        authorized: bool,
+        limits: FileImportLimits,
+        mut update: impl FnMut(FileImportProgress) -> Result<()>,
     ) -> Result<ImportBatch> {
         let metadata = fs::symlink_metadata(path).map_err(|_| file_error())?;
         if !metadata.is_dir() || metadata.file_type().is_symlink() {
@@ -255,8 +190,15 @@ impl Core {
             if entry.file_type().is_ok_and(|t| t.is_dir()) {
                 continue;
             }
-            match self.import_file(project, &entry.path(), authorized) {
+            match self.import_file_with_progress(
+                project,
+                &entry.path(),
+                authorized,
+                limits,
+                &mut update,
+            ) {
                 Ok(file) => result.imported.push(file),
+                Err(e) if e.code == "CANCELLED" => return Err(e),
                 Err(e) => result.failures.push(ImportFailure {
                     name: entry.file_name().to_string_lossy().into_owned(),
                     error_code: e.code,
@@ -276,7 +218,8 @@ impl Core {
                 target_id: r.get(2)?,
                 name: r.get(3)?,
                 sha256: r.get(4)?,
-                size: r.get::<_, u32>(5)? as u64,
+                size: u64::try_from(r.get::<_, i64>(5)?)
+                    .map_err(|_| reconx_storage::rusqlite::Error::IntegralValueOutOfRange(5, -1))?,
                 format: r.get(6)?,
                 created_at: r.get(7)?,
                 source_path: r.get(8)?,
@@ -421,15 +364,24 @@ impl Core {
                 .ok_or_else(|| AppError::new("NOT_FOUND", "The job's file was removed"))?,
         )?;
         update(10, "Reading managed sample and verifying SHA-256")?;
-        let bytes = self.read_sample_with_progress(&file, &mut |done, total| {
-            update(
-                (10 + done * 15 / total.max(1)) as u8,
-                "Reading managed sample and verifying SHA-256",
-            )
-        })?;
-        let analysis = reconx_analysis::inspect_with_progress(&bytes, |done, message| {
-            update(25 + (u16::from(done) * 60 / 100) as u8, message)
-        })?;
+        let analysis = if file.size > MAX_FILE_BYTES as u64 {
+            self.stream_sample_facts(&file, &mut |done, total| {
+                update(
+                    (10 + done * 75 / total.max(1)) as u8,
+                    "Streaming full-file integrity and bounded metadata; deep analysis deferred",
+                )
+            })?
+        } else {
+            let bytes = self.read_sample_with_progress(&file, &mut |done, total| {
+                update(
+                    (10 + done * 15 / total.max(1)) as u8,
+                    "Reading managed sample and verifying SHA-256",
+                )
+            })?;
+            reconx_analysis::inspect_with_progress(&bytes, |done, message| {
+                update(25 + (u16::from(done) * 60 / 100) as u8, message)
+            })?
+        };
         update(
             90,
             "Static parsing completed; saving local analysis artifact",
@@ -451,7 +403,7 @@ impl Core {
         artifact.write_all(&bytes).map_err(|_| file_error())?;
         artifact.sync_all().map_err(|_| file_error())?;
         Ok(super::jobs::PreparedJob {
-            result: serde_json::json!({"analysis_id":record.id,"file_id":record.file_id,"format":record.analysis.format,"sha256":record.analysis.sha256,"sections":record.analysis.sections.len(),"strings":record.analysis.strings.len()}),
+            result: serde_json::json!({"analysis_id":record.id,"file_id":record.file_id,"format":record.analysis.format,"sha256":record.analysis.sha256,"sections":if file.size>MAX_FILE_BYTES as u64 {None}else{Some(record.analysis.sections.len())},"strings":record.analysis.strings.len(),"analysis_limited":file.size>MAX_FILE_BYTES as u64,"string_scope":if file.size>MAX_FILE_BYTES as u64 {"first 1 MiB"}else{"bounded full-file inspection"},"warnings":record.analysis.warnings}),
             analysis: Some((record, name, hash(&bytes))),
             http: None,
         })

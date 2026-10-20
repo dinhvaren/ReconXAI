@@ -35,3 +35,5 @@ tests/
 !/tests/e2e/https-replay.mjs
 !/tests/e2e/ux.mjs
 !/tests/e2e/extensions.mjs
+!/tests/e2e/research-session.mjs
+!/tests/e2e/large-import.mjs

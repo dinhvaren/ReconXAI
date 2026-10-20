@@ -133,6 +133,22 @@ impl Core {
         input: JobInput,
         extension: Option<(&str, &str)>,
     ) -> Result<AnalysisJob> {
+        let mut conn = self.db.connect()?;
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(db_error)?;
+        let id = self.enqueue_job_in_tx(&tx, input, extension)?;
+        tx.commit().map_err(db_error)?;
+        self.job(&id)
+    }
+    /// Queue through the same policy/extension checks inside an enclosing
+    /// research-session transaction; workers cannot claim a partial session.
+    pub(super) fn enqueue_job_in_tx(
+        &self,
+        tx: &Connection,
+        input: JobInput,
+        extension: Option<(&str, &str)>,
+    ) -> Result<String> {
         if !(1..=3_600_000).contains(&input.timeout_ms) {
             return Err(AppError::new(
                 "INVALID_INPUT",
@@ -171,18 +187,13 @@ impl Core {
             ));
         }
         let id = Uuid::new_v4().to_string();
-        let mut conn = self.db.connect()?;
-        let tx = conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)
-            .map_err(db_error)?;
         tx.execute("INSERT INTO analysis_jobs(id,project_id,target_id,file_id,kind,status,created_at,timeout_ms,logs_json) VALUES(?1,?2,?3,?4,?5,'queued',?6,?7,?8)",params![id,project_id,target_id,file_id,input.kind.as_str(),now(),input.timeout_ms as u32,serde_json::to_string(&vec!["Queued for bounded read-only local execution"]).map_err(json_error)?]).map_err(db_error)?;
         if let Some((extension, revision)) = extension {
             tx.execute("INSERT INTO extension_invocations(job_id,extension_id,revision,approved_at) VALUES(?1,?2,?3,?4)", params![id,extension,revision,now()]).map_err(db_error)?;
-            Self::require_extension_job(&tx, &id)?;
+            Self::require_extension_job(tx, &id)?;
         }
-        Self::audit(&tx, "job.queued", &id, "queued")?;
-        tx.commit().map_err(db_error)?;
-        self.job(&id)
+        Self::audit(tx, "job.queued", &id, "queued")?;
+        Ok(id)
     }
     pub fn list_jobs(&self, project: Option<&str>) -> Result<Vec<AnalysisJob>> {
         let project = project.map(|p| self.project(p).map(|p| p.id)).transpose()?;
@@ -206,6 +217,10 @@ impl Core {
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
+        self.cancel_job_in_tx(&tx, id)?;
+        tx.commit().map_err(db_error)
+    }
+    pub(super) fn cancel_job_in_tx(&self, tx: &Connection, id: &str) -> Result<()> {
         let job = tx
             .query_row(
                 &format!("SELECT {JOB_COLUMNS} FROM analysis_jobs WHERE id=?1"),
@@ -223,8 +238,7 @@ impl Core {
         }
         // Running work retains its capacity slot until its worker acknowledges cancellation.
         tx.execute("UPDATE analysis_jobs SET cancel_requested=1,status=CASE WHEN status='queued' THEN 'cancelled' ELSE status END,finished_at=CASE WHEN status='queued' THEN ?1 ELSE finished_at END,stage=CASE WHEN status='queued' THEN 'Cancelled' ELSE 'Cancellation requested' END,logs_json=json_insert(logs_json,'$[#]',?2) WHERE id=?3",params![now(),"Cancellation requested by a user",id]).map_err(db_error)?;
-        Self::audit(&tx, "job.cancel_requested", id, "requested")?;
-        tx.commit().map_err(db_error)
+        Self::audit(tx, "job.cancel_requested", id, "requested")
     }
     /// Only expired or legacy ownerless RUNNING jobs are reconciled. CLI reads and
     /// another Desktop instance never invalidate a live worker's lease.
@@ -439,10 +453,14 @@ impl Core {
                 "artifact_index"=>{
                     let id=job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","Job file was removed"))?;
                     let file=self.imported_file(id)?;
-                    self.read_sample_with_progress(&file,&mut |done,total|update((10+done*60/total.max(1)) as u8,"Indexing verified local sample bytes"))?;
+                    if file.size>reconx_analysis::MAX_FILE_BYTES as u64 {
+                        self.stream_sample_facts(&file,&mut |done,total|update((10+done*60/total.max(1)) as u8,"Indexing complete streamed sample hash"))?;
+                    } else {
+                        self.read_sample_with_progress(&file,&mut |done,total|update((10+done*60/total.max(1)) as u8,"Indexing verified local sample bytes"))?;
+                    }
                     let record=match self.file_analysis(id){Ok(r)=>Some(r),Err(e) if e.code=="NOT_ANALYZED"=>None,Err(e)=>return Err(e)};
                     update(90,"Sample and available analysis artifact indexed")?;
-                    PreparedJob{result:serde_json::json!({"file_id":id,"sha256":file.sha256,"size":file.size,"format":file.format,"analysis_id":record.as_ref().map(|r|&r.id),"sections":record.as_ref().map(|r|r.analysis.sections.len()),"strings":record.as_ref().map(|r|r.analysis.strings.len())}),analysis:None,http:None}
+                    PreparedJob{result:serde_json::json!({"file_id":id,"sha256":file.sha256,"size":file.size,"format":file.format,"analysis_id":record.as_ref().map(|r|&r.id),"sections":record.as_ref().filter(|r|r.analysis.size<=reconx_analysis::MAX_FILE_BYTES as u64).map(|r|r.analysis.sections.len()),"strings":record.as_ref().map(|r|r.analysis.strings.len()),"analysis_limited":file.size>reconx_analysis::MAX_FILE_BYTES as u64}),analysis:None,http:None}
                 },
                 _=>return Err(AppError::new("INVALID_JOB","No allowlisted handler for this job type")),
             };

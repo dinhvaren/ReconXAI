@@ -200,8 +200,8 @@ export default function FileResearchPanel({
           )}
           <h3>Findings & integrations</h3>
           <p className="helper">
-            Finding records, decompilation and Ghidra integration are not
-            connected. Static metadata and retained jobs are available.
+            Use Start AI Research to review evidence, create a finding and
+            prepare a report. Decompilation and Ghidra integration are unavailable.
           </p>
         </>
       )}

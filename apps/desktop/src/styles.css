@@ -2954,3 +2954,7 @@ textarea:focus-visible {
     display: none;
   }
 }
+.research-preview { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 340px; overflow: auto; font-family: var(--font-mono, "IBM Plex Mono", monospace); font-size: 12px; padding: 12px; }
+.research-context .records-toolbar > label { flex: 1 1 180px; min-width: 0; }
+.research-context select { max-width: 100%; }
+.research-context .records-toolbar { padding: 0; margin-bottom: 12px; gap: 12px; }

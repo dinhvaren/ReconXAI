@@ -1,0 +1,626 @@
+{
+  "version": "0.1.0",
+  "database_schema": 17,
+  "release_ready": false,
+  "recorded_at": "2026-10-20T14:27:50.563665+00:00",
+  "base_revision": "b041b667d6c918ce0e22c91f1c65222a2fe91aa2",
+  "source_state": "Uncommitted implementation at verification time; no user data or release publication",
+  "windows_rust": {
+    "passed": 191,
+    "failed": 0,
+    "ignored": 2
+  },
+  "linux_core_cli_rust": {
+    "passed": 191,
+    "failed": 0,
+    "ignored": 2
+  },
+  "ignored_tests": [
+    "real_os_secret_round_trip (explicit OS-store opt-in)",
+    "live_public_https_diagnostic (explicit public HTTPS opt-in)"
+  ],
+  "frontend": {
+    "passed": 39,
+    "failed": 0,
+    "record": "artifacts/recovery-final-frontend-tests.log"
+  },
+  "native": {
+    "large": {
+      "log": "artifacts/product-recovery-native-large.log",
+      "evidence": "artifacts\\large-import-native-1792506310716\\results.json",
+      "artifact": "D:\\ReconXAI\\artifacts\\large-import-native-1792506310716",
+      "passed": 6,
+      "checks": [
+        "Native file picker imports a real 256 MiB padded benign PE using paths only; Node streaming hash independently matches original and complete managed bytes",
+        "Actual Job Engine streams large-file integrity/entropy and saves bounded metadata, strings/hex and explicit deferred deep-analysis warning",
+        "Native cancellation interrupts a genuinely running 1 GiB copy; no partial imported row/staging file, original retained and renderer responsive",
+        "Switching project during a real import cancels its copy and fences stale results; the new project selection is not overwritten",
+        "Native restart and independent CLI preserve the 256 MiB target/file/job/analysis IDs and evidence",
+        "Large-file workspace renders in three themes and four resolutions without document overflow; unsupported deep-analysis tabs are disabled"
+      ]
+    },
+    "research": {
+      "log": "artifacts/product-recovery-native-research.log",
+      "evidence": "artifacts\\research-session-1792506323444\\results.json",
+      "artifact": "D:\\ReconXAI\\artifacts\\research-session-1792506323444",
+      "passed": 9,
+      "checks": [
+        "Native project/target creation selects persisted IDs immediately; CLI reads the same selection",
+        "Start AI Research generates a typed MOCK AI plan and executes actual approved scope/loopback HEAD jobs; no request before separate approval",
+        "Actual evidence is interpreted only after context consent; manual finding stays Needs Verification; real Markdown/JSON/HTML/PDF exports validate",
+        "Global Create Finding opens a real form after context synchronization, preserving manual review workflow",
+        "Navigation through Recon/AI Workspace and native restart preserve the active target and reopen persisted session/evidence/findings/report",
+        "Two projects with identically named targets stay isolated by persistent IDs across CLI-created records, Recon and AI Workspace",
+        "Manual Jobs and Agent Workflows file selectors share the same active target ID without cross-project stale selections",
+        "Benign PE route produces real metadata/strings evidence using the same Job Engine, without executing the file or network requests",
+        "Research view rendered with no document overflow in 3 themes and 4 resolutions (12 captures)"
+      ]
+    },
+    "http": {
+      "log": "artifacts/product-recovery-native-http.log",
+      "evidence": "artifacts\\http-replay-1792506338490\\results.json",
+      "artifact": "D:\\ReconXAI\\artifacts\\http-replay-1792506338490",
+      "passed": 11,
+      "checks": [
+        "Actual native HAR import and editor seed send no request; captured credentials are not replayed",
+        "Native Alice/Bob setup uses actual OS credentials; CLI shares masked metadata and saving never marks authenticated",
+        "Reviewed native POST sends the stored Alice credential to the pinned fixture; actual status/body/timing and redacted response become persistent traffic/evidence",
+        "Switching identities changes a real subsequent request; CLI compares actual captures and never verifies authorization from status differences",
+        "Actual replay evidence, Needs Verification review finding and reviewed JSON/Markdown/HTML/PDF exports share the existing pipeline; tested credentials are redacted",
+        "Complete Desktop restart restores draft/history and securely reuses Alice's OS-stored credential without reentry",
+        "CLI save/preview/approve executes through the same Desktop worker and captures a redirect without following its external destination",
+        "Native cancellation stops a genuinely pending HTTP job and persists Cancelled without fabricating a response",
+        "Actual authentication manager renders in Light/Dark/ReconX at 1920/1440/1366 without exposing stored credentials or document overflow",
+        "Deleting an HTTP target preserves captures and job history, disables its retained identities, and does not break the existing target manager",
+        "CLI removes the native-created identities and their OS credentials; shared project records remain intact"
+      ]
+    },
+    "outputs": {
+      "log": "artifacts/product-recovery-native-outputs.log",
+      "evidence": "artifacts\\outputs-1792506349760\\results.json",
+      "artifact": "D:\\ReconXAI\\artifacts\\outputs-1792506349760",
+      "passed": 6,
+      "checks": [
+        "Actual local analysis automatically records immutable job/target evidence; Desktop verifies content and saves manual source review; CLI reads identical hashes",
+        "Native screenshot import copies actual PNG bytes with matching content hash, renders the local image and persists HTTP request evidence without uploading",
+        "Native finding creation rejects Verified without reviewed source evidence; explicit review then saves linked observation and actual supplied CVSS metrics shared with CLI",
+        "Native report preview exposes redactions and omitted attachments; exact approval exports a real multi-page PDF with independently extracted Vietnamese text; CLI exports valid JSON, safe HTML and Markdown from the same snapshot",
+        "Actual Desktop restart preserves evidence, manual review, verified finding links and immutable report snapshot; CLI reads the same records",
+        "Evidence, Findings and Reports render in Light/Dark/ReconX at 1920 and 1366 without document clipping; actual screenshots captured"
+      ]
+    },
+    "ux": {
+      "log": "artifacts/product-recovery-native-ux.log",
+      "evidence": "artifacts\\ux-after-1792506362426\\results.json",
+      "artifact": "D:\\ReconXAI\\artifacts\\ux-after-1792506362426",
+      "phase": "after",
+      "observations": 216,
+      "checks": [
+        "One rail appearance control; optional activity and navigation toggle correctly",
+        "Keyboard theme selection persists to CLI and native restart",
+        "125/150/200% raster scaling via CDP; physical Windows DPI and Linux GUI not claimed"
+      ]
+    }
+  },
+  "research_cli": {
+    "windows": {
+      "status": "passed",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "timestamp": "2026-10-20T14:04:15.753451+00:00",
+      "checks": [
+        "CLI MOCK AI typed planning + separate approved real HEAD + atomic policy rejection + persisted evidence",
+        "AI interpretation consent + Needs Verification finding + four redacted report formats",
+        "Real benign PE/ELF static session; independent hash; persistent selection across separate CLI processes"
+      ],
+      "command_count": 36,
+      "ai": "MOCK_VERIFIED only; no cloud request",
+      "sample_sha256": "ec3e03be769b0692b2ca9253e325434949ed85e84f7bffff1ebe02dc7507ce9a",
+      "binary_sha256": "d97a2df2e952539f9bd97e9061000495a2a3c55334eef5d97300a3c52acc2695"
+    },
+    "linux": {
+      "status": "passed",
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "timestamp": "2026-10-20T14:04:47.380346+00:00",
+      "checks": [
+        "CLI MOCK AI typed planning + separate approved real HEAD + atomic policy rejection + persisted evidence",
+        "AI interpretation consent + Needs Verification finding + four redacted report formats",
+        "Real benign PE/ELF static session; independent hash; persistent selection across separate CLI processes"
+      ],
+      "command_count": 36,
+      "ai": "MOCK_VERIFIED only; no cloud request",
+      "sample_sha256": "b381cc8c55ec524b9fa92897f0882e855357468b4a763519cec47e05994d61ff",
+      "binary_sha256": "86c894b1aee88f41d8205b6cab0aadab06f2c2aeaddcea500b9f6de0f1a2cc94"
+    }
+  },
+  "upgrade_cli": {
+    "windows": {
+      "status": "passed",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "timestamp": "2026-10-20T14:12:40.757431+00:00",
+      "command_count": 14,
+      "old_binary_sha256": "8b3dd42cedabd1498d133038988d185a8256f69956f907d3f822af4299e764e6",
+      "binary_sha256": "d97a2df2e952539f9bd97e9061000495a2a3c55334eef5d97300a3c52acc2695",
+      "checks": [
+        "Real schema-16 records and queued job preserved by schema-17 upgrade; exact valid pre-upgrade backup",
+        "New CLI drains the old queued job and verifies retained/created evidence, metadata and selected IDs across processes",
+        "Old CLI refuses schema-17 without changing database bytes"
+      ],
+      "preserved_table_row_counts": {
+        "projects": 1,
+        "settings": 0,
+        "providers": 0,
+        "audit_events": 8,
+        "targets": 1,
+        "imported_files": 1,
+        "analysis_jobs": 2,
+        "binary_analyses": 1,
+        "file_notes": 0,
+        "mcp_servers": 0,
+        "capability_invocations": 0,
+        "tool_installations": 0,
+        "ai_tool_plans": 0,
+        "ai_tool_interpretations": 0,
+        "evidence": 1,
+        "findings": 0,
+        "finding_evidence": 0,
+        "reports": 0,
+        "report_exports": 0,
+        "local_http_approvals": 0,
+        "assets": 0,
+        "ai_profile_metadata": 0,
+        "ai_agent_routing": 0,
+        "http_imports": 0,
+        "http_exchanges": 0,
+        "api_operations": 0,
+        "http_notes": 0,
+        "http_comparisons": 0,
+        "http_review_jobs": 0,
+        "http_schema_jobs": 0,
+        "http_auth_profiles": 0,
+        "http_auth_retired_secrets": 0,
+        "http_request_drafts": 0,
+        "http_replay_jobs": 0,
+        "http_replay_dispatch": 0,
+        "http_schema_job_options": 0,
+        "extension_installations": 0,
+        "extension_requirements": 0,
+        "extension_invocations": 0,
+        "mcp_registry_cache": 0,
+        "mcp_registry_entries": 0,
+        "managed_mcp_extensions": 0,
+        "extension_install_jobs": 0
+      },
+      "backup_sha256": "9172c413085f69b8cc2e6fa52ddf303a7e3a93e68faa3f0ddc6d1cca1721905b",
+      "normal_user_data": "not accessed"
+    },
+    "linux": {
+      "status": "passed",
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "timestamp": "2026-10-20T14:13:07.255944+00:00",
+      "command_count": 14,
+      "old_binary_sha256": "f5946bee2f4624c4a8b8e0e01c525a242534decd9e88c9a0ba4e7f6850c12c55",
+      "binary_sha256": "86c894b1aee88f41d8205b6cab0aadab06f2c2aeaddcea500b9f6de0f1a2cc94",
+      "checks": [
+        "Real schema-16 records and queued job preserved by schema-17 upgrade; exact valid pre-upgrade backup",
+        "New CLI drains the old queued job and verifies retained/created evidence, metadata and selected IDs across processes",
+        "Old CLI refuses schema-17 without changing database bytes"
+      ],
+      "preserved_table_row_counts": {
+        "projects": 1,
+        "settings": 0,
+        "providers": 0,
+        "audit_events": 8,
+        "targets": 1,
+        "imported_files": 1,
+        "analysis_jobs": 2,
+        "binary_analyses": 1,
+        "file_notes": 0,
+        "mcp_servers": 0,
+        "capability_invocations": 0,
+        "tool_installations": 0,
+        "ai_tool_plans": 0,
+        "ai_tool_interpretations": 0,
+        "evidence": 1,
+        "findings": 0,
+        "finding_evidence": 0,
+        "reports": 0,
+        "report_exports": 0,
+        "local_http_approvals": 0,
+        "assets": 0,
+        "ai_profile_metadata": 0,
+        "ai_agent_routing": 0,
+        "http_imports": 0,
+        "http_exchanges": 0,
+        "api_operations": 0,
+        "http_notes": 0,
+        "http_comparisons": 0,
+        "http_review_jobs": 0,
+        "http_schema_jobs": 0,
+        "http_auth_profiles": 0,
+        "http_auth_retired_secrets": 0,
+        "http_request_drafts": 0,
+        "http_replay_jobs": 0,
+        "http_replay_dispatch": 0,
+        "http_schema_job_options": 0,
+        "extension_installations": 0,
+        "extension_requirements": 0,
+        "extension_invocations": 0,
+        "mcp_registry_cache": 0,
+        "mcp_registry_entries": 0,
+        "managed_mcp_extensions": 0,
+        "extension_install_jobs": 0
+      },
+      "backup_sha256": "4df0b2450713e315d0ee5dcbf485aaacd1802bba7e0547012c4bea1f1c39cb96",
+      "normal_user_data": "not accessed"
+    }
+  },
+  "large_import_cli": {
+    "windows": {
+      "status": "passed",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "timestamp": "2026-10-20T10:06:52.040748+00:00",
+      "binary_sha256": "d97a2df2e952539f9bd97e9061000495a2a3c55334eef5d97300a3c52acc2695",
+      "checks": [
+        "80 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "256 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "512 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "1024 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "Real largest-file Job Engine metadata analysis persists after process restart; deep parsing explicitly deferred"
+      ],
+      "commands": 45,
+      "files": [
+        {
+          "id": "a06322cb-86d2-4918-8f26-835fd1aac487",
+          "size": 83886080,
+          "sha256": "f3c4efb649951e76e7483279a35a859ccf054bab19ad792e745e027505618d8a"
+        },
+        {
+          "id": "af68bc23-a561-41ca-841f-ff55f7e08ea1",
+          "size": 268435456,
+          "sha256": "a184e652117b4317bcbd4112289e82034728b3241471b25c363a9bac6ade2f7f"
+        },
+        {
+          "id": "50097a0e-1149-49c2-9df3-61a020f7f1cc",
+          "size": 536870912,
+          "sha256": "df6b44ee850f77949ec05c97f20c260fa799eb15679d732277806a85040b3b36"
+        },
+        {
+          "id": "9f0d8e5c-4151-4744-9631-7cae89a56539",
+          "size": 1073741824,
+          "sha256": "043247425393ed10cb4bfb347a616596315ebb40afa54cafac8ea5db7c177c71"
+        }
+      ],
+      "limits": "No binary execution. Complete bytes/hash/entropy; strings/hex bounded to first 1 MiB; no deep sections/imports/decompiler claim."
+    },
+    "linux": {
+      "status": "passed",
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "timestamp": "2026-10-20T10:04:38.036693+00:00",
+      "binary_sha256": "86c894b1aee88f41d8205b6cab0aadab06f2c2aeaddcea500b9f6de0f1a2cc94",
+      "checks": [
+        "80 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "256 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "512 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "1024 MiB complete streaming copy; independent hashlib checks of original/managed bytes; explicit budget rejection; persisted metadata",
+        "Real largest-file Job Engine metadata analysis persists after process restart; deep parsing explicitly deferred",
+        "Actual Linux CLI SIGINT cancels running streaming copy with structured CANCELLED error and removes staging without new records"
+      ],
+      "commands": 50,
+      "files": [
+        {
+          "id": "17857140-8bc1-4bc4-b012-c2f8bfc0fa14",
+          "size": 83886080,
+          "sha256": "0608be97d0dd2ea3f82aed5e5b58ab420e86159b442f7c4d1615d534a87e2983"
+        },
+        {
+          "id": "3cf6776c-75e5-4230-ae53-4d08c5f6a413",
+          "size": 268435456,
+          "sha256": "f88f30fecc962465f6421803fdf1aaab29b4f36facdc1a8ed00a21a92ede085c"
+        },
+        {
+          "id": "c5b1e56b-a9d9-432d-a0df-e87cc63a204a",
+          "size": 536870912,
+          "sha256": "1a615e10cf7c28798ca353e8292666f20ce2663ec302830d6933f85c7c88f017"
+        },
+        {
+          "id": "52cfc004-138b-464d-93a8-66377583f7da",
+          "size": 1073741824,
+          "sha256": "90142e08dc6f38e97e29126e47d8dab2475c555a1446f0b0300a6a2752517efc"
+        }
+      ],
+      "limits": "No binary execution. Complete bytes/hash/entropy; strings/hex bounded to first 1 MiB; no deep sections/imports/decompiler claim."
+    }
+  },
+  "linux_source_files_matching": 71,
+  "cloud_ai": "MOCK_VERIFIED only; deterministic owned-loopback fixtures, no live provider claim",
+  "linux_desktop": "UNVERIFIED",
+  "signed_updater": "NOT_IMPLEMENTED",
+  "installer_lifecycle": "UNVERIFIED",
+  "dependency_gate": "BLOCKED; prior glib unsound/maintenance assessment not rerun in this slice",
+  "managed_mcp_runtime_selection": {
+    "platform": "Windows",
+    "proof": "artifacts/mcp-cli-research-negative-20261020/negative-results.json",
+    "commands": 37,
+    "linux_retest": "not claimed"
+  },
+  "large_files": {
+    "runtime_verified_mib": [
+      80,
+      256,
+      512,
+      1024
+    ],
+    "default_import_mib": 8192,
+    "policy_ceiling_mib": 65536,
+    "deep_parser_mib": 64,
+    "large_prefix_mib": 1,
+    "copy_chunk_kib": 256,
+    "larger_sizes": "UNVERIFIED",
+    "limits": [
+      "No crash-staging GC/resume",
+      "No complete large-file deep parsing/YARA/decompiler",
+      "No OS sandbox or general disk quota",
+      "Windows custom-workspace ACL review remains"
+    ]
+  },
+  "visual_inspection": {
+    "opened_images": [
+      "artifacts/large-import-native-1792506310716/large-import-light-1280.png",
+      "artifacts/research-session-1792506323444/research-dark-1366.png",
+      "artifacts/research-session-1792506323444/research-reconx-1920.png",
+      "artifacts/ux-after-1792506362426/AI-Workspace-dark-1366.png",
+      "artifacts/ux-after-1792506362426/Targets---Scope-light-1280.png"
+    ],
+    "all_images_manually_inspected": false,
+    "reference_user_screenshots": "not attached; no pixel comparison claimed",
+    "physical_windows_dpi": "not changed; raster scaling emulated by CDP only"
+  },
+  "diagnostics_retained": [
+    {
+      "log": "artifacts/large-import-ui-tests-verified.log",
+      "issue": "Worker startup timeouts under concurrent heavy links; zero tests ran; maxWorkers=2 bounded rerun and final 39-test runs passed"
+    },
+    {
+      "log": "artifacts/large-import-rust-raced-diagnostic.log",
+      "issue": "One newly edited assertion raced an older compilation; fresh full verified log supersedes this diagnostic"
+    },
+    {
+      "log": "artifacts/recovery-combined-native-research.log",
+      "issue": "Immediate UI assertion preceded asynchronous CLI snapshot refresh; test now waits for actual persisted and displayed target ID; current native suite passes"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "artifacts/windows-product-recovery-20261020-ux-final/reconx.exe",
+      "bytes": 31155200,
+      "sha256": "d97a2df2e952539f9bd97e9061000495a2a3c55334eef5d97300a3c52acc2695",
+      "signature": "NotSigned"
+    },
+    {
+      "path": "artifacts/windows-product-recovery-20261020-ux-final/reconx-desktop.exe",
+      "bytes": 38951936,
+      "sha256": "d749da216eaa0f299f4641b62de6c1b27be0cbeb66b2d78b7a16cff654b244ee",
+      "signature": "NotSigned"
+    },
+    {
+      "path": "artifacts/linux-cli-large-import-final-20261020/reconx",
+      "bytes": 39238648,
+      "sha256": "86c894b1aee88f41d8205b6cab0aadab06f2c2aeaddcea500b9f6de0f1a2cc94",
+      "signature": "not applicable (ELF)"
+    }
+  ],
+  "frontend_asset": "/assets/index-CzZNeje6.js",
+  "embedded_asset_match": "Asserted on both native launches by research/large/UX harnesses against this exact Vite output",
+  "tool_versions": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "node": "v24.15.0"
+  },
+  "credential_pattern_scans": {
+    "source": {
+      "scope": "Changed/untracked Git source files only; no history or user data scan",
+      "files": 63,
+      "hits": []
+    },
+    "executables_and_frontend": {
+      "timestamp": "2026-10-20T14:26:25.301808+00:00",
+      "scope": "Only the listed final executables and current compiled frontend asset; ASCII credential-pattern scan, not an exhaustive secret audit or history scan",
+      "files": [
+        {
+          "path": "artifacts\\windows-product-recovery-20261020-ux-final\\reconx.exe",
+          "bytes": 31155200,
+          "sha256": "d97a2df2e952539f9bd97e9061000495a2a3c55334eef5d97300a3c52acc2695",
+          "matching_pattern_types": []
+        },
+        {
+          "path": "artifacts\\windows-product-recovery-20261020-ux-final\\reconx-desktop.exe",
+          "bytes": 38951936,
+          "sha256": "d749da216eaa0f299f4641b62de6c1b27be0cbeb66b2d78b7a16cff654b244ee",
+          "matching_pattern_types": []
+        },
+        {
+          "path": "artifacts\\linux-cli-large-import-final-20261020\\reconx",
+          "bytes": 39238648,
+          "sha256": "86c894b1aee88f41d8205b6cab0aadab06f2c2aeaddcea500b9f6de0f1a2cc94",
+          "matching_pattern_types": []
+        },
+        {
+          "path": "apps\\desktop\\dist\\assets\\index-CzZNeje6.js",
+          "bytes": 512711,
+          "sha256": "2f2c14e45989926048469c788195e0a56495e395275cd08e321a014c570d0a04",
+          "matching_pattern_types": []
+        }
+      ]
+    },
+    "limits": "Pattern scans only; not proof of clean Git history, old artifacts or user workspace; no credential revocation claim"
+  },
+  "test_ledger": [
+    {
+      "test": "rustfmt",
+      "platform": "Windows",
+      "command": "cargo fmt --all -- --check",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:05:21.352112+00:00",
+      "evidence": "artifacts/recovery-combined-fmt.log"
+    },
+    {
+      "test": "clippy",
+      "platform": "Windows",
+      "command": "cargo clippy --locked --workspace --all-targets -j2 -- -D warnings",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T09:57:41.907314+00:00",
+      "evidence": "artifacts/large-import-clippy-verified.log"
+    },
+    {
+      "test": "rust-tests",
+      "platform": "Windows",
+      "command": "cargo test --locked --workspace -j2",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T10:08:36.851348+00:00",
+      "evidence": "artifacts/large-import-rust-verified.log"
+    },
+    {
+      "test": "frontend",
+      "platform": "Windows",
+      "command": "npm test (apps/desktop)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:21:30.136633+00:00",
+      "evidence": "artifacts/recovery-final-frontend-tests.log"
+    },
+    {
+      "test": "typescript-vite",
+      "platform": "Windows",
+      "command": "npm run build (apps/desktop)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:21:17.097845+00:00",
+      "evidence": "artifacts/recovery-final-frontend-build.log"
+    },
+    {
+      "test": "release-build",
+      "platform": "Windows",
+      "command": "cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:24:24.310761+00:00",
+      "evidence": "artifacts/product-recovery-final-assets.log"
+    },
+    {
+      "test": "linux-core-cli",
+      "platform": "Parrot/WSL2",
+      "command": "wsl.exe -d Parrot -- bash /mnt/d/ReconXAI/artifacts/large-import-linux-final.sh",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T09:58:50.945977+00:00",
+      "evidence": "artifacts/large-import-linux-final.log"
+    },
+    {
+      "test": "research-cli",
+      "platform": "Windows",
+      "command": "python scripts/research_session_smoke.py --binary artifacts/windows-large-import-final-candidate-20261020/reconx.exe --sample artifacts/recovery-benign.exe --output artifacts/research-cli-windows-combined-20261020",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:04:16.205143+00:00",
+      "evidence": "artifacts/recovery-combined-cli-windows.log"
+    },
+    {
+      "test": "research-cli",
+      "platform": "Parrot/WSL2",
+      "command": "wsl.exe -d Parrot -- bash -lc \"python3 /mnt/d/ReconXAI/scripts/research_session_smoke.py --binary /mnt/d/ReconXAI/artifacts/linux-cli-large-import-final-20261020/reconx --sample /usr/bin/true --output /var/tmp/reconx-research-cli-combined-20261020\"",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:04:48.031809+00:00",
+      "evidence": "artifacts/recovery-combined-cli-linux.log"
+    },
+    {
+      "test": "large-import-cli",
+      "platform": "Windows",
+      "command": "python scripts/large_import_smoke.py --binary artifacts/windows-large-import-final-candidate-20261020/reconx.exe --sample artifacts/recovery-benign.exe --output artifacts/large-import-cli-windows-20261020 --include-gib --resume --reanalyze",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T10:06:52.082277+00:00",
+      "evidence": "artifacts/large-import-cli-windows-final.log"
+    },
+    {
+      "test": "large-import-cli",
+      "platform": "Parrot/WSL2",
+      "command": "python3 scripts/large_import_smoke.py --binary artifacts/linux-cli-large-import-final-20261020/reconx --sample /usr/bin/true --output /var/tmp/large-import-cli-linux-20261020 --include-gib --resume --reanalyze (Linux paths)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T10:04:28.701893+00:00",
+      "evidence": "artifacts/large-import-cli-linux-verified.log"
+    },
+    {
+      "test": "upgrade-cli",
+      "platform": "Windows",
+      "command": "python scripts/research_upgrade_smoke.py --old-binary artifacts/windows-mcp-candidate-1792415560/reconx.exe --binary artifacts/windows-recovery-verified-candidate-20261020/reconx.exe --sample artifacts/recovery-benign.exe --output artifacts/research-upgrade-windows-20261020",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:12:40.824431+00:00",
+      "evidence": "artifacts/recovery-upgrade-windows.log"
+    },
+    {
+      "test": "upgrade-cli",
+      "platform": "Parrot/WSL2",
+      "command": "python3 scripts/research_upgrade_smoke.py --old-binary artifacts/linux-cli-mcp-1792415142/reconx --binary artifacts/linux-cli-large-import-final-20261020/reconx --sample /usr/bin/true --output /var/tmp/reconx-research-upgrade-linux-20261020 (Linux paths)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:13:07.558937+00:00",
+      "evidence": "artifacts/recovery-upgrade-linux.log"
+    },
+    {
+      "test": "native-large",
+      "platform": "Windows/WebView2",
+      "command": "node tests/e2e/large-import.mjs (explicit release pair; RECONX_VERIFY_ASSET=1)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:25:22.430918+00:00",
+      "evidence": "artifacts/product-recovery-native-large.log"
+    },
+    {
+      "test": "native-research",
+      "platform": "Windows/WebView2",
+      "command": "node tests/e2e/research-session.mjs (explicit release pair; RECONX_VERIFY_ASSET=1)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:25:37.524254+00:00",
+      "evidence": "artifacts/product-recovery-native-research.log"
+    },
+    {
+      "test": "native-http",
+      "platform": "Windows/WebView2",
+      "command": "node tests/e2e/http-replay.mjs (explicit release pair; RECONX_VERIFY_ASSET=1)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:25:48.786651+00:00",
+      "evidence": "artifacts/product-recovery-native-http.log"
+    },
+    {
+      "test": "native-outputs",
+      "platform": "Windows/WebView2",
+      "command": "node tests/e2e/outputs.mjs (explicit release pair; RECONX_VERIFY_ASSET=1)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:26:01.448407+00:00",
+      "evidence": "artifacts/product-recovery-native-outputs.log"
+    },
+    {
+      "test": "native-ux",
+      "platform": "Windows/WebView2",
+      "command": "node tests/e2e/ux.mjs after (explicit release pair; RECONX_VERIFY_ASSET=1)",
+      "status": "passed",
+      "exit_code": 0,
+      "timestamp": "2026-10-20T14:27:11.254125+00:00",
+      "evidence": "artifacts/product-recovery-native-ux.log"
+    }
+  ],
+  "source_snapshot": {
+    "path": "artifacts\\product-recovery-source-snapshot.json",
+    "sha256": "caaa5f990a9c3ed7ddc9da25235fadcea0b6b6618d6bce7e8f0e694b57a60805",
+    "scope": "313 local source/docs/manifests; generated verification records excluded to avoid a self-reference"
+  }
+}

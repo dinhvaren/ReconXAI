@@ -19,7 +19,9 @@
     "test:local-inventory": "node ../../tests/e2e/recon-local.mjs",
     "test:ai-providers": "node ../../tests/e2e/ai-providers.mjs",
     "test:http-workspace": "node ../../tests/e2e/http-workspace.mjs",
-    "test:http-replay": "node ../../tests/e2e/http-replay.mjs"
+    "test:http-replay": "node ../../tests/e2e/http-replay.mjs",
+    "test:research": "node ../../tests/e2e/research-session.mjs",
+    "test:large-import": "node ../../tests/e2e/large-import.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.3",

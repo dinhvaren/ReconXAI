@@ -5,6 +5,12 @@ import { useJobEvents, type AnalysisJob } from "../research";
 import { Heading, Modal, type Perform } from "../components/ui";
 import { EmptyState } from "../components/controls";
 import JobHistory from "../components/JobHistory";
+import StartResearchButton from "../components/StartResearchButton";
+import {
+  useWorkspace,
+  useWorkspaceProject,
+  useWorkspaceTarget,
+} from "../workspace";
 interface Plan {
   target_id: string;
   project_id: string;
@@ -47,10 +53,11 @@ export default function ReconPage({
   onAddTarget: () => void;
   navigate: (page: string, project?: string) => void;
 }) {
-  const [project, setProject] = useState(
+  const workspace = useWorkspace();
+  const [project, setProject] = useWorkspaceProject(
       projectId ?? data.projects[0]?.id ?? "",
     ),
-    [target, setTarget] = useState(initialTarget ?? "");
+    [target, setTarget] = useWorkspaceTarget(initialTarget ?? "");
   const [assets, setAssets] = useState<Asset[]>([]),
     [jobs, setJobs] = useState<AnalysisJob[]>([]),
     [plan, setPlan] = useState<Plan | null>(null),
@@ -85,6 +92,7 @@ export default function ReconPage({
     void load().catch((e) => setError(errorText(e)));
   }, [load, data.audit[0]?.id]);
   useEffect(() => {
+    if (workspace) return;
     if (projectId) setProject(projectId);
     setTarget(initialTarget ?? "");
   }, [projectId, initialTarget]);
@@ -115,11 +123,10 @@ export default function ReconPage({
         title="Reconnaissance"
         description="Plan and review an owned local HTTP observation."
         action={
-          target ? (
-            <Button className="button primary" onClick={onAddTarget}>
-              + Add Target
-            </Button>
-          ) : undefined
+          <div className="inline-actions">
+            <StartResearchButton />
+            {!target && <Button onClick={onAddTarget}>Add Target</Button>}
+          </div>
         }
       />
       {error && <p role="alert">{error}</p>}
@@ -133,7 +140,6 @@ export default function ReconPage({
               value={project}
               onChange={(e) => {
                 setProject(e.target.value);
-                setTarget("");
               }}
             >
               <option value="">Choose project</option>

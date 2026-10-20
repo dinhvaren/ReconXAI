@@ -1,6 +1,8 @@
 import { Button } from "../components/controls";
+import { useWorkspace, useWorkspaceProject } from "../workspace";
+import StartResearchButton from "../components/StartResearchButton";
 import { useJobEvents } from "../research";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import {
   targetKinds,
@@ -34,7 +36,10 @@ export default function TargetsPage({
   const [targets, setTargets] = useState<Target[]>([]);
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("");
-  const [filterProject, setFilterProject] = useState(projectId ?? "");
+  const workspace = useWorkspace();
+  const [filterProject, setFilterProject] = useWorkspaceProject(
+    projectId ?? "",
+  );
   const [selected, setSelected] = useState<Target | null>(null);
   const [scope, setScope] = useState<ScopeDecision | null>(null);
   const [candidate, setCandidate] = useState("");
@@ -43,24 +48,41 @@ export default function TargetsPage({
   const [remove, setRemove] = useState<Target | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const loadVersion = useRef(0);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     setLoading(true);
     try {
       const rows = await request<Target[]>("targets_list", {
         project: filterProject || null,
       });
+      if (version !== loadVersion.current) return;
       setTargets(rows);
       setSelected((s) => rows.find((t) => t.id === s?.id) ?? null);
       setError("");
     } catch (e) {
-      setError(errorText(e));
+      if (version === loadVersion.current) setError(errorText(e));
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
   }, [filterProject]);
   useEffect(() => {
-    setFilterProject(projectId ?? "");
+    if (!workspace) setFilterProject(projectId ?? "");
   }, [projectId]);
+  useEffect(() => {
+    if (workspace)
+      setSelected(
+        targets.find(
+          (t) =>
+            t.id === workspace.selection.target_id &&
+            t.project_id === workspace.selection.project_id,
+        ) ?? null,
+      );
+  }, [
+    workspace?.selection.target_id,
+    workspace?.selection.project_id,
+    targets,
+  ]);
   useEffect(() => {
     void load();
   }, [load, data.audit[0]?.id]);
@@ -221,7 +243,13 @@ export default function TargetsPage({
                     <td>
                       <Button
                         className="text-button target-name"
-                        onClick={() => setSelected(t)}
+                        onClick={() => {
+                          setSelected(t);
+                          if (workspace)
+                            void workspace
+                              .select(t.project_id, t.id)
+                              .catch(() => {});
+                        }}
                       >
                         {t.name}
                       </Button>
@@ -272,6 +300,10 @@ export default function TargetsPage({
         <section className="panel target-details">
           <div className="panel-heading">
             <h2>{selected.name}</h2>
+            <StartResearchButton
+              projectId={selected.project_id}
+              targetId={selected.id}
+            />
             <Button className="text-button" onClick={() => setSelected(null)}>
               Close details
             </Button>

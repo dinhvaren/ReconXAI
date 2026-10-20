@@ -299,7 +299,17 @@ fn invalid_oversized_and_missing_files_do_not_create_import_records() {
         .set_len(64 * 1024 * 1024 + 1)
         .unwrap();
     assert_eq!(
-        core.import_file(&p.id, &oversized, true).unwrap_err().code,
+        core.import_file_with_progress(
+            &p.id,
+            &oversized,
+            true,
+            reconx_core::FileImportLimits {
+                max_bytes: 64 * 1024 * 1024
+            },
+            |_| Ok(())
+        )
+        .unwrap_err()
+        .code,
         "INPUT_LIMIT"
     );
     assert_eq!(

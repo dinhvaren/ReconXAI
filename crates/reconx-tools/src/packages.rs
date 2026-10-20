@@ -335,7 +335,7 @@ fn compatible_node(version: &str) -> bool {
         .and_then(|s| s.parse::<u32>().ok())
         .is_some_and(|v| v >= 24)
 }
-fn free_space(path: &Path) -> Result<u64> {
+pub fn free_space(path: &Path) -> Result<u64> {
     #[cfg(windows)]
     {
         use std::os::windows::ffi::OsStrExt;

@@ -42,9 +42,13 @@ host/path component and URL-origin boundaries are checked. Local analysis requir
 recorded permission, matching immutable import source identity and an active project.
 Workers recheck policy/cancellation at stage boundaries. No mode executes samples
 or unrestricted shell strings/scanners. Reviewed AI plans can queue only typed
-local-file jobs. A 64 MiB input limit, output cardinality
+local-file jobs. Streaming ingestion uses a separate configurable disk budget;
+the deep parser retains a 64 MiB input limit. Bounded prefixes, output cardinality
 limits, ZIP directory checks and panic containment defend parser entry points.
-These controls are not an OS process sandbox.
+These controls are not an OS process sandbox. Import cancellation removes incomplete
+staging during normal unwinding; forced process termination can leave private
+staging files. Automatic crash-staging cleanup and workspace disk quotas remain
+unimplemented. Complete published blobs are conservatively retained on later errors.
 
 Managed sample/result integrity is checked with SHA-256. Raw strings and hex are
 kept in private local artifact files, not ordinary database configuration. These

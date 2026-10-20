@@ -1,4 +1,9 @@
 import { Button } from "../components/controls";
+import {
+  useWorkspaceProject,
+  useWorkspaceTarget,
+  useWorkspace,
+} from "../workspace";
 import { useCallback, useEffect, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import {
@@ -25,16 +30,32 @@ export default function JobsPage({
   onOpenFile: (id: string, project: string) => void;
 }) {
   const [jobs, setJobs] = useState<AnalysisJob[]>([]);
+  const workspace = useWorkspace();
   const [files, setFiles] = useState<ImportedFile[]>([]);
   const [targets, setTargets] = useState<Target[]>([]);
   const [status, setStatus] = useState("");
-  const [project, setProject] = useState("");
+  const [project, setProject] = useWorkspaceProject("");
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<JobKind>("local_static_binary");
   const [fileId, setFileId] = useState("");
-  const [targetId, setTargetId] = useState("");
+  const [targetId, setTargetId] = useWorkspaceTarget("");
   const [timeout, setTimeoutSeconds] = useState(60);
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (!workspace) return;
+    const target = workspace.selection.target_id;
+    setFileId((previous) =>
+      files.some(
+        (f) =>
+          f.id === previous &&
+          f.target_id === target &&
+          f.project_id === project,
+      )
+        ? previous
+        : (files.find((f) => f.target_id === target && f.project_id === project)
+            ?.id ?? ""),
+    );
+  }, [project, workspace?.selection.target_id, files]);
   const load = useCallback(async () => {
     try {
       const [j, f, t] = await Promise.all([
@@ -124,14 +145,23 @@ export default function JobsPage({
                 required
                 aria-label="Job target"
                 value={targetId}
-                onChange={(e) => setTargetId(e.target.value)}
+                onChange={(e) => {
+                  const target = targets.find((t) => t.id === e.target.value);
+                  if (workspace && target)
+                    void workspace
+                      .select(target.project_id, target.id)
+                      .catch(() => {});
+                  else setTargetId(e.target.value);
+                }}
               >
                 <option value="">Choose a target</option>
-                {targets.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
+                {targets
+                  .filter((t) => !project || t.project_id === project)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
               </select>
             </label>
           ) : (
@@ -141,14 +171,23 @@ export default function JobsPage({
                 required
                 aria-label="Job file"
                 value={fileId}
-                onChange={(e) => setFileId(e.target.value)}
+                onChange={(e) => {
+                  setFileId(e.target.value);
+                  const file = files.find((f) => f.id === e.target.value);
+                  if (workspace && file)
+                    void workspace
+                      .select(file.project_id, file.target_id)
+                      .catch(() => {});
+                }}
               >
                 <option value="">Choose an imported file</option>
-                {files.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
+                {files
+                  .filter((f) => !project || f.project_id === project)
+                  .map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
               </select>
             </label>
           )}

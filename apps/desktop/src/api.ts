@@ -81,6 +81,34 @@ export async function streamChat(
 export async function cancelStream(requestId: string): Promise<void> {
   return invoke("cancel_stream", { requestId });
 }
+export interface FileImportProgress {
+  stage: string;
+  completed: number;
+  total: number;
+}
+export async function streamImport<T>(
+  project: string,
+  path: string,
+  authorized: boolean,
+  folder: boolean,
+  maxBytes: number,
+  requestId: string,
+  onProgress: (p: FileImportProgress) => void,
+): Promise<T> {
+  const updates = new Channel<FileImportProgress>();
+  updates.onmessage = onProgress;
+  return invoke("import_file_stream", {
+    input: {
+      project,
+      path,
+      authorized,
+      folder,
+      limits: { max_bytes: maxBytes },
+    },
+    requestId,
+    updates,
+  });
+}
 export interface ToolManifest {
   id: string;
   name: string;

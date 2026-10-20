@@ -29,7 +29,7 @@ export default function TargetDialog({
   projectId?: string;
   initialKind?: TargetKind;
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (target: Target) => Promise<void>;
 }) {
   const [draft, setDraft] = useState<TargetInput>({
     project_id: target?.project_id ?? projectId ?? projects[0]?.id ?? "",
@@ -121,11 +121,14 @@ export default function TargetDialog({
               allowed_scope: lines(allow),
               excluded_scope: lines(exclude),
             };
-            await request(target ? "target_update" : "target_create", {
-              ...(target ? { id: target.id } : {}),
-              input,
-            });
-            await onSaved();
+            const saved = await request<Target>(
+              target ? "target_update" : "target_create",
+              {
+                ...(target ? { id: target.id } : {}),
+                input,
+              },
+            );
+            await onSaved(saved);
             onClose();
           } catch (e) {
             setError(errorText(e));

@@ -2,7 +2,7 @@ import { chromium } from "../../apps/desktop/node_modules/playwright/index.mjs";
 import { createServer } from "node:net";
 import { spawn, execFile, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
@@ -73,6 +73,17 @@ async function launch() {
   await page
     .getByRole("heading", { name: "Workspace overview", exact: true })
     .waitFor();
+  if (process.env.RECONX_VERIFY_ASSET === "1") {
+    const html = await readFile(
+      path.join(root, "apps/desktop/dist/index.html"),
+      "utf8",
+    );
+    assert.equal(
+      await page.locator('script[type="module"][src]').getAttribute("src"),
+      html.match(/src="([^"]+\.js)"/)[1],
+      "Native UX verification must use the current embedded frontend",
+    );
+  }
   await page.emulateMedia({ reducedMotion: "reduce" });
 }
 async function stop() {
@@ -161,7 +172,18 @@ try {
       "Tool Manager",
       "Settings",
     ];
-    if (phase !== "before") modules.push("AI Providers");
+    if (phase !== "before")
+      modules.push(
+        "Projects",
+        "Targets & Scope",
+        "AI Research",
+        "AI Providers",
+        "AI Workspace",
+        "Workflows",
+        "Findings",
+        "Evidence",
+        "Reports",
+      );
     if (
       phase !== "before" &&
       (await page
@@ -236,7 +258,11 @@ try {
           assert.equal(measured.themeButtons, 1);
           assert.equal(measured.railWidth, 48, `Compact rail in ${theme}`);
           for (const button of measured.buttons)
-            if (button.disabled) assert(button.reason, `${module}: disabled action has no explanation: ${button.label}`);
+            if (button.disabled)
+              assert(
+                button.reason,
+                `${module}: disabled action has no explanation: ${button.label}`,
+              );
           for (const button of measured.buttons)
             assert(
               [30, 34, 38].some((size) => Math.abs(button.height - size) < 1),

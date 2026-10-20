@@ -1,6 +1,6 @@
 # Targets and local binary analysis
 
-Both clients use shared Core services, the existing database and migrations 002/003.
+Both clients use shared Core services and the existing database, currently schema 017.
 No provider configuration or project reset is needed.
 
 ## Targets
@@ -66,11 +66,19 @@ entropy, ASCII and anchored UTF-16 LE strings. Architecture, entry point,
 sections, segments and imports/exports are shown when available. Comparison is
 byte/section/import comparison, not semantic patch analysis. No decompiler exists.
 
-Limits: 64 MiB/sample; 4096 sections/imports/exports/package entries; 4000 sampled
+Import now uses streaming copy/hash and a configurable budget (8 GiB default,
+64 GiB policy ceiling; actual fixtures verified through 1 GiB). The deep parser,
+byte comparison and fixed YARA-X adapter retain separate 64 MiB budgets. Large-file
+metadata jobs stream the full hash/entropy and inspect only the first 1 MiB for
+strings/hex, with explicit limited-analysis warnings and unknown section counts.
+See [STREAMING_FILE_IMPORT.md](STREAMING_FILE_IMPORT.md).
+Parser limits: 4096 sections/imports/exports/package entries; 4000 sampled
 strings of at most 256 characters; 100 direct folder entries; 512-byte hex preview.
 ASCII sampling reserves capacity for UTF-16 and is not exhaustive. UI shows the
 first 200 matches; search narrows them, CLI returns all retained rows. ZIP64,
-recursive import, disassembly, YARA, Ghidra and AI artifact transmission are pending.
+recursive import, disassembly and Ghidra remain unavailable. Fixed YARA-X signatures
+require the verified managed tool and a file within its budget. Selected-artifact
+AI review uses an exact preview and explicit destination consent; no automatic upload.
 Section entropy scans share a 64 MiB byte budget; overlapping ranges cannot amplify
 work without limit. Skipped section entropy is reported as unavailable.
 
@@ -94,7 +102,8 @@ The harness uses isolated Tauri/WebView2 and CLI children with one temporary
 database. Windows helper automation selects owned PE/JSON through real native
 dialogs. Hidden test windows retain the real renderer/IPC/dialogs and prevent
 physical input racing automation. Records/screenshots live in ignored artifacts.
-Linux runtime and installers remain unverified.
+Linux Core/CLI streaming import, analysis, cancellation and persistence have actual
+Parrot/WSL acceptance. Linux Desktop and installer lifecycle remain unverified.
 
 Durable queue, Job Center, exact result retrieval, local notes and explicit AI
 artifact consent are documented in JOB_ENGINE.md. Native job acceptance can be run

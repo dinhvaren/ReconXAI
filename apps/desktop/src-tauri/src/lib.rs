@@ -16,6 +16,93 @@ use zeroize::Zeroizing;
 struct ActiveStreams(Mutex<HashMap<String, watch::Sender<bool>>>);
 struct ActiveJobs(Mutex<Option<JobEngine>>);
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StreamingImportInput {
+    project: String,
+    path: String,
+    authorized: bool,
+    folder: bool,
+    limits: reconx_core::FileImportLimits,
+}
+#[tauri::command]
+async fn import_file_stream(
+    core: tauri::State<'_, Core>,
+    active: tauri::State<'_, ActiveStreams>,
+    input: StreamingImportInput,
+    request_id: String,
+    updates: tauri::ipc::Channel<reconx_core::FileImportProgress>,
+) -> Result<Value> {
+    uuid::Uuid::parse_str(&request_id)
+        .map_err(|_| AppError::new("INVALID_INPUT", "Import request ID must be a UUID"))?;
+    let key = format!("import:{request_id}");
+    let (sender, receiver) = watch::channel(false);
+    {
+        let mut running = active
+            .0
+            .lock()
+            .map_err(|_| AppError::new("WORKER_ERROR", "Cannot access import registry"))?;
+        if running.contains_key(&key)
+            || running.keys().filter(|k| k.starts_with("import:")).count() >= 2
+        {
+            return Err(AppError::new(
+                "IMPORT_BUSY",
+                "At most two streaming imports may run",
+            ));
+        }
+        running.insert(key.clone(), sender);
+    }
+    let core = core.inner().clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let mut last = std::time::Instant::now();
+        let mut stage = String::new();
+        let update = |progress: reconx_core::FileImportProgress| {
+            if *receiver.borrow() {
+                return Err(AppError::new(
+                    "CANCELLED",
+                    "Import cancelled; completed files are retained",
+                ));
+            }
+            if progress.stage == stage
+                && progress.completed != progress.total
+                && last.elapsed() < std::time::Duration::from_millis(50)
+            {
+                return Ok(());
+            }
+            stage = progress.stage.clone();
+            last = std::time::Instant::now();
+            updates
+                .send(progress)
+                .map_err(|_| AppError::new("CANCELLED", "Import view closed before completion"))
+        };
+        if input.folder {
+            value(core.import_folder_with_progress(
+                &input.project,
+                std::path::Path::new(&input.path),
+                input.authorized,
+                input.limits,
+                update,
+            )?)
+        } else {
+            value(core.import_file_with_progress(
+                &input.project,
+                std::path::Path::new(&input.path),
+                input.authorized,
+                input.limits,
+                update,
+            )?)
+        }
+    })
+    .await
+    .map_err(|_| AppError::new("WORKER_ERROR", "Streaming file importer failed"));
+    active
+        .0
+        .lock()
+        .map_err(|_| AppError::new("WORKER_ERROR", "Cannot access import registry"))?
+        .remove(&key);
+    result?
+}
+
 #[tauri::command]
 async fn install_tool(
     core: tauri::State<'_, Core>,
@@ -105,6 +192,47 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    WorkspaceSelection,
+    WorkspaceSelect {
+        project: Option<String>,
+        target: Option<String>,
+        revision: i64,
+    },
+    ResearchPreview {
+        input: reconx_core::ResearchRequest,
+    },
+    ResearchPlan {
+        review: reconx_core::ResearchReview,
+    },
+    ResearchList {
+        project: String,
+    },
+    ResearchShow {
+        id: String,
+    },
+    ResearchApprove {
+        id: String,
+        fingerprint: String,
+        approved: bool,
+        network_approved: bool,
+    },
+    ResearchCancel {
+        id: String,
+    },
+    ResearchEvidencePreview {
+        id: String,
+    },
+    ResearchInterpret {
+        review: reconx_core::ResearchInterpretReview,
+    },
+    ResearchFinding {
+        id: String,
+        title: String,
+        details: String,
+    },
+    ResearchReport {
+        id: String,
+    },
     ManagedMcpPlan {
         id: String,
         version: String,
@@ -581,6 +709,27 @@ fn value(item: impl serde::Serialize) -> Result<Value> {
 }
 fn local(core: Core, request: Request) -> Result<Value> {
     match request {
+        Request::WorkspaceSelection => value(core.workspace_selection()?),
+        Request::WorkspaceSelect {
+            project,
+            target,
+            revision,
+        } => value(core.select_workspace(project.as_deref(), target.as_deref(), revision)?),
+        Request::ResearchPreview { input } => value(core.research_preview(input)?),
+        Request::ResearchList { project } => value(core.research_list(&project)?),
+        Request::ResearchShow { id } => value(core.research_session(&id)?),
+        Request::ResearchApprove {
+            id,
+            fingerprint,
+            approved,
+            network_approved,
+        } => value(core.research_approve(&id, &fingerprint, approved, network_approved)?),
+        Request::ResearchCancel { id } => value(core.research_cancel(&id)?),
+        Request::ResearchEvidencePreview { id } => value(core.research_evidence_preview(&id)?),
+        Request::ResearchFinding { id, title, details } => {
+            value(core.research_finding(&id, &title, &details)?)
+        }
+        Request::ResearchReport { id } => value(core.research_report(&id)?),
         Request::AiCatalog => value(core.ai_catalog()),
         Request::AiManager => value(core.ai_manager()?),
         Request::AiRoutingSave { routes } => {
@@ -960,6 +1109,8 @@ async fn service(core: tauri::State<'_, Core>, request: Request) -> Result<Value
         Request::McpState { id } => value(core.mcp_state(&id).await),
         Request::JobInterpret { review } => value(core.interpret_job(review).await?),
         Request::PlanCreate { review } => value(core.plan_local_tools(review).await?),
+        Request::ResearchPlan { review } => value(core.research_plan(review).await?),
+        Request::ResearchInterpret { review } => value(core.research_interpret(review).await?),
         Request::FileExplain { review } => value(core.explain_file_artifact(review).await?),
         Request::AiConnectionTest { id } => value(core.test_ai_connection(&id).await?),
         Request::AiModelsRefresh { id } => value(core.refresh_ai_models(&id).await?),
@@ -1092,6 +1243,7 @@ pub fn run() {
             stream_chat,
             cancel_stream,
             install_tool,
+            import_file_stream,
             apply_window_theme
         ])
         .build(tauri::generate_context!())

@@ -1,10 +1,26 @@
 {
-  "date": "2026-10-19",
+  "date": "2026-10-20",
   "version": "0.1.0",
   "release_ready": false,
-  "source_base_revision": "0e496ed",
+  "source_base_revision": "b041b667d6c918ce0e22c91f1c65222a2fe91aa2",
   "evidence_is_local_not_bundled": true,
   "modules": [
+    {
+      "module": "AI Research",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "crates/reconx-core/src/research_sessions.rs",
+        "crates/reconx-storage/migrations/017_research_sessions.sql",
+        "apps/desktop/src/workspace.tsx",
+        "apps/desktop/src/pages/ResearchPage.tsx",
+        "apps/cli/src/main.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/product-recovery-current-verification.json",
+        "artifacts\\research-session-1792506323444\\results.json"
+      ],
+      "limitations": "Bounded local capabilities and separately approved loopback HEAD only. MOCK AI workflow, no live account claim; no DAG/pause/standing-auto or complete pentest."
+    },
     {
       "module": "Dashboard",
       "status": "RUNTIME_VERIFIED",
@@ -101,12 +117,15 @@
       "status": "PARTIAL",
       "source_references": [
         "apps/desktop/src/pages/ReversePage.tsx",
-        "crates/reconx-core/src/reverse.rs"
+        "crates/reconx-core/src/reverse.rs",
+        "crates/reconx-core/src/file_ingest.rs",
+        "tests/e2e/large-import.mjs"
       ],
       "runtime_evidence": [
-        "artifacts/security-current-verification.json"
+        "artifacts/product-recovery-current-verification.json",
+        "artifacts\\large-import-native-1792506310716\\results.json"
       ],
-      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+      "limitations": "Streaming import verified through 1 GiB; 8 GiB default/64 GiB configurable ceiling not fully runtime tested. Deep parsing/YARA/byte-diff remain 64 MiB; large metadata prefix-limited, no decompiler. No crash-staging GC."
     },
     {
       "module": "Mobile Security",
@@ -260,9 +279,10 @@
       "module": "Desktop UX",
       "status": "PARTIAL",
       "runtime_evidence": [
-        "artifacts/ux-extensions-current-verification.json"
+        "artifacts/product-recovery-current-verification.json",
+        "artifacts\\ux-after-1792506362426\\results.json"
       ],
-      "limitations": "Windows native 120 captures/three themes; Linux GUI and physical DPI unverified"
+      "limitations": "216 measured observations/18 pages/three themes/four resolutions plus shell keyboard/restart. Populated workflows, all modal/focus paths and physical DPI still incomplete; Linux GUI unverified."
     },
     {
       "module": "Extensions",
@@ -271,6 +291,21 @@
         "artifacts/ux-extensions-current-verification.json"
       ],
       "limitations": "First-party YARA-X native adapter runtime verified; official MCP registry/community updates/setup incomplete"
+    },
+    {
+      "module": "Large-file streaming ingestion",
+      "status": "RUNTIME_VERIFIED",
+      "source_references": [
+        "crates/reconx-core/src/file_ingest.rs",
+        "apps/desktop/src/pages/ReversePage.tsx",
+        "apps/cli/src/main.rs",
+        "crates/reconx-core/tests/large_import.rs"
+      ],
+      "runtime_evidence": [
+        "artifacts/product-recovery-current-verification.json",
+        "artifacts\\large-import-native-1792505626507\\results.json"
+      ],
+      "limitations": "Bounded import slice, actual fixture sizes through 1 GiB only; broad Reverse Engineering remains PARTIAL; docs/STREAMING_FILE_IMPORT.md"
     }
   ],
   "release_blockers": [
@@ -313,5 +348,21 @@
     "frontend_tests": 36,
     "linux_desktop": "UNVERIFIED",
     "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
-  }
+  },
+  "critical_recovery": {
+    "database_schema": 17,
+    "shared_context": "RUNTIME_VERIFIED",
+    "bounded_target_session": "RUNTIME_VERIFIED",
+    "large_file_import": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "full_workbench": "PARTIAL",
+    "evidence": "artifacts/product-recovery-current-verification.json",
+    "verified_sizes_mib": [
+      80,
+      256,
+      512,
+      1024
+    ],
+    "next_task": "Populated-workspace UX/context acceptance, then reviewed native HTTPX lifecycle and fixed approved local capability"
+  },
+  "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json"
 }

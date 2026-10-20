@@ -1,5 +1,6 @@
 import { Button } from "../components/controls";
-import { useCallback, useEffect, useState } from "react";
+import { useWorkspaceProject, useWorkspace } from "../workspace";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { selectPaths } from "../research";
 import { Heading, Modal, type Perform } from "../components/ui";
@@ -139,7 +140,8 @@ export default function RecordsPage({
   newFindingRequest?: number;
   onFindingRequestConsumed?: () => void;
 }) {
-  const [project, setProject] = useState(
+  const workspace = useWorkspace();
+  const [project, setProject] = useWorkspaceProject(
     projectId ?? data.projects[0]?.id ?? "",
   );
   const [evidence, setEvidence] = useState<Evidence[]>([]),
@@ -177,7 +179,10 @@ export default function RecordsPage({
     [report, setReport] = useState<ReportView | null>(null),
     [approved, setApproved] = useState(false),
     [format, setFormat] = useState("markdown");
+  const loadVersion = useRef(0);
+  const previousProject = useRef(project);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     if (!project) {
       setEvidence([]);
       setFindings([]);
@@ -189,6 +194,7 @@ export default function RecordsPage({
       request<Finding[]>("findings_list", { project }),
       request<Report[]>("reports_list", { project }),
     ]);
+    if (version !== loadVersion.current) return;
     setEvidence(e);
     setFindings(f);
     setReports(r);
@@ -201,7 +207,14 @@ export default function RecordsPage({
   }, [projectId]);
   const openFinding = (f: Finding | null) => {
     setEditing(f);
-    setDraft(f ? structuredClone(f.input) : initialFinding(project));
+    setDraft(
+      f
+        ? structuredClone(f.input)
+        : {
+            ...initialFinding(project),
+            target_id: workspace?.selection.target_id ?? null,
+          },
+    );
     setConfirm(false);
     setCvss("");
     setError("");
@@ -219,7 +232,14 @@ export default function RecordsPage({
     setCompareA("");
     setCompareB("");
     setJob("");
-    setEvTarget("");
+    setEvTarget(workspace?.selection.target_id ?? "");
+    if (previousProject.current !== project) {
+      setView(null);
+      setReport(null);
+      setFindingOpen(false);
+      setEvOpen(false);
+    }
+    previousProject.current = project;
   }, [project]);
   const act = (fn: () => Promise<unknown>, message: string) =>
     perform(async () => {

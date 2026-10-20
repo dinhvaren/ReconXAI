@@ -31,7 +31,7 @@ SQLite stores references and metadata. See RESEARCH_INPUTS.md for limits and rem
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
 
-Schema version is 012. Opening an existing workspace now checks its version with
+Schema version is 017. Opening an existing workspace checks its version with
 a read-only SQLite connection before enabling WAL, then rechecks under the write
 lock. Newer/corrupt files are rejected; additive upgrade backups and preservation
 tests remain in storage. This is not a complete workspace backup/restore feature;
@@ -51,7 +51,27 @@ rather than creating an inconsistent second execution. Local notes are independe
 of provider settings. Selected-artifact AI review binds consent to its exact preview
 and destination and has no implicit fallback. See JOB_ENGINE.md for limits/interfaces.
 
-Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The token system supports exactly Light/Dark/ReconX, native Segoe UI Variable Text, locally bundled Source Sans 3/IBM Plex Mono and the original DM Sans wordmark and original SVG assets without runtime font/image downloads. Selected project context is local presentation state; it does not send project data to AI or change CLI operations. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
+Desktop presentation uses a four-region shell in App.tsx. Grouped navigation and activity/shared controls live in src/components; Dashboard and existing business-bearing pages live in src/pages. The token system supports exactly Light/Dark/ReconX, native Segoe UI Variable Text, locally bundled Source Sans 3/IBM Plex Mono and the original DM Sans wordmark and original SVG assets without runtime font/image downloads. Active project/target IDs now live in SQLite, shared with CLI through the revision-checked WorkspaceProvider. Selection alone transmits no data to AI. Shared settings remain in SQLite. Search indexes existing project/provider metadata and routes; future module views expose no execution channel.
+
+## Target-bound sessions and streaming imports (schema 017)
+
+`research_sessions.rs` adds persisted typed plans and links to existing jobs,
+evidence, manual findings and report snapshots. It discovers actual compiled/local
+capabilities, validates strict capability-ID proposals, binds approval to current
+scope/model/settings and queues approved work atomically through `jobs.rs`.
+Metadata-only AI planning and evidence interpretation have separate consent steps.
+Owned-loopback HEAD needs additional explicit approval and displays its destination
+and limits. This is a bounded local workflow, not general autonomous pentesting or
+a DAG scheduler. See [AI_RESEARCH_SESSIONS.md](AI_RESEARCH_SESSIONS.md).
+
+`file_ingest.rs` streams path-based imports on blocking workers, hashes/copies in
+256 KiB chunks, checks disk space/source mutation, and atomically publishes complete
+artifacts with transactional target/file metadata. Import limits are separate from
+the 64 MiB deep-parser budget. Large metadata jobs stream full integrity/entropy,
+retain only a bounded prefix for strings/hex and explicitly defer deep structure.
+No sample bytes cross React/Tauri IPC. Native progress/cancellation and CLI use the
+same Core; file sizes use checked SQLite i64/u64 conversion. See
+[STREAMING_FILE_IMPORT.md](STREAMING_FILE_IMPORT.md), including crash-staging limits.
 
 Appearance is centralized in src/theme.tsx and shared ThemeMenu components. Saved appearance is read before the native window is shown. The core's transaction-scoped set_theme operation updates only that preference; Settings drafts exclude theme and use the central write queue. CSS roles cover the neutral Light/Dark palettes and preserved ReconX palette. Legacy system or missing preference migrates to reconx on open; new installations default to ReconX. No OS appearance listener is installed. See THEMES.md.
 

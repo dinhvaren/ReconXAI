@@ -1,4 +1,5 @@
 import { Button } from "../components/controls";
+import { useWorkspaceProject } from "../workspace";
 import { useCallback, useEffect, useState } from "react";
 import { request, type Snapshot } from "../api";
 import { Heading, Modal, type Perform } from "../components/ui";
@@ -86,7 +87,7 @@ export function McpPage({
   const [toolName, setToolName] = useState(""),
     [input, setInput] = useState("{}"),
     [preview, setPreview] = useState<Preview | null>(null);
-  const [project, setProject] = useState(projectId ?? ""),
+  const [project, setProject] = useWorkspaceProject(projectId ?? ""),
     [secret, setSecret] = useState(""),
     [secretName, setSecretName] = useState("bearer"),
     [loadError, setLoadError] = useState("");

@@ -1,6 +1,7 @@
 import type { Project, Snapshot, ToolInventory } from "../api";
 import { ActivityItem, Heading, Icon } from "../components/ui";
 import { Button, EmptyState, PanelHeader } from "../components/controls";
+import StartResearchButton from "../components/StartResearchButton";
 
 export default function Dashboard({
   data,
@@ -30,11 +31,14 @@ export default function Dashboard({
           "Your local research projects and recent work."
         }
         action={
-          currentProject ? (
-            <Button variant="primary" onClick={onAddTarget}>
-              <Icon name="plus" />
-              Add Target
-            </Button>
+          projects.length > 0 ? (
+            <div className="inline-actions">
+              <StartResearchButton />
+              <Button onClick={onAddTarget}>
+                <Icon name="plus" />
+                Add Target
+              </Button>
+            </div>
           ) : undefined
         }
       />

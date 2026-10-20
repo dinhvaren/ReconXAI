@@ -1,10 +1,19 @@
 import { Button } from "../components/controls";
 import JobHistory from "../components/JobHistory";
 import FileResearchPanel from "../components/FileResearchPanel";
+import StartResearchButton from "../components/StartResearchButton";
+import { useWorkspace } from "../workspace";
 import { useJobEvents, activeJob as jobIsActive } from "../research";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { request, errorText, type Snapshot } from "../api";
+import {
+  request,
+  streamImport,
+  cancelStream,
+  errorText,
+  type Snapshot,
+  type FileImportProgress,
+} from "../api";
 import {
   selectPaths,
   type ImportedFile,
@@ -62,6 +71,7 @@ export default function ReversePage({
   requestImport?: number;
 }) {
   const [files, setFiles] = useState<ImportedFile[]>([]);
+  const workspace = useWorkspace();
   const [jobs, setJobs] = useState<AnalysisJob[]>([]);
   const [selected, setSelected] = useState(initialFileId ?? "");
   const [record, setRecord] = useState<AnalysisRecord | null>(null);
@@ -76,15 +86,49 @@ export default function ReversePage({
   const [compareId, setCompareId] = useState("");
   const [chooseImport, setChooseImport] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [importProgress, setImportProgress] =
+    useState<FileImportProgress | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [limitMiB, setLimitMiB] = useState(8192);
+  const activeImport = useRef<string | null>(null),
+    importCancelled = useRef(false);
+  const currentProject = useRef(projectId);
+  currentProject.current = projectId;
+  useEffect(() => {
+    currentProject.current = projectId;
+    return () => {
+      currentProject.current = undefined;
+      importCancelled.current = true;
+      if (activeImport.current?.startsWith("import:"))
+        void cancelStream(activeImport.current).catch(() => {});
+    };
+  }, [projectId]);
+  const loadVersion = useRef(0);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     const [f, j] = await Promise.all([
       request<ImportedFile[]>("files_list", { project: projectId || null }),
       request<AnalysisJob[]>("jobs_list", { project: projectId || null }),
     ]);
+    if (version !== loadVersion.current || currentProject.current !== projectId)
+      return;
     setFiles(f);
     setJobs(j);
-    setSelected((s) => (f.some((f) => f.id === s) ? s : (f[0]?.id ?? "")));
-  }, [projectId]);
+    setSelected((s) => {
+      if (workspace && !workspace.selection.target_id) return "";
+      if (workspace?.selection.target_id)
+        return (
+          f.find(
+            (file) =>
+              file.id === s && file.target_id === workspace.selection.target_id,
+          )?.id ??
+          f.find((file) => file.target_id === workspace.selection.target_id)
+            ?.id ??
+          ""
+        );
+      return f.some((file) => file.id === s) ? s : (f[0]?.id ?? "");
+    });
+  }, [projectId, workspace?.selection.target_id]);
   useEffect(() => {
     void load().catch((e) => setLocalError(errorText(e)));
   }, [load, data.audit[0]?.id]);
@@ -104,6 +148,7 @@ export default function ReversePage({
   );
   useEffect(() => {
     setRecord(null);
+    setTab("Metadata");
     setComparison("");
     setStringSearch("");
     if (!selected) return;
@@ -137,55 +182,95 @@ export default function ReversePage({
         setLocalError("Select or create a project before importing files.");
         return;
       }
+      if (activeImport.current) {
+        setLocalError("An import is already in progress");
+        return;
+      }
+      if (!Number.isInteger(limitMiB) || limitMiB < 1 || limitMiB > 65536) {
+        setLocalError("Choose an import limit from 1 to 65536 MiB");
+        return;
+      }
+      activeImport.current = "batch";
+      importCancelled.current = false;
+      setImporting(true);
+      setImportProgress(null);
       setLocalError("");
       setImportSummary("");
-      await perform(async () => {
-        let imported = 0;
-        const failures: string[] = [];
-        let firstId = "";
-        for (const path of paths.slice(0, 100)) {
-          try {
-            if (folder) {
-              const result = await request<{
-                imported: ImportedFile[];
-                failures: { name: string; error_code: string }[];
-              }>("file_import", {
-                project: projectId,
-                path,
-                authorized,
-                folder,
-              });
-              imported += result.imported.length;
-              firstId ||= result.imported[0]?.id ?? "";
-              failures.push(
-                ...result.failures.map((f) => `${f.name}: ${f.error_code}`),
-              );
-            } else {
-              const file = await request<ImportedFile>("file_import", {
-                project: projectId,
-                path,
-                authorized,
-                folder,
-              });
-              imported++;
-              firstId ||= file.id;
+      try {
+        await perform(async () => {
+          let imported = 0;
+          const failures: string[] = [];
+          let firstId = "";
+          let firstTarget: string | null = null;
+          for (const path of paths.slice(0, 100)) {
+            if (importCancelled.current) break;
+            const requestId = crypto.randomUUID();
+            activeImport.current = `import:${requestId}`;
+            try {
+              if (folder) {
+                const result = await streamImport<{
+                  imported: ImportedFile[];
+                  failures: { name: string; error_code: string }[];
+                }>(
+                  projectId,
+                  path,
+                  authorized,
+                  folder,
+                  limitMiB * 1024 * 1024,
+                  requestId,
+                  setImportProgress,
+                );
+                imported += result.imported.length;
+                firstId ||= result.imported[0]?.id ?? "";
+                firstTarget ||= result.imported[0]?.target_id ?? null;
+                failures.push(
+                  ...result.failures.map((f) => `${f.name}: ${f.error_code}`),
+                );
+              } else {
+                const file = await streamImport<ImportedFile>(
+                  projectId,
+                  path,
+                  authorized,
+                  folder,
+                  limitMiB * 1024 * 1024,
+                  requestId,
+                  setImportProgress,
+                );
+                imported++;
+                firstId ||= file.id;
+                firstTarget ||= file.target_id;
+              }
+            } catch (e) {
+              failures.push(errorText(e));
+              if ((e as { code?: string })?.code === "CANCELLED") {
+                importCancelled.current = true;
+                break;
+              }
             }
-          } catch (e) {
-            failures.push(errorText(e));
           }
-        }
-        if (paths.length > 100)
-          failures.push("Only the first 100 selected paths were processed.");
-        await load();
-        if (firstId) setSelected(firstId);
-        setImportSummary(
-          `${imported} file(s) imported${failures.length ? `; ${failures.length} failed` : ""}.`,
-        );
-        setLocalError(failures.join("\n"));
-        setChooseImport(false);
-      });
+          if (paths.length > 100)
+            failures.push("Only the first 100 selected paths were processed.");
+          await load();
+          if (currentProject.current !== projectId) return;
+          if (firstId) {
+            if (workspace) await workspace.select(projectId, firstTarget);
+            setSelected(firstId);
+          }
+          setImportSummary(
+            importCancelled.current
+              ? "Import interrupted. Completed files are retained in the list below."
+              : `${imported} file(s) imported${failures.length ? `; ${failures.length} failed` : ""}.`,
+          );
+          setLocalError(failures.join("\n"));
+          setChooseImport(false);
+        });
+      } finally {
+        activeImport.current = null;
+        setImporting(false);
+        setImportProgress(null);
+      }
     },
-    [projectId, authorized, perform, load],
+    [projectId, authorized, perform, load, limitMiB],
   );
   const dropImport = useRef(importPaths);
   useEffect(() => {
@@ -267,7 +352,8 @@ export default function ReversePage({
             Import Folder
           </Button>
           <span className="muted">
-            Drop local files into this workspace · 64 MiB per file
+            Drop local files into this workspace · streamed import; bounded deep
+            parsing
           </span>
         </div>
         <label className="checkbox-row">
@@ -284,6 +370,51 @@ export default function ReversePage({
           up to 100 direct entries.
         </p>
         {!projectId && <p>Select a project in the toolbar first.</p>}
+        <label>
+          Import limit (MiB)
+          <input
+            aria-label="Import limit (MiB)"
+            type="number"
+            min={1}
+            max={65536}
+            value={limitMiB}
+            disabled={importing}
+            onChange={(e) => setLimitMiB(Number(e.target.value))}
+          />
+        </label>
+        <p>
+          Files above 64 MiB retain their complete bytes and hash. Metadata jobs
+          stream integrity and inspect a bounded prefix; deep structure and YARA
+          analysis remain limited.
+        </p>
+        {importing && (
+          <div role="status">
+            <p>{importProgress?.stage ?? "Preparing streaming import"}</p>
+            {importProgress && (
+              <>
+                <progress
+                  max={Math.max(1, importProgress.total)}
+                  value={importProgress.completed}
+                />
+                <span>
+                  {importProgress.completed.toLocaleString()} /{" "}
+                  {importProgress.total.toLocaleString()} bytes (current file)
+                </span>
+              </>
+            )}
+            <Button
+              onClick={() => {
+                importCancelled.current = true;
+                if (activeImport.current?.startsWith("import:"))
+                  void cancelStream(activeImport.current).catch((e) =>
+                    setLocalError(errorText(e)),
+                  );
+              }}
+            >
+              Cancel import
+            </Button>
+          </div>
+        )}
       </section>
       {localError && (
         <p role="alert" className="banner error break-value">
@@ -318,6 +449,10 @@ export default function ReversePage({
               className={`file-history-item ${selected === f.id ? "active" : ""}`}
               onClick={() => {
                 setSelected(f.id);
+                if (workspace)
+                  void workspace
+                    .select(f.project_id, f.target_id)
+                    .catch(() => {});
                 setTab("Metadata");
               }}
             >
@@ -335,6 +470,10 @@ export default function ReversePage({
               <div className="panel-heading">
                 <div>
                   <h2>{file.name}</h2>
+                  <StartResearchButton
+                    projectId={file.project_id}
+                    targetId={file.target_id ?? undefined}
+                  />
                   <p>
                     {file.format} ·{" "}
                     {analysis?.architecture ?? "Architecture not available"}
@@ -414,8 +553,9 @@ export default function ReversePage({
                   <h3>File imported</h3>
                   <p className="technical break-value">SHA-256 {file.sha256}</p>
                   <p>
-                    Start analysis to save sections, imports, exports, strings
-                    and hex data.
+                    {file.size > 64 * 1024 * 1024
+                      ? "Start bounded metadata analysis. Deep structure remains deferred for this file size."
+                      : "Start analysis to save sections, imports, exports, strings and hex data."}
                   </p>
                 </div>
               )}
@@ -441,6 +581,28 @@ export default function ReversePage({
                       <button
                         key={name}
                         role="tab"
+                        disabled={
+                          file.size > 64 * 1024 * 1024 &&
+                          [
+                            "Sections",
+                            "Segments",
+                            "Imports",
+                            "Exports",
+                            "Package",
+                          ].includes(name)
+                        }
+                        title={
+                          file.size > 64 * 1024 * 1024 &&
+                          [
+                            "Sections",
+                            "Segments",
+                            "Imports",
+                            "Exports",
+                            "Package",
+                          ].includes(name)
+                            ? "Deep structure is deferred under the independent parser budget"
+                            : undefined
+                        }
                         aria-selected={tab === name}
                         onClick={() => setTab(name)}
                       >
@@ -597,7 +759,13 @@ export default function ReversePage({
                         </label>
                         <Button
                           className="button secondary"
-                          disabled={!compareId || busy}
+                          disabled={
+                            !compareId ||
+                            busy ||
+                            file.size > 64 * 1024 * 1024 ||
+                            (files.find((f) => f.id === compareId)?.size ?? 0) >
+                              64 * 1024 * 1024
+                          }
                           onClick={() =>
                             void perform(async () =>
                               setComparison(
@@ -613,9 +781,13 @@ export default function ReversePage({
                             )
                           }
                           disabledReason={
-                            !compareId
-                              ? "Select a file to compare"
-                              : "An operation is in progress"
+                            file.size > 64 * 1024 * 1024 ||
+                            (files.find((f) => f.id === compareId)?.size ?? 0) >
+                              64 * 1024 * 1024
+                              ? "Byte comparison currently supports files up to 64 MiB; complete large artifacts remain preserved"
+                              : !compareId
+                                ? "Select a file to compare"
+                                : "An operation is in progress"
                           }
                         >
                           Compare binaries
@@ -651,9 +823,10 @@ export default function ReversePage({
       <details className="module-details">
         <summary>Available analysis integrations</summary>
         <p className="muted">
-          Disassembly, decompilation, Ghidra, YARA and AI function analysis are
-          not connected in this build. Metadata and strings shown above come
-          from the local static parser.
+          Disassembly, decompilation and function analysis require a verified
+          external analyzer. Local metadata and strings use bounded parsers;
+          large files show streamed metadata with explicit limits. Installed
+          YARA-X signatures retain their separate 64 MiB analysis budget.
         </p>
       </details>
       <Modal

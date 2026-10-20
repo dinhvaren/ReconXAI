@@ -15,6 +15,7 @@ export const navigation: { group: string; items: NavItem[] }[] = [
   {
     group: "Research",
     items: [
+      { name: "AI Research", icon: "workflow", implemented: true },
       { name: "Reconnaissance", icon: "radar", implemented: true },
       { name: "Web Security", icon: "globe", implemented: true },
       { name: "API Security", icon: "api", implemented: true },

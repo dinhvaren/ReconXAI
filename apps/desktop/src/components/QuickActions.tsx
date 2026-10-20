@@ -11,6 +11,7 @@ export default function QuickActions({
       actions={[
         "New Project",
         "Add Target",
+        "Start AI Research",
         "Import File",
         "Import Repository",
         "Start Recon",

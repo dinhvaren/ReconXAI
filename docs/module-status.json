@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -283,7 +283,9 @@
     {
       "id": "native_file_import",
       "status": "TESTED",
-      "verification": "Actual Windows Open picker imported owned PE; folder import has Rust tests"
+      "verification": "Actual Windows Open picker imported owned PE; folder import has Rust tests",
+      "current_verification": "artifacts/product-recovery-current-verification.json",
+      "limits": "Streaming import through 1 GiB tested; separate 64 MiB deep-parser/YARA budget; large metadata explicitly limited"
     },
     {
       "id": "native_file_drop",
@@ -293,7 +295,9 @@
     {
       "id": "static_binary_analysis",
       "status": "TESTED",
-      "verification": "Native PE; ELF64/Mach-O64/APK fixtures; persisted sections/strings/hashes/metadata"
+      "verification": "Native PE; ELF64/Mach-O64/APK fixtures; persisted sections/strings/hashes/metadata",
+      "current_verification": "artifacts/product-recovery-current-verification.json",
+      "limits": "Streaming import through 1 GiB tested; separate 64 MiB deep-parser/YARA budget; large metadata explicitly limited"
     },
     {
       "id": "binary_comparison",
@@ -474,133 +478,42 @@
       "status": "TESTED",
       "verification": "artifacts/security-workflow-final.log; artifacts/security-workflow-linux-final.log",
       "scope": "Both YAML workflows parse and run commands are strings; remote CI success remains independent"
+    },
+    {
+      "id": "shared_workspace_context",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/product-recovery-current-verification.json",
+      "scope": "Persistent CAS project/target IDs; native/CLI navigation and restart"
+    },
+    {
+      "id": "target_research_sessions",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/product-recovery-current-verification.json",
+      "scope": "Typed bounded local plans, one-shot approval, real jobs/evidence/manual findings/report; MOCK AI only"
+    },
+    {
+      "id": "streaming_file_import",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/product-recovery-current-verification.json",
+      "scope": "Independent hashes for80/256/512/1024 MiB; native256 MiB import, running1 GiB cancellation/project switching; large metadata deferred"
     }
   ],
   "verification": {
-    "rust_passed": 143,
+    "rust_passed": 191,
     "rust_failed": 0,
-    "rust_ignored_default": 1,
-    "explicit_os_secret_test_passed": 1,
-    "frontend_passed": 26,
+    "rust_ignored_default": 2,
+    "frontend_passed": 39,
     "frontend_failed": 0,
-    "native_scenarios_passed": 9,
-    "ui_page_viewport_observations": 50,
-    "theme_page_viewport_observations": 12,
-    "debug_record": "artifacts/native-1792081858453/results.json",
-    "release_record": "artifacts/security-current-verification.json",
-    "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
-    "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
-    "inputs_release_record": "artifacts/inputs-1792323558147/results.json",
-    "inputs_checkpoints_per_scenario": 9,
-    "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
-    "note": "Current security/schema/storage changes: Windows/Linux Core-CLI 142 each, frontend 26, 9 native suites/77 checkpoints. Dependency gate BLOCKED by glib; Linux Desktop/Secret Service and clean installer unverified. Legacy debug/typography fields are historical.",
-    "typography_before_record": "artifacts/typography-refinement/before/results.json",
-    "typography_after_record": "artifacts/typography-refinement/after/results.json",
-    "typography_observations_per_phase": 57,
-    "typography_release_regression_record": "artifacts/native-1791968095176/results.json",
-    "typography_release_regression_checkpoints": 8,
-    "typography_release_inputs_record": "artifacts/inputs-1791968144226/results.json",
-    "typography_device_scale_after_pixels": [
-      {
-        "scale": 1.25,
-        "width": 1800,
-        "height": 1125
-      },
-      {
-        "scale": 1.5,
-        "width": 2160,
-        "height": 1350
-      },
-      {
-        "scale": 2,
-        "width": 2880,
-        "height": 1800
-      }
-    ],
-    "legacy_native_checkpoints_per_scenario": 6,
-    "native_checkpoints": {
-      "http-replay": 11,
-      "http-workspace": 12,
-      "native": 8,
-      "inputs": 9,
-      "jobs": 8,
-      "integrations": 6,
+    "native_checks_current": {
+      "research": 9,
+      "large_import": 6,
+      "http_replay": 11,
       "outputs": 6,
-      "recon-local": 7,
-      "ai-providers": 10
+      "ux_shell": 3
     },
-    "jobs_debug_record": "artifacts/jobs-1792081914450/results.json",
-    "jobs_release_record": "artifacts/jobs-1792323568765/results.json",
-    "native_configurations": [
-      "windows-debug",
-      "windows-release"
-    ],
-    "preservation_record": "artifacts/release-upgrade-1792216876468/after.json",
-    "normal_startup_record": "artifacts/windows-x64/normal-startup.json",
-    "integrations_debug_record": "artifacts/integrations-1792081951499/results.json",
-    "integrations_release_record": "artifacts/integrations-1792323595665/results.json",
-    "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
-    "release_sha256": {
-      "reconx.exe": "6c43dfa5d119418914fa6f0951aafae33bf7086d6f16e997f89baaa6f9ceba47",
-      "reconx-desktop.exe": "abec8aac7a2ae746602d211271ed912d4c27f755e2f68a6dffbbbc08915dd6bb"
-    },
-    "outputs_release_record": "artifacts/outputs-1792323613641/results.json",
-    "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
-    "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
-    "local_inventory_release_record": "artifacts/recon-local-1792323626517/results.json",
-    "linux_core_cli_record": "artifacts/security-ci-followup-linux-stdout.log",
-    "release_native_checkpoints_total": 77,
-    "release_records": {
-      "http-replay": "artifacts/http-replay-1792314338414/results.json",
-      "http-workspace": "artifacts/http-workspace-1792314349444/results.json",
-      "native": "artifacts/native-1792314366857/results.json",
-      "inputs": "artifacts/inputs-1792314409622/results.json",
-      "jobs": "artifacts/jobs-1792314420262/results.json",
-      "integrations": "artifacts/integrations-1792314447326/results.json",
-      "outputs": "artifacts/outputs-1792314471536/results.json",
-      "recon-local": "artifacts/recon-local-1792314487988/results.json",
-      "ai-providers": "artifacts/native-ai-providers-1792314502191/results.json"
-    },
-    "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
-    "linux_current_rust_passed": 143,
-    "linux_current_record": "artifacts/security-ci-followup-linux-stdout.log",
-    "previous_release_records": {
-      "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
-      "regression": "artifacts/native-1792238059810/results.json",
-      "inputs": "artifacts/inputs-1792238103145/results.json",
-      "local_jobs": "artifacts/jobs-1792238116432/results.json",
-      "tools_mcp_ai": "artifacts/integrations-1792238145137/results.json",
-      "research_outputs": "artifacts/outputs-1792238163896/results.json",
-      "local_inventory": "artifacts/recon-local-1792238177437/results.json"
-    },
-    "http_workspace_record": "artifacts/http-workspace-1792323498002/results.json",
-    "native_checkpoints_total": 77,
-    "current_schema_native_counts": {
-      "http-workspace": 12,
-      "native": 8,
-      "inputs": 9,
-      "jobs": 8,
-      "integrations": 6,
-      "outputs": 6,
-      "recon-local": 7,
-      "ai-providers": 10
-    },
-    "current_manual_http_native_counts": {
-      "http-replay": 11,
-      "http-workspace": 12,
-      "native": 8,
-      "inputs": 9,
-      "jobs": 8,
-      "integrations": 6,
-      "outputs": 6,
-      "recon-local": 7,
-      "ai-providers": 10
-    },
-    "negative_tls_records": [
-      "artifacts/replay-tls-windows.log",
-      "artifacts/replay-tls-linux.log"
-    ],
-    "current_security_checkpoint": "artifacts/security-current-verification.json"
+    "ux_page_theme_size_observations": 216,
+    "record": "artifacts/product-recovery-current-verification.json",
+    "scope": "Bounded local research/import plus current HTTP/output/shell regression; prior broader suites remain historical"
   },
   "v1_release": {
     "ready": false,
@@ -616,7 +529,7 @@
       "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
     ]
   },
-  "database_schema_version": 16,
+  "database_schema_version": 17,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -633,14 +546,21 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 143,
-        "ignored": 1,
-        "record": "artifacts/security-ci-followup-linux-stdout.log"
+        "passed": 191,
+        "failed": 0,
+        "ignored": 2,
+        "record": "artifacts/large-import-linux-final.log"
       },
-      "optimized_cli_record": "artifacts/linux-cli-security-20261018-185625/smoke/acceptance.json"
+      "optimized_cli_record": "artifacts/product-recovery-current-verification.json"
     }
   },
   "page_inventory": [
+    {
+      "page": "AI Research",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "artifacts/product-recovery-current-verification.json",
+      "limits": "Only the bounded local capabilities listed in the session preview"
+    },
     {
       "page": "Dashboard",
       "status": "RUNTIME_VERIFIED",
@@ -804,12 +724,168 @@
   "current_mcp_registry_verification": {
     "version": "0.1.0",
     "database_schema": 16,
-    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE; subsequent runtime-selection fix pending acceptance",
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE; runtime-selection fix accepted on Windows with 37-command negative test",
     "proof": "artifacts/mcp-current-verification.json",
     "windows_rust": "180/0/2",
     "linux_core_cli_rust": "180/0/2",
     "frontend_tests": 36,
     "linux_desktop": "UNVERIFIED",
-    "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
+    "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate",
+    "runtime_selection_fix_windows": "RUNTIME_VERIFIED: artifacts/mcp-cli-research-negative-20261020/negative-results.json"
+  },
+  "current_research_session_verification": {
+    "version": "0.1.0",
+    "database_schema": 17,
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "proof": "artifacts/product-recovery-current-verification.json",
+    "windows_rust": "191/0/2",
+    "linux_core_cli_rust": "191/0/2",
+    "frontend_tests": 39,
+    "native_checks": {
+      "research": 9,
+      "large_import": 6,
+      "http": 11,
+      "outputs": 6,
+      "ux_shell": 3
+    },
+    "release_ready": false,
+    "large_file_import": "RUNTIME_VERIFIED_THROUGH_1_GIB",
+    "linux_desktop": "UNVERIFIED",
+    "live_cloud_ai": "NOT_TESTED",
+    "next_action": "Populated-workspace UX/context acceptance, then reviewed native HTTPX lifecycle and fixed approved local capability"
+  },
+  "verification_history_before_product_recovery": {
+    "rust_passed": 143,
+    "rust_failed": 0,
+    "rust_ignored_default": 1,
+    "explicit_os_secret_test_passed": 1,
+    "frontend_passed": 26,
+    "frontend_failed": 0,
+    "native_scenarios_passed": 9,
+    "ui_page_viewport_observations": 50,
+    "theme_page_viewport_observations": 12,
+    "debug_record": "artifacts/native-1792081858453/results.json",
+    "release_record": "artifacts/security-current-verification.json",
+    "preceding_redesign_record": "artifacts/native-1791901611396/results.json",
+    "inputs_debug_record": "artifacts/inputs-1792081901057/results.json",
+    "inputs_release_record": "artifacts/inputs-1792323558147/results.json",
+    "inputs_checkpoints_per_scenario": 9,
+    "preceding_theme_release_record": "artifacts/native-1791906555280/results.json",
+    "note": "Current security/schema/storage changes: Windows/Linux Core-CLI 142 each, frontend 26, 9 native suites/77 checkpoints. Dependency gate BLOCKED by glib; Linux Desktop/Secret Service and clean installer unverified. Legacy debug/typography fields are historical.",
+    "typography_before_record": "artifacts/typography-refinement/before/results.json",
+    "typography_after_record": "artifacts/typography-refinement/after/results.json",
+    "typography_observations_per_phase": 57,
+    "typography_release_regression_record": "artifacts/native-1791968095176/results.json",
+    "typography_release_regression_checkpoints": 8,
+    "typography_release_inputs_record": "artifacts/inputs-1791968144226/results.json",
+    "typography_device_scale_after_pixels": [
+      {
+        "scale": 1.25,
+        "width": 1800,
+        "height": 1125
+      },
+      {
+        "scale": 1.5,
+        "width": 2160,
+        "height": 1350
+      },
+      {
+        "scale": 2,
+        "width": 2880,
+        "height": 1800
+      }
+    ],
+    "legacy_native_checkpoints_per_scenario": 6,
+    "native_checkpoints": {
+      "http-replay": 11,
+      "http-workspace": 12,
+      "native": 8,
+      "inputs": 9,
+      "jobs": 8,
+      "integrations": 6,
+      "outputs": 6,
+      "recon-local": 7,
+      "ai-providers": 10
+    },
+    "jobs_debug_record": "artifacts/jobs-1792081914450/results.json",
+    "jobs_release_record": "artifacts/jobs-1792323568765/results.json",
+    "native_configurations": [
+      "windows-debug",
+      "windows-release"
+    ],
+    "preservation_record": "artifacts/release-upgrade-1792216876468/after.json",
+    "normal_startup_record": "artifacts/windows-x64/normal-startup.json",
+    "integrations_debug_record": "artifacts/integrations-1792081951499/results.json",
+    "integrations_release_record": "artifacts/integrations-1792323595665/results.json",
+    "retained_failed_release_input_record": "artifacts/inputs-1792145013664/results.json",
+    "release_sha256": {
+      "reconx.exe": "6c43dfa5d119418914fa6f0951aafae33bf7086d6f16e997f89baaa6f9ceba47",
+      "reconx-desktop.exe": "abec8aac7a2ae746602d211271ed912d4c27f755e2f68a6dffbbbc08915dd6bb"
+    },
+    "outputs_release_record": "artifacts/outputs-1792323613641/results.json",
+    "outputs_debug_record": "artifacts/outputs-1792217139477/results.json",
+    "local_inventory_debug_record": "artifacts/recon-local-1792217154231/results.json",
+    "local_inventory_release_record": "artifacts/recon-local-1792323626517/results.json",
+    "linux_core_cli_record": "artifacts/security-ci-followup-linux-stdout.log",
+    "release_native_checkpoints_total": 77,
+    "release_records": {
+      "http-replay": "artifacts/http-replay-1792314338414/results.json",
+      "http-workspace": "artifacts/http-workspace-1792314349444/results.json",
+      "native": "artifacts/native-1792314366857/results.json",
+      "inputs": "artifacts/inputs-1792314409622/results.json",
+      "jobs": "artifacts/jobs-1792314420262/results.json",
+      "integrations": "artifacts/integrations-1792314447326/results.json",
+      "outputs": "artifacts/outputs-1792314471536/results.json",
+      "recon-local": "artifacts/recon-local-1792314487988/results.json",
+      "ai-providers": "artifacts/native-ai-providers-1792314502191/results.json"
+    },
+    "ai_provider_manager_record": "artifacts/ai-manager-verification.json",
+    "linux_current_rust_passed": 143,
+    "linux_current_record": "artifacts/security-ci-followup-linux-stdout.log",
+    "previous_release_records": {
+      "ai_providers": "artifacts/native-ai-providers-1792237828887/results.json",
+      "regression": "artifacts/native-1792238059810/results.json",
+      "inputs": "artifacts/inputs-1792238103145/results.json",
+      "local_jobs": "artifacts/jobs-1792238116432/results.json",
+      "tools_mcp_ai": "artifacts/integrations-1792238145137/results.json",
+      "research_outputs": "artifacts/outputs-1792238163896/results.json",
+      "local_inventory": "artifacts/recon-local-1792238177437/results.json"
+    },
+    "http_workspace_record": "artifacts/http-workspace-1792323498002/results.json",
+    "native_checkpoints_total": 77,
+    "current_schema_native_counts": {
+      "http-workspace": 12,
+      "native": 8,
+      "inputs": 9,
+      "jobs": 8,
+      "integrations": 6,
+      "outputs": 6,
+      "recon-local": 7,
+      "ai-providers": 10
+    },
+    "current_manual_http_native_counts": {
+      "http-replay": 11,
+      "http-workspace": 12,
+      "native": 8,
+      "inputs": 9,
+      "jobs": 8,
+      "integrations": 6,
+      "outputs": 6,
+      "recon-local": 7,
+      "ai-providers": 10
+    },
+    "negative_tls_records": [
+      "artifacts/replay-tls-windows.log",
+      "artifacts/replay-tls-linux.log"
+    ],
+    "current_security_checkpoint": "artifacts/security-current-verification.json"
+  },
+  "current_product_recovery_verification": {
+    "proof": "artifacts/product-recovery-current-verification.json",
+    "version": "0.1.0",
+    "schema": 17,
+    "release_ready": false,
+    "linux_desktop": "UNVERIFIED",
+    "live_cloud_ai": "NOT_TESTED"
   }
 }

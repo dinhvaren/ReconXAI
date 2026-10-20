@@ -8,6 +8,8 @@ import {
   type AppTheme,
 } from "./api";
 import { ThemeProvider, useTheme } from "./theme";
+import { WorkspaceProvider, useWorkspace } from "./workspace";
+import ResearchPage from "./pages/ResearchPage";
 import ThemeMenu from "./components/ThemeMenu";
 import AiProviderManager from "./components/AiProviderManager";
 import { Heading } from "./components/ui";
@@ -27,7 +29,7 @@ import HttpPage from "./pages/HttpPage";
 import TargetDialog from "./components/TargetDialog";
 import QuickActions from "./components/QuickActions";
 import { useJobEvents, type Target, type TargetKind } from "./research";
-import type { AnalysisJob } from "./research";
+import type { ImportedFile } from "./research";
 import {
   Projects,
   SettingsPage,
@@ -38,12 +40,16 @@ import {
 export default function App({ initialTheme }: { initialTheme?: AppTheme }) {
   return (
     <ThemeProvider initialTheme={initialTheme}>
-      <Workbench />
+      <WorkspaceProvider>
+        <Workbench />
+      </WorkspaceProvider>
     </ThemeProvider>
   );
 }
 function Workbench() {
   const theme = useTheme();
+  const workspace = useWorkspace()!;
+  const [researchProvider, setResearchProvider] = useState<string>();
   const [page, setPage] = useState("Dashboard");
   const [data, setData] = useState<Snapshot | null>(null);
   useJobEvents((job) =>
@@ -75,9 +81,7 @@ function Workbench() {
   const [showActivity, setShowActivity] = useState(
     () => localStorage.getItem("reconx.activityOpen") === "true",
   );
-  const [selected, setSelected] = useState<string | null>(() =>
-    localStorage.getItem("reconx.selectedProject"),
-  );
+  const selected = workspace.selection.project_id;
   useEffect(() => {
     localStorage.setItem("reconx.activityOpen", String(showActivity));
   }, [showActivity]);
@@ -107,10 +111,9 @@ function Workbench() {
     let closed = false;
     // Reconciliation and changes from another CLI process also update Dashboard.
     const timer = setInterval(() => {
-      void request<AnalysisJob[]>("jobs_list", { project: null })
-        .then((jobs) => {
-          if (!closed)
-            setData((current) => (current ? { ...current, jobs } : current));
+      void request<Snapshot>("snapshot")
+        .then((snapshot) => {
+          if (!closed) setData(snapshot);
         })
         .catch((e) => {
           if (!closed) setError(errorText(e));
@@ -159,17 +162,62 @@ function Workbench() {
     if (group) setGroups((current) => current.filter((g) => g !== group.group));
   };
   const selectProject = (id: string) => {
-    setSelected(id);
-    localStorage.setItem("reconx.selectedProject", id);
+    void workspace
+      .select(
+        id || null,
+        id === selected ? workspace.selection.target_id : null,
+      )
+      .catch(() => {});
   };
+  const openImportedFile = (id: string, projectId: string) =>
+    void perform(async () => {
+      const file = (
+        await request<ImportedFile[]>("files_list", { project: projectId })
+      ).find((f) => f.id === id);
+      if (!file)
+        throw new Error("Imported file is no longer available in this project");
+      await workspace.select(file.project_id, file.target_id);
+      setReverseFile(id);
+      navigate("Reverse Engineering");
+    });
   const projects = data?.projects.filter((p) => !p.archived) ?? [];
+  useEffect(() => {
+    if (
+      !workspace.ready ||
+      workspace.saving ||
+      workspace.selection.revision !== 0 ||
+      selected ||
+      !data
+    )
+      return;
+    const active = data.projects.filter((p) => !p.archived);
+    const previous = localStorage.getItem("reconx.selectedProject");
+    const initial = active.find((p) => p.id === previous) ?? active[0];
+    if (initial) void workspace.select(initial.id).catch(() => {});
+  }, [
+    workspace.ready,
+    workspace.saving,
+    workspace.selection.revision,
+    selected,
+    data,
+  ]);
+  useEffect(() => {
+    const open = (event: Event) => {
+      setResearchProvider(
+        (event as CustomEvent<{ providerId?: string }>).detail?.providerId,
+      );
+      setPage("AI Research");
+      if (workspaceRef.current) workspaceRef.current.scrollTop = 0;
+    };
+    window.addEventListener("reconx-start-research", open);
+    return () => window.removeEventListener("reconx-start-research", open);
+  }, []);
   const addTarget = (kind: TargetKind = "domain") => {
     setEditingTarget(undefined);
     setNewTargetKind(kind);
     setTargetOpen(true);
   };
-  const project =
-    selected === null ? projects[0] : projects.find((p) => p.id === selected);
+  const project = projects.find((p) => p.id === selected);
   const needle = query.trim().toLowerCase();
   const searchResults = [
     ...projects
@@ -395,6 +443,26 @@ function Workbench() {
               </option>
             ))}
           </select>
+          <select
+            className="project-selector"
+            aria-label="Current target"
+            value={workspace.selection.target_id ?? ""}
+            disabled={!project || workspace.saving}
+            onChange={(e) =>
+              void workspace
+                .select(selected, e.target.value || null)
+                .catch(() => {})
+            }
+          >
+            <option value="">Select target</option>
+            {(data?.targets ?? [])
+              .filter((t) => t.project_id === selected)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
           <div className="toolbar-actions">
             <QuickActions
               run={(action) => {
@@ -417,6 +485,7 @@ function Workbench() {
                   navigate("Reconnaissance");
                 }
                 if (action === "Start API Testing") navigate("API Security");
+                if (action === "Start AI Research") navigate("AI Research");
                 if (action === "Export Report") navigate("Reports");
                 if (action === "View Jobs") navigate("Analysis Jobs");
                 if (action === "Open AI Workspace") navigate("AI Workspace");
@@ -444,10 +513,10 @@ function Workbench() {
           </div>
         </header>
         <main ref={workspaceRef} className="workspace-content">
-          {(error || theme.error) && (
+          {(error || theme.error || workspace.error) && (
             <div role="alert" className="banner error">
               <Icon name="flag" size={16} />
-              <span>{error || theme.error}</span>
+              <span>{error || theme.error || workspace.error}</span>
               <button
                 aria-label="Dismiss error"
                 onClick={() => {
@@ -484,7 +553,10 @@ function Workbench() {
               </Button>
             </div>
           ) : (
-            <div className="page-view" key={page}>
+            <div
+              className="page-view"
+              key={`${page}:${project?.id ?? "workspace"}`}
+            >
               {(["Evidence", "Findings", "Reports"] as const).map((name) =>
                 page === name ? (
                   <RecordsPage
@@ -518,7 +590,7 @@ function Workbench() {
                   busy={busy}
                   onAddTarget={() => addTarget("url")}
                   navigate={(page, project) => {
-                    if (project) setSelected(project);
+                    if (project) selectProject(project);
                     navigate(page);
                   }}
                 />
@@ -584,6 +656,18 @@ function Workbench() {
                   perform={perform}
                 />
               )}
+              {page === "AI Research" && (
+                <ResearchPage
+                  key={
+                    workspace.selection.target_id ??
+                    workspace.selection.project_id ??
+                    "none"
+                  }
+                  data={data}
+                  providerId={researchProvider}
+                  navigate={navigate}
+                />
+              )}
               {page === "Tool Manager" && (
                 <ToolManagerPage busy={busy} perform={perform} />
               )}
@@ -591,7 +675,7 @@ function Workbench() {
                 <TargetsPage
                   onRecon={(id, project) => {
                     setReconTarget(id);
-                    setSelected(project);
+                    void workspace.select(project, id).catch(() => {});
                     navigate("Reconnaissance");
                   }}
                   data={data}
@@ -603,11 +687,7 @@ function Workbench() {
                     setEditingTarget(target);
                     setTargetOpen(true);
                   }}
-                  onReverse={(id, projectId) => {
-                    selectProject(projectId);
-                    setReverseFile(id);
-                    navigate("Reverse Engineering");
-                  }}
+                  onReverse={openImportedFile}
                 />
               )}
               {page === "Reverse Engineering" && (
@@ -636,11 +716,7 @@ function Workbench() {
                   data={data}
                   busy={busy}
                   perform={perform}
-                  onOpenFile={(id, projectId) => {
-                    selectProject(projectId);
-                    setReverseFile(id);
-                    navigate("Reverse Engineering");
-                  }}
+                  onOpenFile={openImportedFile}
                 />
               )}
               {page !== "Analysis Jobs" &&
@@ -687,12 +763,11 @@ function Workbench() {
           projects={projects}
           projectId={project?.id}
           onClose={() => setTargetOpen(false)}
-          onSaved={() =>
-            perform(
-              refresh,
-              editingTarget ? "Target updated" : "Target created",
-            )
-          }
+          onSaved={async (saved) => {
+            await workspace.select(saved.project_id, saved.id);
+            await refresh();
+            setNotice(editingTarget ? "Target updated" : "Target created");
+          }}
         />
       )}
     </div>

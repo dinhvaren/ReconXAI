@@ -270,7 +270,7 @@ fn scope_for(input: &TargetInput, candidate: &str) -> (&'static str, &'static st
     (status, reason, included && !excluded)
 }
 impl Core {
-    fn validate_target_input(&self, mut input: TargetInput) -> Result<TargetInput> {
+    pub(super) fn validate_target_input(&self, mut input: TargetInput) -> Result<TargetInput> {
         let project = self.project(&input.project_id)?;
         if project.archived {
             return Err(AppError::new(
@@ -318,7 +318,7 @@ impl Core {
         }
         Ok(input)
     }
-    fn write_target(tx: &Connection, target: &Target) -> Result<()> {
+    pub(super) fn write_target(tx: &Connection, target: &Target) -> Result<()> {
         tx.execute("INSERT INTO targets(id,project_id,name,kind,value,json,created_at,updated_at,last_analyzed_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)",
             params![target.id,target.input.project_id,target.input.name,serde_json::to_string(&target.input.kind).map_err(json_error)?,target.input.value,serde_json::to_string(&target.input).map_err(json_error)?,target.created_at,target.updated_at,target.last_analyzed_at])
             .map_err(|e| if matches!(e, reconx_storage::rusqlite::Error::SqliteFailure(ref f,_) if f.code==reconx_storage::rusqlite::ErrorCode::ConstraintViolation) {

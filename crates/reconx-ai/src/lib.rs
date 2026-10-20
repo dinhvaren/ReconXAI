@@ -122,7 +122,7 @@ impl SecretStore for OsSecretStore {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiReply {
     pub text: String,
     pub model: String,

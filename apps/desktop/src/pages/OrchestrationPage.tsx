@@ -1,5 +1,6 @@
 import { Button } from "../components/controls";
-import { useCallback, useEffect, useState } from "react";
+import { useWorkspaceProject, useWorkspace } from "../workspace";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { request, type Snapshot, type Reply } from "../api";
 import { Heading, Modal, type Perform } from "../components/ui";
 import JobHistory from "../components/JobHistory";
@@ -33,7 +34,8 @@ export function OrchestrationPage({
   busy: boolean;
   perform: Perform;
 }) {
-  const [project, setProject] = useState(projectId ?? ""),
+  const workspace = useWorkspace();
+  const [project, setProject] = useWorkspaceProject(projectId ?? ""),
     [files, setFiles] = useState<ImportedFile[]>([]),
     [file, setFile] = useState("");
   const [provider, setProvider] = useState(
@@ -63,7 +65,35 @@ export function OrchestrationPage({
     };
   }, []);
   const config = data.providers.find((p) => p.id === provider);
+  const currentProject = useRef(project),
+    loadVersion = useRef(0);
+  currentProject.current = project;
+  useEffect(() => {
+    setFile("");
+    setPreview("");
+    setConsent(false);
+    setEvidence(null);
+    setReply("");
+  }, [project]);
+  useEffect(() => {
+    if (workspace)
+      setFile((previous) =>
+        files.some(
+          (f) =>
+            f.id === previous &&
+            f.project_id === project &&
+            f.target_id === workspace.selection.target_id,
+        )
+          ? previous
+          : (files.find(
+              (f) =>
+                f.project_id === project &&
+                f.target_id === workspace.selection.target_id,
+            )?.id ?? ""),
+      );
+  }, [project, workspace?.selection.target_id, files]);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     if (!project) {
       setPlans([]);
       setFiles([]);
@@ -75,6 +105,8 @@ export function OrchestrationPage({
       request<StoredPlan[]>("plans_list", { project }),
       request<Capability[]>("capabilities", { project }),
     ]);
+    if (version !== loadVersion.current || currentProject.current !== project)
+      return;
     setFiles(f);
     setPlans(p);
     setCaps(c);
@@ -138,7 +170,14 @@ export function OrchestrationPage({
             <select
               aria-label="Workflow file"
               value={file}
-              onChange={(e) => setFile(e.target.value)}
+              onChange={(e) => {
+                setFile(e.target.value);
+                const chosen = files.find((f) => f.id === e.target.value);
+                if (workspace && chosen)
+                  void workspace
+                    .select(chosen.project_id, chosen.target_id)
+                    .catch(() => {});
+              }}
             >
               <option value="">Select imported file</option>
               {files.map((f) => (

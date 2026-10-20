@@ -8,5 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
     restoreMocks: true,
+    // Keep jsdom worker memory bounded alongside native Rust builds on a workstation.
+    maxWorkers: 2,
   },
 });

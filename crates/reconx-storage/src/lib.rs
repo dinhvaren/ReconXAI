@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-pub const SCHEMA_VERSION: i64 = 16;
+pub const SCHEMA_VERSION: i64 = 17;
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -184,6 +184,12 @@ impl Database {
         if version < 16 {
             tx.execute_batch(include_str!("../migrations/016_managed_mcp.sql"))
                 .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 16)
+                .map_err(db_error)?;
+        }
+        if version < 17 {
+            tx.execute_batch(include_str!("../migrations/017_research_sessions.sql"))
+                .map_err(db_error)?;
             tx.pragma_update(None, "user_version", SCHEMA_VERSION)
                 .map_err(db_error)?;
         }
@@ -219,12 +225,18 @@ fn require_supported_schema(version: i64) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn remove_research_fixture_schema(conn: &Connection) {
+        // These fixtures downgrade a current isolated DB to a historical layout.
+        // Remove the newer tables as well; production migrations remain strict.
+        conn.execute_batch("DROP TRIGGER workspace_target_removed; DROP TRIGGER workspace_project_removed; DROP TRIGGER workspace_project_archived; DROP TABLE research_session_records; DROP TABLE research_session_jobs; DROP TABLE research_sessions; DROP TABLE workspace_selection;").unwrap();
+    }
     #[test]
     fn version_thirteen_extension_upgrade_retains_existing_data_and_valid_backup() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("v13.db");
         let old = Database::open(&path).unwrap();
         let conn = old.connect().unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations;
             INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Retained project','Private notes','before','before');
             INSERT INTO analysis_jobs(id,project_id,kind,status,created_at,logs_json) VALUES('queued','p','artifact_index','queued','before','[]');
@@ -234,7 +246,12 @@ mod tests {
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .map(|p| p.unwrap().path())
-            .find(|p| p.file_name().unwrap().to_string_lossy().contains("pre-v16"))
+            .find(|p| {
+                p.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}"))
+            })
             .unwrap();
         let snapshot = Connection::open(backup).unwrap();
         assert_eq!(
@@ -282,6 +299,7 @@ mod tests {
         let path = dir.path().join("v12.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations; DROP TABLE http_schema_job_options;
             INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Retained project','Original notes','before','before');
             INSERT INTO evidence(id,project_id,kind,title,created_at,metadata_json) VALUES('e','p','attachment','Original evidence','before','{}');
@@ -296,7 +314,12 @@ mod tests {
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .map(|p| p.unwrap().path())
-            .find(|p| p.file_name().unwrap().to_string_lossy().contains("pre-v16"))
+            .find(|p| {
+                p.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}"))
+            })
             .unwrap();
         let snapshot = Connection::open(backup).unwrap();
         assert_eq!(
@@ -374,13 +397,18 @@ mod tests {
         let path = dir.path().join("v11.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations; DROP TABLE http_schema_job_options; DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Schema checkpoint','Retained private notes','before','before'); INSERT INTO evidence(id,project_id,kind,title,created_at,metadata_json) VALUES('e','p','attachment','Retained evidence','before','{}'); INSERT INTO http_imports VALUES('i','p',NULL,'har','Existing capture','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','before','e','{}'); INSERT INTO http_exchanges VALUES('c','i','p',NULL,'example.test','GET','/',200,'{}'); INSERT INTO api_operations VALUES('o','i','p',NULL,'GET','/','{}'); INSERT INTO analysis_jobs(id,project_id,kind,status,created_at,timeout_ms,logs_json,result_json) VALUES('j','p','offline_schema_review','completed','before',30000,'[]','{\"observations\":[]}'); INSERT INTO http_schema_jobs VALUES('j','c','o','bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');").unwrap();
         conn.pragma_update(None, "user_version", 11).unwrap();
         let upgraded = Database::open(&path).unwrap();
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .flatten()
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v16"))
+            .find(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}"))
+            })
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -435,6 +463,7 @@ mod tests {
         let path = dir.path().join("v10.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations; DROP TABLE http_schema_job_options; DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('p','Retained HTTP','private notes','before','before'); INSERT INTO evidence(id,project_id,kind,title,created_at,metadata_json) VALUES('e','p','attachment','private source','before','{}'); INSERT INTO http_imports VALUES('h','p',NULL,'har','Retained capture','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','before','e','{}'); INSERT INTO http_exchanges VALUES('c','h','p',NULL,'example.test','GET','/',200,'{}'); INSERT INTO http_notes VALUES('c','Retained note','before');").unwrap();
         conn.pragma_update(None, "user_version", 10).unwrap();
         let upgraded = Database::open(&path).unwrap();
@@ -449,7 +478,11 @@ mod tests {
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .flatten()
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v16"))
+            .find(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}"))
+            })
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -503,6 +536,7 @@ mod tests {
         let path = dir.path().join("v9.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations; DROP TABLE http_schema_job_options; DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports; INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('retained','Retained project','Notes stay intact','before','before'); INSERT INTO providers(id,name,json) VALUES('profile','Retained model','{\"model\":\"fixture\"}'); INSERT INTO ai_profile_metadata(provider_id,vendor_id,options_json) VALUES('profile','custom','{\"streaming\":false}'); INSERT INTO ai_agent_routing VALUES('web','profile');").unwrap();
         conn.pragma_update(None, "user_version", 9).unwrap();
         drop(conn);
@@ -549,12 +583,11 @@ mod tests {
             .unwrap(),
             0
         );
-        assert!(
-            std::fs::read_dir(dir.path())
-                .unwrap()
-                .flatten()
-                .any(|e| e.file_name().to_string_lossy().contains("pre-v16"))
-        );
+        assert!(std::fs::read_dir(dir.path()).unwrap().flatten().any(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .contains(&format!("pre-v{SCHEMA_VERSION}"))
+        }));
     }
     #[test]
     fn additive_ai_upgrade_preserves_interrupted_snapshot_tables_and_creates_backup() {
@@ -563,6 +596,7 @@ mod tests {
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
         conn.execute_batch("CREATE TABLE retained_http_artifact(id TEXT PRIMARY KEY,sha256 TEXT);INSERT INTO retained_http_artifact VALUES('retained','unchanged');DROP TABLE ai_agent_routing;DROP TABLE ai_profile_metadata;CREATE TABLE ai_profile_metadata(provider_id TEXT PRIMARY KEY REFERENCES providers(id),vendor_id TEXT NOT NULL DEFAULT 'custom',models_json TEXT NOT NULL DEFAULT '[]',models_fingerprint TEXT,models_refreshed_at TEXT,connection_json TEXT);").unwrap();
+        remove_research_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE extension_install_jobs; DROP TABLE managed_mcp_extensions; DROP TABLE mcp_registry_cache; DROP TABLE mcp_registry_entries; DROP TABLE extension_invocations; DROP TABLE extension_requirements; DROP TABLE extension_installations; DROP TABLE http_schema_job_options; DROP TABLE http_replay_dispatch; DROP TABLE http_replay_jobs; DROP TABLE http_request_drafts; DROP TABLE http_auth_retired_secrets; DROP TABLE http_auth_profiles; DROP TABLE http_schema_jobs; DROP TABLE http_review_jobs; DROP TABLE http_comparisons; DROP TABLE http_notes; DROP TABLE api_operations; DROP TABLE http_exchanges; DROP TABLE http_imports;").unwrap();
         conn.pragma_update(None, "user_version", 8).unwrap();
         drop(conn);
@@ -589,12 +623,11 @@ mod tests {
                     .is_ok()
             );
         }
-        assert!(
-            std::fs::read_dir(dir.path())
-                .unwrap()
-                .flatten()
-                .any(|p| p.file_name().to_string_lossy().contains("pre-v16"))
-        );
+        assert!(std::fs::read_dir(dir.path()).unwrap().flatten().any(|p| {
+            p.file_name()
+                .to_string_lossy()
+                .contains(&format!("pre-v{SCHEMA_VERSION}"))
+        }));
     }
     #[test]
     fn version_five_outputs_survive_local_inventory_migration_and_backup() {
@@ -702,7 +735,11 @@ mod tests {
         let backup = std::fs::read_dir(dir.path())
             .unwrap()
             .filter_map(|e| e.ok())
-            .find(|e| e.file_name().to_string_lossy().contains("pre-v16"))
+            .find(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}"))
+            })
             .unwrap();
         let snapshot =
             Connection::open_with_flags(backup.path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
@@ -822,5 +859,58 @@ mod tests {
         assert_eq!(Database::open(&path).unwrap_err().code, "DATABASE_ERROR");
         assert_eq!(std::fs::read(&path).unwrap(), bytes);
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+    #[test]
+    fn research_migration_retains_v16_data_and_invalidates_removed_workspace_selection() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("v16.db");
+        let db = Database::open(&path).unwrap();
+        let conn = db.connect().unwrap();
+        conn.execute_batch("DROP TRIGGER workspace_target_removed; DROP TRIGGER workspace_project_removed; DROP TRIGGER workspace_project_archived; DROP TABLE research_session_records; DROP TABLE research_session_jobs; DROP TABLE research_sessions; DROP TABLE workspace_selection; PRAGMA user_version=16;").unwrap();
+        conn.execute("INSERT INTO projects(id,name,description,created_at,updated_at,archived) VALUES('keep','Preserved project','prior data','stamp','stamp',0)", []).unwrap();
+        drop(conn);
+        let reopened = Database::open(&path).unwrap();
+        let conn = reopened.connect().unwrap();
+        assert_eq!(
+            conn.query_row(
+                "SELECT description FROM projects WHERE id='keep'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "prior data"
+        );
+        conn.execute(
+            "UPDATE workspace_selection SET project_id='keep',revision=1",
+            [],
+        )
+        .unwrap();
+        conn.execute("UPDATE projects SET archived=1 WHERE id='keep'", [])
+            .unwrap();
+        assert_eq!(
+            conn.query_row("SELECT revision FROM workspace_selection", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        assert!(
+            conn.query_row("SELECT project_id FROM workspace_selection", [], |r| r
+                .get::<_, Option<
+                String,
+            >>(
+                0
+            ))
+            .unwrap()
+            .is_none()
+        );
+        assert!(
+            std::fs::read_dir(dir.path())
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .any(|e| e
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(&format!("pre-v{SCHEMA_VERSION}")))
+        );
     }
 }

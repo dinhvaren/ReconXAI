@@ -1,4 +1,5 @@
 import { Button } from "../components/controls";
+import StartResearchButton from "../components/StartResearchButton";
 import AiProviderManager from "../components/AiProviderManager";
 import type { AiManagerState } from "../ai";
 import {
@@ -23,6 +24,7 @@ import {
 } from "../api";
 import { Modal, Heading, Icon as Glyph, type Perform } from "../components/ui";
 import { useTheme } from "../theme";
+import { useWorkspace } from "../workspace";
 const date = (text: string) => new Date(text).toLocaleString();
 export function Projects({
   data,
@@ -35,6 +37,7 @@ export function Projects({
   perform: Perform;
   onAddTarget: () => void;
 }) {
+  const workspace = useWorkspace();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
@@ -48,7 +51,13 @@ export function Projects({
       async () => {
         if (editing)
           await request("update_project", { id: editing, name, description });
-        else await request("create_project", { name, description });
+        else {
+          const created = await request<{ id: string }>("create_project", {
+            name,
+            description,
+          });
+          if (workspace) await workspace.select(created.id);
+        }
         setName("");
         setDescription("");
         setEditing(null);
@@ -86,6 +95,7 @@ export function Projects({
         description="A durable home for your research notes and workspace history."
         action={
           <div className="inline-actions">
+            <StartResearchButton />
             <Button className="button" onClick={onAddTarget}>
               + Add Target
             </Button>
@@ -533,9 +543,12 @@ export function AiWorkspace({
         eyebrow="AI-ASSISTED LOCAL RESEARCH"
         title="AI Workspace"
         action={
-          <Button className="button secondary" onClick={onTools}>
-            Plan local analysis
-          </Button>
+          <div className="inline-actions">
+            <StartResearchButton providerId={id} />
+            <Button className="button secondary" onClick={onTools}>
+              Plan local analysis
+            </Button>
+          </div>
         }
         description="Ask your configured model to explain evidence, review code, or draft remediation."
       />
@@ -872,8 +885,8 @@ export function AiWorkspace({
           <div className="research-context-section">
             <h3>Agent tasks & approvals</h3>
             <p>
-              Agent execution and workflow approval controls are not available.
-              This conversation cannot run tools.
+              Use Start AI Research to review a plan and approve supported tool
+              workflows. This conversation cannot run tools.
             </p>
           </div>
           <div className="research-context-section">

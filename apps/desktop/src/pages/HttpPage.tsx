@@ -1,4 +1,5 @@
 import { Button } from "../components/controls";
+import { useWorkspaceProject, useWorkspaceTarget } from "../workspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { request, errorText, type Snapshot } from "../api";
@@ -85,8 +86,8 @@ export default function HttpPage({
   busy: boolean;
   navigate: (page: string) => void;
 }) {
-  const [project, setProject] = useState(projectId ?? "");
-  const [target, setTarget] = useState("");
+  const [project, setProject] = useWorkspaceProject(projectId ?? "");
+  const [target, setTarget] = useWorkspaceTarget("");
   const [workspace, setWorkspace] = useState<HttpWorkspace | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,6 @@ export default function HttpPage({
   const [aiReply, setAiReply] = useState("");
   useEffect(() => {
     setProject(projectId ?? "");
-    setTarget("");
     setOffset(0);
     setSelected("");
   }, [projectId]);
@@ -349,7 +349,6 @@ export default function HttpPage({
             value={project}
             onChange={(e) => {
               setProject(e.target.value);
-              setTarget("");
               setOffset(0);
               setSelected("");
             }}

@@ -27,6 +27,12 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Persistent target-bound sessions over the existing reviewed capabilities.
+    #[command(subcommand)]
+    Research(ResearchCommand),
+    /// Shared active project/target IDs, used by Desktop and CLI.
+    #[command(subcommand)]
+    Workspace(WorkspaceCommand),
     /// Compiled, permission-bounded native extensions; installation requires a reviewed plan.
     #[command(subcommand)]
     Extensions(ExtensionsCommand),
@@ -512,6 +518,17 @@ enum ReverseCommand {
         authorized: bool,
         #[arg(long)]
         folder: bool,
+        #[arg(
+            long,
+            default_value_t = 8192,
+            help = "Streaming import budget per file; deep parser remains independently bounded"
+        )]
+        max_mib: u64,
+        #[arg(
+            long,
+            help = "Print bounded byte progress to stderr; stdout remains JSON"
+        )]
+        progress: bool,
     },
     List {
         #[arg(long)]
@@ -780,6 +797,66 @@ enum RegistryCommand {
         offline: bool,
     },
     Clear,
+}
+#[derive(Subcommand)]
+enum WorkspaceCommand {
+    Show,
+    Select {
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long)]
+        target: Option<String>,
+        #[arg(long)]
+        revision: Option<i64>,
+    },
+}
+#[derive(Subcommand)]
+enum ResearchCommand {
+    Preview {
+        target: String,
+        #[arg(long)]
+        provider: Option<String>,
+        #[arg(long, default_value = "ai_assisted")]
+        mode: String,
+    },
+    Plan {
+        input: PathBuf,
+    },
+    List {
+        #[arg(long)]
+        project: String,
+    },
+    Show {
+        id: String,
+    },
+    Approve {
+        id: String,
+        #[arg(long)]
+        fingerprint: String,
+        #[arg(long)]
+        approve: bool,
+        #[arg(long)]
+        approve_network: bool,
+    },
+    Cancel {
+        id: String,
+    },
+    Evidence {
+        id: String,
+    },
+    Interpret {
+        input: PathBuf,
+    },
+    Finding {
+        id: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        details_file: PathBuf,
+    },
+    Report {
+        id: String,
+    },
 }
 #[derive(Subcommand)]
 enum WorkflowCommand {
@@ -1405,6 +1482,8 @@ async fn execute(cli: &Cli) -> Result<Value> {
                 project,
                 authorized,
                 folder,
+                max_mib,
+                progress,
             } => {
                 let project = match project {
                     Some(p) => p.clone(),
@@ -1419,11 +1498,16 @@ async fn execute(cli: &Cli) -> Result<Value> {
                         p[0].id.clone()
                     }
                 };
-                if *folder {
-                    serialize(core.import_folder(&project, input, *authorized)?)
-                } else {
-                    serialize(core.import_file(&project, input, *authorized)?)
-                }
+                import_cli(
+                    core.clone(),
+                    project,
+                    input.clone(),
+                    *authorized,
+                    *folder,
+                    *max_mib,
+                    *progress,
+                )
+                .await
             }
             ReverseCommand::List { project } => serialize(core.list_files(project.as_deref())?),
             ReverseCommand::Analyze { id } => serialize(core.analyze_file(id)?),
@@ -2033,6 +2117,67 @@ async fn execute(cli: &Cli) -> Result<Value> {
             }
             McpCommand::History { server } => serialize(core.mcp_history(server)?),
         },
+        Command::Workspace(command) => match command {
+            WorkspaceCommand::Show => serialize(core.workspace_selection()?),
+            WorkspaceCommand::Select {
+                project,
+                target,
+                revision,
+            } => serialize(core.select_workspace(
+                project.as_deref(),
+                target.as_deref(),
+                revision.unwrap_or(core.workspace_selection()?.revision),
+            )?),
+        },
+        Command::Research(command) => match command {
+            ResearchCommand::Preview {
+                target,
+                provider,
+                mode,
+            } => serialize(core.research_preview(reconx_core::ResearchRequest {
+                target_id: target.clone(),
+                provider_id: provider.clone(),
+                mode: serde_json::from_value(json!(mode)).map_err(|_| {
+                    AppError::new(
+                        "INVALID_INPUT",
+                        "Mode must be manual, ai_assisted or authorized_auto",
+                    )
+                })?,
+            })?),
+            ResearchCommand::Plan { input } => serialize(
+                core.research_plan(serde_json::from_str(&read_file(input)?).map_err(|_| {
+                    AppError::new("INVALID_INPUT", "Expected a reviewed research context")
+                })?)
+                .await?,
+            ),
+            ResearchCommand::List { project } => serialize(core.research_list(project)?),
+            ResearchCommand::Show { id } => serialize(core.research_session(id)?),
+            ResearchCommand::Approve {
+                id,
+                fingerprint,
+                approve,
+                approve_network,
+            } => serialize(core.research_approve(id, fingerprint, *approve, *approve_network)?),
+            ResearchCommand::Cancel { id } => serialize(core.research_cancel(id)?),
+            ResearchCommand::Evidence { id } => serialize(core.research_evidence_preview(id)?),
+            ResearchCommand::Interpret { input } => serialize(
+                core.research_interpret(serde_json::from_str(&read_file(input)?).map_err(
+                    |_| {
+                        AppError::new(
+                            "INVALID_INPUT",
+                            "Expected exact evidence and destination consent",
+                        )
+                    },
+                )?)
+                .await?,
+            ),
+            ResearchCommand::Finding {
+                id,
+                title,
+                details_file,
+            } => serialize(core.research_finding(id, title, &read_file(details_file)?)?),
+            ResearchCommand::Report { id } => serialize(core.research_report(id)?),
+        },
         Command::Workflow(command) => match command {
             WorkflowCommand::Evidence { job } => serialize(core.job_evidence_preview(job)?),
             WorkflowCommand::Interpret { input } => {
@@ -2057,6 +2202,57 @@ async fn execute(cli: &Cli) -> Result<Value> {
         Command::Audit => serialize(core.audit_events()?),
         Command::Completions { .. } => unreachable!(),
     }
+}
+async fn import_cli(
+    core: Core,
+    project: String,
+    path: PathBuf,
+    authorized: bool,
+    folder: bool,
+    max_mib: u64,
+    progress: bool,
+) -> Result<Value> {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    };
+    let max_bytes = max_mib
+        .checked_mul(1024 * 1024)
+        .ok_or_else(|| AppError::new("INPUT_LIMIT", "Import budget is too large"))?;
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let flag = cancelled.clone();
+    let mut worker = tokio::task::spawn_blocking(move || {
+        let mut last = std::time::Instant::now();
+        let mut stage = String::new();
+        let update = |p: reconx_core::FileImportProgress| {
+            if flag.load(Ordering::Acquire) {
+                return Err(AppError::new(
+                    "CANCELLED",
+                    "Import cancelled; completed files are retained",
+                ));
+            }
+            if progress
+                && (stage != p.stage
+                    || p.completed == p.total
+                    || last.elapsed() >= std::time::Duration::from_millis(100))
+            {
+                eprintln!("{}", serde_json::to_string(&p).unwrap_or_default());
+                last = std::time::Instant::now();
+                stage = p.stage;
+            }
+            Ok(())
+        };
+        let limits = reconx_core::FileImportLimits { max_bytes };
+        if folder {
+            serialize(
+                core.import_folder_with_progress(&project, &path, authorized, limits, update)?,
+            )
+        } else {
+            serialize(core.import_file_with_progress(&project, &path, authorized, limits, update)?)
+        }
+    });
+    let result = tokio::select! {result=&mut worker=>result, _=tokio::signal::ctrl_c()=>{cancelled.store(true,Ordering::Release);worker.await}};
+    result.map_err(|_| AppError::new("WORKER_ERROR", "Streaming import worker failed"))?
 }
 async fn install_managed_package(
     core: &Core,

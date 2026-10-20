@@ -1,3 +1,263 @@
+## Current product-recovery checkpoint — 2026-10-20
+
+Version **0.1.0**, schema **017**, **v1.0 NOT READY**. This checkpoint supersedes
+older results below without combining their test counts. Source base
+`b041b667d6c918ce0e22c91f1c65222a2fe91aa2`; changes were uncommitted when verified.
+Current evidence: `artifacts/product-recovery-current-verification.json`. No normal user database, credentials or imported
+dataset was reset; no sample was executed and no release was published.
+Repository verification metadata: [product-recovery-20261020.json](verification/product-recovery-20261020.json).
+The local `artifacts/product-recovery-git-delivery.json`, when present, records the
+final commit/push and working-tree state; the revision above is the test baseline.
+
+The shared SQLite project/target selection now uses persistent IDs and revision
+checks. Start AI Research entry points use one Core session service and one view.
+The session reviews metadata-only AI context, validates strict capability IDs,
+consumes one-shot approval and atomically queues existing handlers. Supported
+steps are offline scope review, local metadata/strings, available fixed YARA-X
+and a separately approved owned-loopback HEAD. The exact HEAD destination and
+one-request/5-second/no-redirect limits are visible before approval. Actual jobs,
+logs, evidence, separately consented unverified AI interpretation, manual Needs
+Verification findings and reviewed four-format reports stay linked. SQLite history
+restores sessions even when WebView localStorage did not flush. Jobs/Workflows file
+selection updates the same target; project changes fence stale async results.
+
+Streaming ingestion is independent of deep parsing: paths cross IPC, copy/hash runs
+in 256 KiB chunks with disk checks, source-mutation checks, progress, cancellation
+and atomic publication. The import budget defaults to 8 GiB (configurable policy
+ceiling 64 GiB); actual runtime sizes are verified only through 1 GiB. Files above
+64 MiB retain complete bytes/hash, stream full entropy and use a 1 MiB strings/hex
+prefix. Unknown section counts are null and unsupported deep tabs are disabled.
+Deep parsing, fixed YARA-X and full byte comparison retain separate 64 MiB budgets.
+Native picker, drop and folder paths share Core; native acceptance exercises the
+picker, running cancellation, project switching and restart. No new migration after
+017; checked i64/u64 decoding fixes large-file size preservation.
+
+Guides: [AI_RESEARCH_SESSIONS.md](AI_RESEARCH_SESSIONS.md) and
+[STREAMING_FILE_IMPORT.md](STREAMING_FILE_IMPORT.md).
+
+| Current verification | Actual result | Evidence |
+|---|---|---|
+| Windows workspace Rust | 191 passed, 0 failed, 2 explicitly ignored | `artifacts/large-import-rust-verified.log` |
+| Parrot/WSL Core + CLI Rust | 191 passed, 0 failed, 2 explicitly ignored; 71 Rust/SQL files match staged source | `artifacts/large-import-linux-final.log` |
+| Clippy and rustfmt | Warning-denied Windows/Linux Clippy; Windows rustfmt pass | `large-import-clippy-verified.log`, Linux log, `recovery-combined-fmt.log` in artifacts |
+| Frontend / TypeScript / Vite | 39 passed; current production frontend build passes | `artifacts/recovery-final-frontend-tests.log`, `recovery-final-frontend-build.log` |
+| Windows optimized Desktop + CLI | Actual portable executables, both NotSigned | `artifacts/windows-product-recovery-20261020-ux-final`, `artifacts/product-recovery-final-assets.log` |
+| Linux optimized CLI | Actual ELF; Core/CLI acceptance only | `artifacts/linux-cli-large-import-final-20261020/reconx` |
+| Native integrated research | 9 acceptance checks | `artifacts/research-session-1792506323444/results.json` |
+| Native large-file import | 6 acceptance checks | `artifacts/large-import-native-1792506310716/results.json` |
+| Native HTTP regression | 11 acceptance checks | `artifacts/http-replay-1792506338490/results.json` |
+| Native evidence/findings/reports | 6 acceptance checks; independent PDF text/redaction inspection | `artifacts/outputs-1792506349760/results.json` |
+| Native shell UX | 216 page/theme/size observations; 3 shell/theme checks | `artifacts/ux-after-1792506362426/results.json` |
+| Real research CLI | 36 commands on each host; mock planning + real HEAD/static jobs + four reports | `artifacts/research-cli-{windows,linux}-combined-20261020/results.json` |
+| Large CLI fixtures | 80/256/512/1024 MiB; independent source/blob hashes; current largest metadata job; Linux running SIGINT | `artifacts/large-import-cli-windows-20261020/results.json`, `large-import-cli-linux-final-proof-20261020/results.json` |
+| Actual schema-16 → 17 CLI upgrade | 14 commands each host; old queued job/evidence preserved; valid exact backup; old client rejects newer DB without byte changes | `artifacts/research-upgrade-{windows,linux}-20261020/results.json` |
+
+These passes do not complete the broad workbench. Live cloud AI and actual local
+inference engines are unverified (research AI tests use deterministic owned mocks).
+General remote replay, active authorization matrix, stateful APIs, full schema,
+DNS/RDAP/CT/scanners, advanced analyzers/mobile/cloud/network/lab, general DAG and
+standing auto-policy, pause/resume, budgets/billing/OAuth, two useful Marketplace
+analyzer categories, first-run dependency setup, signed updater, clean installer
+lifecycle and Linux GUI remain PARTIAL/BLOCKED/UNVERIFIED. The known glib unsound
+and maintenance security gate remains unresolved; advisory data was not refreshed
+in this functional slice. Windows binaries are unsigned.
+
+Large-file limits remain explicit: forced termination may leave private import
+staging; no automatic crash-staging GC/resume, general workspace quota, complete
+large-file decompilation or OS process sandbox. Custom Windows ACL hardening is
+still open. The configurable 64 GiB ceiling is not runtime verification at 64 GiB.
+Authorized Auto currently means reviewed offline steps, not reusable standing
+authorization or uncontrolled scanning. Missing usage/cost is unavailable, never
+fabricated as zero. MCP same-user subprocesses are not sandboxed.
+
+### Diagnostics and visual evidence
+
+The first expanded native research assertion read the top-bar target before the
+independent CLI snapshot refreshed. Its failure screenshot/log remain retained;
+the corrected test waits for both displayed and SQLite-persisted IDs and passes.
+A worker-start timeout run executed zero frontend tests under concurrent heavy
+linking; bounded two-worker reruns pass all39. A source-edit/compile race diagnostic
+is superseded by a fresh full191-test run. None of these failed attempts is counted
+as a pass. Exact retained paths are in the verification JSON.
+
+Current research and large-file views each have 12 actual captures (three themes,
+1280×720/1366×768/1440×900/1920×1080). The shell UX run adds 216 observations over
+18 pages at those same themes/sizes, checks sampled control heights30/34/38,
+disabled explanations and overflow, plus theme keyboard/restart and emulated
+raster scaling. Five representative final images (large Light1280, research
+Dark1366 and ReconX1920, AI Workspace Dark1366 and Targets Light1280) were opened
+and inspected; not every capture was manually
+inspected. No user screenshot attachment was available for pixel comparison.
+The existing typography and exactly three themes are preserved.
+
+### Exact continuation
+
+1. Preserve this accepted pair/proof and schema017. Do not repeat streaming or
+   session implementation; no normal user dataset/credential migration is needed.
+2. Finish Milestone 3 UX/context audit for modal editing, target switching and
+   keyboard navigation in populated workspaces; the current 216 observations
+   verify measured controls/overflow, not every workflow or physical display DPI.
+3. Milestone 4: implement a second useful reviewed integration in another category,
+   prioritizing native HTTPX: official release/source/checksum review, installer
+   manifest, fixed typed approved loopback probe, timeout/cancel, normalized assets
+   and evidence, Desktop/CLI acceptance. Registry metadata or `--version` alone
+   must not mark an execution adapter Ready. External replay remains denied until
+   its separate scope/DNS/redirect policy is actually implemented and tested.
+4. Then continue the requested DAG/agent, accounting/local-engine, installer/updater
+   and remaining-domain phases. Keep all release/security blockers visible.
+
+Re-run only checks justified by subsequent changes. Reproduction:
+
+```powershell
+$env:CARGO_INCREMENTAL='0'
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings
+cargo test --locked --workspace -j2
+Push-Location apps/desktop
+npm run build
+npm test
+Pop-Location
+# Rebuild embedded assets after frontend edits; use a fresh candidate directory.
+(Get-Item apps/desktop/src-tauri/src/lib.rs).LastWriteTime=Get-Date
+cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2
+$env:RECONX_CLI_EXE='D:\ReconXAI\artifacts\windows-product-recovery-20261020-ux-final\reconx.exe'
+$env:RECONX_DESKTOP_EXE='D:\ReconXAI\artifacts\windows-product-recovery-20261020-ux-final\reconx-desktop.exe'
+$env:RECONX_VERIFY_ASSET='1'
+node tests/e2e/research-session.mjs
+node tests/e2e/large-import.mjs
+node tests/e2e/http-replay.mjs
+node tests/e2e/outputs.mjs
+node tests/e2e/ux.mjs after
+```
+
+Every native harness uses its own workspace and spawned PID; do not close the
+user's normal application. Use `wsl.exe` explicitly: a shell profile's `wsl`
+function can mask execution. Linux staged source and exact commands/logs are in
+the machine-readable proof; no Linux GUI pass is claimed. Large fixture directories
+are isolated and retained. Avoid recreating multi-GiB fixture copies needlessly;
+`large_import_smoke.py --resume --reanalyze` reuses its explicitly validated fixture.
+
+---
+
+Historical checkpoints below retain their original scope and dates.
+
+## Product recovery: target-bound research — 2026-10-20
+
+Version **0.1.0**, schema **017**, **v1.0 NOT READY**. This checkpoint supersedes
+older counts below; historical sections remain historical. Source base b041b66;
+changes are uncommitted. No reset, normal user-data cleanup, commit, push or release.
+
+Implemented and runtime verified: shared persisted project/target IDs with revision
+checks; Start AI Research entry points; one integrated session view; metadata-only
+AI planning consent; strict capability-ID plans; exact one-shot approval and atomic
+job batch; separately approved owned-loopback HEAD; real local metadata/strings;
+existing YARA-X availability detection; actual progress/logs; evidence; separately
+reviewed unverified AI interpretation; manual Needs Verification finding; report
+preview and four existing export formats. Desktop and CLI use the same Core and DB.
+No arbitrary shell/MCP/scanner execution or automatic Verified finding was added.
+
+Proof: `artifacts/research-current-verification.json`. Accepted portable Windows
+pair: `artifacts/windows-research-current-20261020`; Linux CLI:
+`artifacts/linux-cli-research-20261020/reconx`. Both Windows executables are
+actually NotSigned. Native tests assert the embedded frontend asset matches current
+Vite output; earlier candidates are preserved. Native screenshots are genuine
+WebView2 captures; no user attachment was available for pixel comparison.
+
+Current results: Windows Rust **186 passed / 0 failed / 2 ignored**; Linux Core/CLI
+**186/0/2**; frontend **39 passed**. Warning-denied Clippy both hosts; rustfmt and
+TypeScript/Vite pass. Native current build: research **8**, HTTP regression **11**,
+output regression **6** acceptance checks. Research captures cover exactly three
+themes × four sizes (1280/1366/1440/1920), no document overflow; Light1280, Dark1366
+and ReconX1920 captures were opened and inspected. Real CLI research acceptance is
+**36 commands per host**, including approved fixture HEAD, mock AI plan/interpretation,
+hash verification, real PE/ELF static jobs, review finding and four redacted reports.
+These are separate suites, not a claim of broad domain coverage.
+
+The previously pending cached-MCP-runtime fix also passes actual Windows negative
+acceptance: **37 commands**, running install cancellation, previous Ready retention,
+cached package binding to the newly approved managed Node path/hash, actual MCP
+health and failed corrupted-package update rollback. Evidence:
+`artifacts/mcp-cli-research-negative-20261020/negative-results.json`.
+
+Limits: only listed bounded local capabilities; domain registration alone is not
+recon/scanning. Remote replay, active authz matrix, stateful APIs, multi-domain DAG,
+pause/resume, reusable standing auto-policy, accounting/cost budgets, live cloud
+accounts, actual Ollama/LM Studio/vLLM engines, advanced decompiler/mobile/cloud/network
+adapters, two useful marketplace analyzer categories, setup/installer/signed updater
+and Linux GUI acceptance remain incomplete or unverified. AI tests use owned local
+deterministic protocol fixtures only. The known glib/dependency security release
+gate remains unresolved; this checkpoint did not rerun the advisory audit.
+
+**Next P0:** replace the 64 MiB ingestion architecture with bounded streaming copy
+and SHA-256, cancellable progress, disk-space checks, atomic publication and u64
+storage. Preserve a separate bounded deep-parser budget. Current `reverse.rs`
+`import_file` still reads/inspects the entire <=64 MiB input, `list_files` still
+decodes size through u32, and `prepare_file_analysis` calls the bounded sample
+reader. No 80/256/512 MiB or 1 GiB import pass is claimed. Do not merely enlarge
+MAX_FILE_BYTES or pass raw file bytes through React/IPC.
+
+### Changes and continuation
+
+New Core `research_sessions.rs`, migration017, shared-context `workspace.tsx`,
+ResearchPage and StartResearchButton. Updated App/navigation/target dialogs and
+project-aware existing workspaces; existing Agent Workflows, chat, imports, MCP,
+Job Engine, evidence and reporting remain available. Existing queue/cancel/HEAD
+helpers now accept an enclosing transaction; no parallel scheduler was introduced.
+New CLI `workspace` and `research` groups and matching Tauri operations. Architecture
+and JSON review formats: `docs/AI_RESEARCH_SESSIONS.md`.
+
+Regression failures fixed: schema upgrade fixtures initially retained new017 tables
+while simulating old versions; fixtures now remove only their isolated newer layout,
+without making production migrations permissive. Native restart initially depended
+on browser-local session hints; restore now reads SQLite history. Async selection/list
+responses are fenced; deleted/archived selections invalidate IDs. Quick Create Finding
+remains usable. History status now follows actual jobs and planning context closes
+after plan creation. Native first attempt's failed restart proof is retained under
+`artifacts/research-session-1792487208696/results.json`. A subsequent fixture compile
+failure used a helper module as a program; test now compiles an explicit benign main.
+An early full-test invocation overlapped source edits and failed rustdoc; only the
+final complete log counts above are accepted. All 69 staged Rust/SQL source hashes
+match the Linux test snapshot.
+
+Exact reproducible commands (use isolated data and explicit accepted binaries):
+
+```powershell
+$env:CARGO_INCREMENTAL='0'
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings
+cargo test --locked --workspace -j2
+cd apps/desktop
+npm run build
+npm test
+cd ../..
+cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2
+$env:RECONX_CLI_EXE='D:\ReconXAI\artifacts\windows-research-current-20261020\reconx.exe'
+$env:RECONX_DESKTOP_EXE='D:\ReconXAI\artifacts\windows-research-current-20261020\reconx-desktop.exe'
+$env:RECONX_VERIFY_ASSET='1'
+node tests/e2e/research-session.mjs
+node tests/e2e/http-replay.mjs
+node tests/e2e/outputs.mjs
+```
+
+Desktop source asset changes require a fresh embedded-asset build; the native test
+can assert the actual script path, preventing a stale executable from being accepted.
+Build logs: recovery-release-build-final.log and recovery-desktop-current-assets.log.
+Linux stage/run: `artifacts/stage-recovery-linux.py`, `artifacts/recovery-linux-run.sh`;
+the latter uses the retained1.95 toolchain and native Linux temp workspace, excludes
+Desktop and builds Core/CLI offline. CLI acceptance command:
+`python scripts/research_session_smoke.py --binary <explicit binary> --sample <benign PE/ELF> --output <new isolated directory>`.
+Each CLI call is a separate process; logs carry actual exit codes/timestamps. Never
+execute the imported sample. `scripts/verify.ps1 -Research` and `npm run test:research`
+provide reproducible native entry points.
+
+Current work after this checkpoint: large-file import design/audit; no implementation
+yet. First next edit must separate ingestion from `reconx-analysis::MAX_FILE_BYTES`,
+not change the parser cap. Add cancellation and partial-file cleanup tests before
+advertising large imports. Preserve existing databases and accepted binaries. Source
+protection: `git status --short` before resuming; keep all uncommitted changes.
+
+---
+
 ## MCP Registry / reviewed npm runtime checkpoint — 2026-10-19
 
 Version **0.1.0**, schema **016**; **v1.0 NOT READY**. A bounded Registry + npm

@@ -1,3 +1,109 @@
+## Current product-recovery checkpoint — 2026-10-20
+
+Version **0.1.0**, schema **017**, **v1.0 NOT READY**. This checkpoint supersedes
+older results below without combining their test counts. Source base
+`b041b667d6c918ce0e22c91f1c65222a2fe91aa2`; changes were uncommitted when verified.
+Current evidence: `artifacts/product-recovery-current-verification.json`. No normal user database, credentials or imported
+dataset was reset; no sample was executed and no release was published.
+Repository verification metadata: [product-recovery-20261020.json](verification/product-recovery-20261020.json).
+The local `artifacts/product-recovery-git-delivery.json`, when present, records the
+final commit/push and working-tree state; the revision above is the test baseline.
+
+The shared SQLite project/target selection now uses persistent IDs and revision
+checks. Start AI Research entry points use one Core session service and one view.
+The session reviews metadata-only AI context, validates strict capability IDs,
+consumes one-shot approval and atomically queues existing handlers. Supported
+steps are offline scope review, local metadata/strings, available fixed YARA-X
+and a separately approved owned-loopback HEAD. The exact HEAD destination and
+one-request/5-second/no-redirect limits are visible before approval. Actual jobs,
+logs, evidence, separately consented unverified AI interpretation, manual Needs
+Verification findings and reviewed four-format reports stay linked. SQLite history
+restores sessions even when WebView localStorage did not flush. Jobs/Workflows file
+selection updates the same target; project changes fence stale async results.
+
+Streaming ingestion is independent of deep parsing: paths cross IPC, copy/hash runs
+in 256 KiB chunks with disk checks, source-mutation checks, progress, cancellation
+and atomic publication. The import budget defaults to 8 GiB (configurable policy
+ceiling 64 GiB); actual runtime sizes are verified only through 1 GiB. Files above
+64 MiB retain complete bytes/hash, stream full entropy and use a 1 MiB strings/hex
+prefix. Unknown section counts are null and unsupported deep tabs are disabled.
+Deep parsing, fixed YARA-X and full byte comparison retain separate 64 MiB budgets.
+Native picker, drop and folder paths share Core; native acceptance exercises the
+picker, running cancellation, project switching and restart. No new migration after
+017; checked i64/u64 decoding fixes large-file size preservation.
+
+Guides: [AI_RESEARCH_SESSIONS.md](AI_RESEARCH_SESSIONS.md) and
+[STREAMING_FILE_IMPORT.md](STREAMING_FILE_IMPORT.md).
+
+### Exact continuation
+
+1. Preserve this accepted pair/proof and schema017. Do not repeat streaming or
+   session implementation; no normal user dataset/credential migration is needed.
+2. Finish Milestone 3 UX/context audit for modal editing, target switching and
+   keyboard navigation in populated workspaces; the current 216 observations
+   verify measured controls/overflow, not every workflow or physical display DPI.
+3. Milestone 4: implement a second useful reviewed integration in another category,
+   prioritizing native HTTPX: official release/source/checksum review, installer
+   manifest, fixed typed approved loopback probe, timeout/cancel, normalized assets
+   and evidence, Desktop/CLI acceptance. Registry metadata or `--version` alone
+   must not mark an execution adapter Ready. External replay remains denied until
+   its separate scope/DNS/redirect policy is actually implemented and tested.
+4. Then continue the requested DAG/agent, accounting/local-engine, installer/updater
+   and remaining-domain phases. Keep all release/security blockers visible.
+
+Re-run only checks justified by subsequent changes. Reproduction:
+
+```powershell
+$env:CARGO_INCREMENTAL='0'
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings
+cargo test --locked --workspace -j2
+Push-Location apps/desktop
+npm run build
+npm test
+Pop-Location
+# Rebuild embedded assets after frontend edits; use a fresh candidate directory.
+(Get-Item apps/desktop/src-tauri/src/lib.rs).LastWriteTime=Get-Date
+cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2
+$env:RECONX_CLI_EXE='D:\ReconXAI\artifacts\windows-product-recovery-20261020-ux-final\reconx.exe'
+$env:RECONX_DESKTOP_EXE='D:\ReconXAI\artifacts\windows-product-recovery-20261020-ux-final\reconx-desktop.exe'
+$env:RECONX_VERIFY_ASSET='1'
+node tests/e2e/research-session.mjs
+node tests/e2e/large-import.mjs
+node tests/e2e/http-replay.mjs
+node tests/e2e/outputs.mjs
+node tests/e2e/ux.mjs after
+```
+
+Every native harness uses its own workspace and spawned PID; do not close the
+user's normal application. Use `wsl.exe` explicitly: a shell profile's `wsl`
+function can mask execution. Linux staged source and exact commands/logs are in
+the machine-readable proof; no Linux GUI pass is claimed. Large fixture directories
+are isolated and retained. Avoid recreating multi-GiB fixture copies needlessly;
+`large_import_smoke.py --resume --reanalyze` reuses its explicitly validated fixture.
+
+These passes do not complete the broad workbench. Live cloud AI and actual local
+inference engines are unverified (research AI tests use deterministic owned mocks).
+General remote replay, active authorization matrix, stateful APIs, full schema,
+DNS/RDAP/CT/scanners, advanced analyzers/mobile/cloud/network/lab, general DAG and
+standing auto-policy, pause/resume, budgets/billing/OAuth, two useful Marketplace
+analyzer categories, first-run dependency setup, signed updater, clean installer
+lifecycle and Linux GUI remain PARTIAL/BLOCKED/UNVERIFIED. The known glib unsound
+and maintenance security gate remains unresolved; advisory data was not refreshed
+in this functional slice. Windows binaries are unsigned.
+
+Large-file limits remain explicit: forced termination may leave private import
+staging; no automatic crash-staging GC/resume, general workspace quota, complete
+large-file decompilation or OS process sandbox. Custom Windows ACL hardening is
+still open. The configurable 64 GiB ceiling is not runtime verification at 64 GiB.
+Authorized Auto currently means reviewed offline steps, not reusable standing
+authorization or uncontrolled scanning. Missing usage/cost is unavailable, never
+fabricated as zero. MCP same-user subprocesses are not sandboxed.
+
+---
+
+Historical checkpoints below retain their original scope and dates.
+
 ## UX/extension checkpoint — 2026-10-19
 
 Windows UX and one first-party YARA-X extension lifecycle are runtime verified;
