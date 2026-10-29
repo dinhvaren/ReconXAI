@@ -28,11 +28,17 @@ mod managed_mcp;
 mod mcp;
 mod mcp_http;
 mod recon;
+mod recon_tools;
+pub use recon_tools::{
+    ReconConfig, ReconPlan, ReconTool, parse_httpx_output, parse_subfinder_output,
+};
 mod registry;
 pub use managed_mcp::{MANAGED_MCP_EVERYTHING, ManagedMcpApproval, ManagedMcpSummary};
 mod reporting;
+mod research_graph;
 mod research_sessions;
 pub use registry::*;
+pub use research_graph::*;
 pub use research_sessions::*;
 mod reverse;
 mod targets;

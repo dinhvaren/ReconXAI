@@ -1,3 +1,72 @@
+## Current verified checkpoint — 2026-10-29
+
+Version **0.1.0**, SQLite schema **019**, **v1.0 NOT READY**. This supersedes
+older checkpoints below. Source base `c920130bab108a55f228b69789d47caeb8e8850f`;
+verification ran on the preserved working tree, with source hashes recorded in
+[research-provenance-20261029.json](verification/research-provenance-20261029.json).
+Local full proof: `artifacts/research-current-verification.json`. No normal user
+workspace/credential was reset, sample executed or public target scanned.
+
+Implemented in this slice:
+- Pinned real HTTPX/Subfinder adapters, official archive/executable hashes, exact
+  pinned PATH reuse, private version/execution config, real local GET/source-list
+  health, safe receipt-owned repair and preservation of unexpected destinations.
+- Reviewed typed jobs, exact target/scope/tool approval, IP-pinned HTTPX transport,
+  bounded output/timeout/cancellation, inventory/evidence, shared Desktop/CLI and
+  target research sessions. Migration018 preserves prior session/selection data.
+- Read-only persistent asset/exploration provenance over actual sessions, plans,
+  approvals, jobs, inventory, evidence, manual findings and reports. Migration019
+  adds graph tables, not a queue. Graph review cannot execute tools or AI.
+- Research Session graph filters/search/pagination, keyboard/pointer pan, zoom,
+  neighborhood focus, source inspection, JSON export and stable restart IDs.
+  Local import paths/URL credentials are omitted from graph metadata; source
+  evidence integrity remains a separate check. Marketplace search selection and
+  duplicate raw/normalized evidence storage were fixed, not hidden by test changes.
+
+| Current verification | Actual result | Evidence |
+|---|---|---|
+| Windows Rust workspace | 202 passed, 0 failed, 2 explicit opt-in ignores | `artifacts/research-graph-final-rust.log` |
+| Parrot/WSL Core + CLI | 202 passed, 0 failed, 2 ignored; 78 Rust/SQL files match | `artifacts/research-graph-linux.log`, source comparison JSON |
+| Frontend / TS / Vite | 44 passed; current production build passes | `research-graph-final-frontend-tests.log`, `research-graph-readable-frontend-build.log` |
+| Formatting / Clippy | rustfmt check + warning-denied Windows/Linux Clippy pass | proof command ledger; `artifacts/research-final-fmt.log` |
+| Windows native research/recon/graph | 12 acceptance groups, 33 actual captures | `artifacts/recon-tools-native-1793259682347/results.json` |
+| Native HTTP / outputs regression | 11 / 6 acceptance groups, separately recorded | `artifacts/http-replay-1793259879215/results.json`, `artifacts/outputs-1793259890313/results.json` |
+| Legacy manual HEAD regression | 7 groups; current collapsed controls and existing data/exports work | `artifacts/recon-local-1793260674071/results.json` |
+| Real tools CLI | 7 groups including repair; Windows/Linux actual owned HTTPX | release CLI fixture records in proof |
+| Graph CLI / persistence | Actual schema018 fixture → 019, 16 nodes/17 edges, jobs unchanged, filters/export/backup | Windows/Linux graph acceptance JSON in proof |
+
+Counts are per platform/suite, not summed across repeated runs. Mock planning and
+interpretation remain **MOCK_VERIFIED**; no live cloud account claim. Subfinder's
+real installation/version/source inventory and parser are tested, but live passive
+domain enumeration is **NOT_TESTED** without an owned authorized domain/source.
+Remote HTTPX/TLS runtime is unverified; certificate metadata is not a trust verdict.
+
+Accepted development artifacts (unsigned; no installer/release publication):
+`artifacts/windows-research-graph-final-20261029/{reconx-desktop.exe,reconx.exe}` and
+`artifacts/linux-research-graph-20261029/reconx`. Each folder contains checksums and
+a build manifest. Linux GUI remains **UNVERIFIED**; WSL Core/CLI is not GUI proof.
+
+The five-capability request remains **PARTIAL**. No automatic offensive continuation
+loop, multi-agent runtime/message bus, general DAG/pause/resume/budgets, universal
+invocation envelope, new capture policy/proxy/CA or global asset graph is claimed.
+Existing HAR/manual-loopback traffic capture works; a dedicated opt-in recorder is
+not implemented. Graphs are bounded session projections refreshed on review, not
+an inference system or complete transition-history engine. Refresh after target/
+file removal remains a known gap. No hypothesis is automatically Verified.
+The existing glib/RustSec, installer/signing/updater, broader domains and Linux GUI
+release gates remain open; advisory data was not refreshed in this feature slice.
+
+Guides: [RECON_TOOL_ADAPTERS.md](RECON_TOOL_ADAPTERS.md),
+[EXPLORATION_GRAPH.md](EXPLORATION_GRAPH.md),
+[UNIFIED_TOOL_EXECUTION.md](UNIFIED_TOOL_EXECUTION.md),
+[AUTONOMOUS_RESEARCH.md](AUTONOMOUS_RESEARCH.md),
+[MULTI_AGENT_ARCHITECTURE.md](MULTI_AGENT_ARCHITECTURE.md),
+[TRAFFIC_RECORDING.md](TRAFFIC_RECORDING.md).
+
+---
+
+Earlier checkpoint history (not current test totals):
+
 ## Current product-recovery checkpoint — 2026-10-20
 
 Version **0.1.0**, schema **017**, **v1.0 NOT READY**. This checkpoint supersedes

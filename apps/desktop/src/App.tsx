@@ -702,6 +702,7 @@ function Workbench() {
               )}
               {page === "Extensions" && (
                 <ExtensionsPage
+                  onOpenRecon={() => navigate("Reconnaissance")}
                   onOpenMcp={() => navigate("MCP Hub")}
                   projectId={project?.id}
                   onOpenFiles={() => {

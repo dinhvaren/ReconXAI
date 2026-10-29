@@ -142,6 +142,14 @@ export async function installTool(
   updates.onmessage = onUpdate;
   return invoke("install_tool", { id, updates });
 }
+export async function installNativeExtension(
+  approval: { id: string; fingerprint: string; approved: boolean },
+  onProgress: (p: ToolProgress) => void,
+) {
+  const updates = new Channel<ToolProgress>();
+  updates.onmessage = onProgress;
+  return invoke("install_native_extension", { approval, updates });
+}
 export function errorText(error: unknown): string {
   if (typeof error === "object" && error && "message" in error)
     return String(error.message);

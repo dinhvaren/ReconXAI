@@ -35,6 +35,8 @@ pub struct ExtensionManifest {
 pub fn validate_extension_manifest(manifest: &ExtensionManifest) -> Result<()> {
     let expected = if manifest.id == MANAGED_MCP_EVERYTHING {
         managed_mcp::manifest(&manifest.version)?
+    } else if matches!(manifest.id.as_str(), "httpx" | "subfinder") {
+        recon_manifest(&manifest.id)
     } else {
         yara_manifest()
     };
@@ -66,9 +68,38 @@ fn yara_manifest() -> ExtensionManifest {
         uninstall_method: "remove-extension-registration-retain-tools-and-evidence".into(),
     }
 }
+fn recon_manifest(id: &str) -> ExtensionManifest {
+    let mut m = yara_manifest();
+    m.id = id.into();
+    m.name = format!("ProjectDiscovery {}", id);
+    m.category = "Reconnaissance".into();
+    m.description=if id=="httpx" {"Explicitly approved, scope-filtered HTTP probes with pinned IP transport. Results are observations, not vulnerabilities."}else{"Passive subdomain intelligence from selected keyless providers. No active validation; live source access remains independently verifiable."}.into();
+    m.required_tools = vec![id.into()];
+    m.capabilities = vec![format!(
+        "{}.{}",
+        id,
+        if id == "httpx" { "probe" } else { "passive" }
+    )];
+    m.permissions = vec![
+        "execute:pinned-binary-fixed-arguments".into(),
+        if id == "httpx" {
+            "network:explicitly-approved-in-scope-urls"
+        } else {
+            "network:selected-passive-providers-parent-domain-disclosure"
+        }
+        .into(),
+        "write:assets-and-evidence".into(),
+    ];
+    m.entrypoint = format!("job:recon_{}", id);
+    m.health_check = "verified-version-and-offline-cli-contract".into();
+    m
+}
 fn extension_manifest(id: &str) -> Result<ExtensionManifest> {
     if id == MANAGED_MCP_EVERYTHING {
         return managed_mcp::manifest("2.0.0");
+    }
+    if matches!(id, "httpx" | "subfinder") {
+        return Ok(recon_manifest(id));
     }
     if id != YARA {
         return Err(AppError::new(
@@ -202,6 +233,8 @@ impl Core {
         }
         let entries = [
             self.extension_entry(YARA)?,
+            self.extension_entry("httpx")?,
+            self.extension_entry("subfinder")?,
             self.extension_entry(MANAGED_MCP_EVERYTHING)?,
         ];
         Ok(entries
@@ -227,11 +260,14 @@ impl Core {
                 "No verified extension dependency for this OS/architecture",
             ));
         }
-        let fingerprint = reconx_tools::hash(&serde_json::to_vec(&extension).map_err(json_error)?);
         let actions = extension
             .dependencies
             .iter()
             .map(|d| {
+                if matches!(d.manifest.id.as_str(),"httpx"|"subfinder") && !d.integrity_verified
+                    && let Ok(Some(path))=self.tool_manager().discover_recon(&d.manifest.id) {
+                    return format!("Reuse existing executable {} after pinned SHA-256 verification: {}",d.manifest.id,path.display());
+                }
                 format!(
                     "{} {} {}",
                     if d.integrity_verified {
@@ -244,15 +280,29 @@ impl Core {
                 )
             })
             .chain([
-                "Run a real bounded signature health check; register the extension".into(),
+                "Run real adapter health checks (HTTPX: one owned-loopback GET; Subfinder: offline source inventory); register only after success".into(),
                 "Uninstall retains managed tools, projects and evidence".into(),
             ])
-            .collect();
+            .collect::<Vec<_>>();
+        let fingerprint = reconx_tools::hash(
+            &serde_json::to_vec(&json!({"extension":extension,"actions":actions}))
+                .map_err(json_error)?,
+        );
         Ok(ExtensionInstallPlan { extension, fingerprint, actions, requires_admin: false,
             package_plan:None,
-            network_access: "Installation only: pinned GitHub release URLs and SHA-256 hashes shown in dependency manifests. Signature execution is offline.".into() })
+            network_access: "Installation uses reviewed GitHub URLs/hash verification or an approved matching PATH executable. HTTPX health sends one GET to its own temporary loopback fixture. Target probes and external passive-source queries need separate approval.".into() })
     }
     pub async fn extension_install(&self, approval: ExtensionApproval) -> Result<ExtensionEntry> {
+        self.extension_install_with_progress(approval, |_| {}).await
+    }
+    pub async fn extension_install_with_progress<F>(
+        &self,
+        approval: ExtensionApproval,
+        mut progress: F,
+    ) -> Result<ExtensionEntry>
+    where
+        F: FnMut(ToolProgress) + Send,
+    {
         if approval.id == MANAGED_MCP_EVERYTHING {
             return Err(AppError::new(
                 "MANAGED_EXTENSION_API",
@@ -317,11 +367,27 @@ impl Core {
         let outcome = async {
             for dependency in &plan.extension.dependencies {
                 if !dependency.integrity_verified {
-                    self.tool_install(&dependency.manifest.id, |_| {}).await?;
+                    let id = &dependency.manifest.id;
+                    if matches!(id.as_str(), "httpx" | "subfinder")
+                        && let Some(path) = self.tool_manager().discover_recon(id)?
+                    {
+                        self.tool_manager().adopt_recon(id, &path)?;
+                    } else {
+                        self.tool_install(id, &mut progress).await?;
+                    }
                 }
+                progress(ToolProgress {
+                    phase: format!("health-check:{}", dependency.manifest.id),
+                    downloaded: 0,
+                    total: None,
+                });
                 self.tool_doctor(&dependency.manifest.id).await?;
             }
-            self.extension_signature_health().await
+            if approval.id == YARA {
+                self.extension_signature_health().await
+            } else {
+                self.recon_extension_health(&approval.id).await
+            }
         }
         .await;
         state.enabled = outcome.is_ok();
@@ -347,6 +413,23 @@ impl Core {
         )?;
         outcome?;
         self.extension_entry(&approval.id)
+    }
+    async fn recon_extension_health(&self, id: &str) -> Result<()> {
+        if id == "subfinder" {
+            let manager = self.tool_manager();
+            let output = tokio::task::spawn_blocking(move || {
+                manager.recon_execute(reconx_tools::ReconToolRequest::Sources, || Ok(()))
+            })
+            .await
+            .map_err(|_| AppError::new("WORKER_ERROR", "Source inventory worker failed"))??;
+            if !output.stdout.contains("crtsh") && !output.stderr.contains("crtsh") {
+                return Err(AppError::new(
+                    "EXTENSION_HEALTH",
+                    "Reviewed source is not available",
+                ));
+            }
+        }
+        Ok(())
     }
     async fn extension_signature_health(&self) -> Result<()> {
         let manager = self.tool_manager();
@@ -391,8 +474,14 @@ impl Core {
             self.write_extension_state(id, &state)?;
         }
         let outcome = async {
-            self.tool_doctor("yara-x").await?;
-            self.extension_signature_health().await
+            for tool in &entry.manifest.required_tools {
+                self.tool_doctor(tool).await?;
+            }
+            if id == YARA {
+                self.extension_signature_health().await
+            } else {
+                self.recon_extension_health(id).await
+            }
         }
         .await;
         state.last_health_check = outcome.as_ref().ok().map(|_| now());
@@ -556,6 +645,14 @@ impl Core {
     }
     pub fn extension_history(&self, id: &str) -> Result<Vec<AnalysisJob>> {
         extension_manifest(id)?;
+        if matches!(id, "httpx" | "subfinder") {
+            return Ok(self
+                .recon_history(None)?
+                .into_iter()
+                .filter(|j| j.kind == format!("recon_{id}"))
+                .take(100)
+                .collect());
+        }
         let conn = self.db.connect()?;
         let ids = conn.prepare("SELECT job_id FROM extension_invocations WHERE extension_id=?1 ORDER BY approved_at DESC LIMIT 100").map_err(db_error)?
             .query_map([id], |r| r.get::<_,String>(0)).map_err(db_error)?.collect::<std::result::Result<Vec<_>,_>>().map_err(db_error)?;

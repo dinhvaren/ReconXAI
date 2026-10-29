@@ -18,7 +18,9 @@ reviewed local-file planner can queue typed allowlisted jobs. Streaming uses Tau
 IPC channels and a bounded cancellation registry. Fixed version checks, managed
 YARA-X signatures, manually approved benign MCP calls, evidence/findings/reports,
 offline HAR/OpenAPI review and individually reviewed loopback HTTP have real core
-services. General scanners, remote replay and broad autonomous agents are not
+services. Reviewed HTTPX metadata and passive Subfinder adapters now use the same
+Tool Manager, typed jobs, inventory and evidence pipeline; target-session plans
+require separate network/data-sharing approval. General scanners, remote replay and broad autonomous agents are not
 implemented. Navigation marks future modules clearly.
 
 Migration 002 extends existing projects with targets, imported sample metadata,
@@ -31,7 +33,7 @@ SQLite stores references and metadata. See RESEARCH_INPUTS.md for limits and rem
 
 Dependencies are sourced from crates.io and the official npm registry. Cargo.lock and package-lock.json preserve resolved versions.
 
-Schema version is 017. Opening an existing workspace checks its version with
+Schema version is 019. Opening an existing workspace checks its version with
 a read-only SQLite connection before enabling WAL, then rechecks under the write
 lock. Newer/corrupt files are rejected; additive upgrade backups and preservation
 tests remain in storage. This is not a complete workspace backup/restore feature;
@@ -121,3 +123,10 @@ result evidence. ReconPage/RecordsPage and the CLI call these same services.
 Current migrations snapshot versions 1-5 before an additive schema-6 transaction;
 there is no destructive automatic rollback. See LOCAL_INVENTORY.md and
 RESEARCH_OUTPUTS.md for byte limits and platform-dependent guarantees.
+
+
+Schema019 adds a bounded, read-only materialized provenance graph over existing
+session/job/evidence/asset records. It is not an execution queue, agent runtime or
+network capability. Desktop and CLI call the same Core projection/page/export
+services; source identities and scope associations remain authoritative. See
+EXPLORATION_GRAPH.md for limits, privacy, consistency and acceptance boundaries.

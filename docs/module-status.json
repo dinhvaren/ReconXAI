@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-20",
+  "updated": "2026-10-29",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -488,32 +488,47 @@
     {
       "id": "target_research_sessions",
       "status": "RUNTIME_VERIFIED",
-      "verification": "artifacts/product-recovery-current-verification.json",
-      "scope": "Typed bounded local plans, one-shot approval, real jobs/evidence/manual findings/report; MOCK AI only"
+      "verification": "docs/verification/research-provenance-20261029.json",
+      "scope": "Bounded typed reviewed plans, actual local/tool jobs, evidence/report and read-only graph; MOCK AI only, no autonomous offensive loop"
     },
     {
       "id": "streaming_file_import",
       "status": "RUNTIME_VERIFIED",
       "verification": "artifacts/product-recovery-current-verification.json",
       "scope": "Independent hashes for80/256/512/1024 MiB; native256 MiB import, running1 GiB cancellation/project switching; large metadata deferred"
+    },
+    {
+      "id": "session_provenance_graph",
+      "status": "RUNTIME_VERIFIED",
+      "scope": "Bounded read-only session projection, not complete global exploration/asset graph",
+      "verification": "docs/verification/research-provenance-20261029.json"
+    },
+    {
+      "id": "multi_agent_runtime",
+      "status": "NOT_STARTED",
+      "verification": "No empty agents are exposed; existing model routing is not an agent runtime"
+    },
+    {
+      "id": "opt_in_owned_traffic_recorder",
+      "status": "NOT_STARTED",
+      "verification": "Existing HAR/manual replay captures remain; no new project policy/proxy/recorder"
     }
   ],
   "verification": {
-    "rust_passed": 191,
+    "rust_passed": 202,
     "rust_failed": 0,
     "rust_ignored_default": 2,
-    "frontend_passed": 39,
+    "frontend_passed": 44,
     "frontend_failed": 0,
     "native_checks_current": {
-      "research": 9,
-      "large_import": 6,
+      "research_recon_graph": 12,
       "http_replay": 11,
       "outputs": 6,
-      "ux_shell": 3
+      "legacy_head": 7
     },
-    "ux_page_theme_size_observations": 216,
-    "record": "artifacts/product-recovery-current-verification.json",
-    "scope": "Bounded local research/import plus current HTTP/output/shell regression; prior broader suites remain historical"
+    "native_research_captures": 33,
+    "record": "artifacts/research-current-verification.json",
+    "scope": "Bounded managed recon + read-only graph; mock AI only; no autonomous pentest/multi-agent/recording completion claim"
   },
   "v1_release": {
     "ready": false,
@@ -529,7 +544,7 @@
       "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
     ]
   },
-  "database_schema_version": 17,
+  "database_schema_version": 19,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -546,12 +561,12 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 191,
+        "passed": 202,
         "failed": 0,
         "ignored": 2,
-        "record": "artifacts/large-import-linux-final.log"
+        "record": "artifacts/research-graph-linux.log"
       },
-      "optimized_cli_record": "artifacts/product-recovery-current-verification.json"
+      "optimized_cli_record": "artifacts/linux-research-graph-20261029/build-manifest.json"
     }
   },
   "page_inventory": [
@@ -579,7 +594,7 @@
     {
       "page": "Reconnaissance",
       "status": "PARTIAL",
-      "verification": "artifacts/security-current-verification.json"
+      "verification": "docs/verification/research-provenance-20261029.json"
     },
     {
       "page": "Web Security",
@@ -665,6 +680,12 @@
       "page": "Red Team Lab",
       "status": "NOT_STARTED",
       "verification": "No dedicated workspace implemented"
+    },
+    {
+      "page": "AI Research / stored provenance",
+      "status": "RUNTIME_VERIFIED",
+      "verification": "docs/verification/research-provenance-20261029.json",
+      "scope": "Integrated bounded read-only graph"
     }
   ],
   "current_web_api_verification": "artifacts/security-current-verification.json",
@@ -735,24 +756,22 @@
   },
   "current_research_session_verification": {
     "version": "0.1.0",
-    "database_schema": 17,
+    "database_schema": 19,
     "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
-    "proof": "artifacts/product-recovery-current-verification.json",
-    "windows_rust": "191/0/2",
-    "linux_core_cli_rust": "191/0/2",
-    "frontend_tests": 39,
+    "proof": "docs/verification/research-provenance-20261029.json",
+    "windows_rust": "202/0/2",
+    "linux_core_cli_rust": "202/0/2",
+    "frontend_tests": 44,
     "native_checks": {
-      "research": 9,
-      "large_import": 6,
+      "research_recon_graph": 12,
       "http": 11,
-      "outputs": 6,
-      "ux_shell": 3
+      "outputs": 6
     },
     "release_ready": false,
     "large_file_import": "RUNTIME_VERIFIED_THROUGH_1_GIB",
     "linux_desktop": "UNVERIFIED",
     "live_cloud_ai": "NOT_TESTED",
-    "next_action": "Populated-workspace UX/context acceptance, then reviewed native HTTPX lifecycle and fixed approved local capability"
+    "next_action": "Historical graph/source hardening, then explicit opt-in owned HTTP recording"
   },
   "verification_history_before_product_recovery": {
     "rust_passed": 143,
@@ -887,5 +906,55 @@
     "release_ready": false,
     "linux_desktop": "UNVERIFIED",
     "live_cloud_ai": "NOT_TESTED"
+  },
+  "current_recon_tools_verification": {
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "version": "0.1.0",
+    "schema": 19,
+    "proof": "docs/verification/research-provenance-20261029.json",
+    "live_subfinder": "NOT_TESTED",
+    "cloud_ai": "MOCK_VERIFIED",
+    "linux_desktop": "UNVERIFIED",
+    "release_ready": false
+  },
+  "verification_history_before_research_graph_20261029": {
+    "rust_passed": 191,
+    "rust_failed": 0,
+    "rust_ignored_default": 2,
+    "frontend_passed": 39,
+    "frontend_failed": 0,
+    "native_checks_current": {
+      "research": 9,
+      "large_import": 6,
+      "http_replay": 11,
+      "outputs": 6,
+      "ux_shell": 3
+    },
+    "ux_page_theme_size_observations": 216,
+    "record": "artifacts/product-recovery-current-verification.json",
+    "scope": "Bounded local research/import plus current HTTP/output/shell regression; prior broader suites remain historical"
+  },
+  "current_research_graph_verification": {
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "broader_module": "PARTIAL",
+    "schema": 19,
+    "proof": "docs/verification/research-provenance-20261029.json",
+    "nodes_from": "actual source records only",
+    "graph_types": [
+      "asset",
+      "exploration"
+    ],
+    "automatic_execution": false,
+    "node_limit": 5000,
+    "edge_limit": 20000,
+    "default_page": 100,
+    "max_page": 200,
+    "native_groups": 12,
+    "captures": 33
+  },
+  "ci_recon_graph_acceptance": {
+    "status": "CONFIGURED_NOT_REMOTE_VERIFIED",
+    "workflow": ".github/workflows/ci.yml",
+    "local_validation": "YAML parsed; no duplicate named steps; no release publication added"
   }
 }

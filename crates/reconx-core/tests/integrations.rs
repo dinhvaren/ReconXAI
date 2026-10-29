@@ -158,7 +158,10 @@ async fn mcp_trust_schema_stale_permissions_timeout_and_cancel() {
         "MCP_SCHEMA"
     );
     c.args.pop();
-    c.timeout_ms = 500;
+    // A 500 ms process-start budget can fail before the tested invocation on
+    // loaded Windows hosts. Keep a bounded startup budget and make the tool
+    // deliberately exceed it, then prove the job actually reached invocation.
+    c.timeout_ms = 3000;
     core.mcp_save(c.clone()).await.unwrap();
     core.mcp_connect("fixture").await.unwrap();
     let stale = approve(&core, &project, json!({"text":"stale"}));
@@ -170,11 +173,17 @@ async fn mcp_trust_schema_stale_permissions_timeout_and_cancel() {
     c.allowed_tools = vec!["echo".into()];
     core.mcp_save(c).await.unwrap();
     core.mcp_connect("fixture").await.unwrap();
-    let timeout = approve(&core, &project, json!({"text":"delay","delay_ms":3000}));
+    let timeout = approve(&core, &project, json!({"text":"delay","delay_ms":10000}));
     let engine = JobEngine::start(core.clone(), 1, |_| {}).unwrap();
-    assert_eq!(done(&core, &timeout.id).status, "failed");
+    let timed_out = done(&core, &timeout.id);
+    assert_eq!(timed_out.status, "failed");
+    assert_eq!(timed_out.error_code.as_deref(), Some("JOB_TIMEOUT"));
+    assert!(
+        timed_out.progress >= 30,
+        "Timeout must interrupt a real tool invocation: {timed_out:?}"
+    );
     // Cancellation tests need enough time to observe a real in-flight call.
-    // Reusing the 500 ms timeout could fail during process startup on loaded
+    // Reusing the short timeout could fail during process startup on loaded
     // CI, before the tool was ever called; that tests timeout, not cancellation.
     drop(engine);
     let mut cancel_config = config("fixture");

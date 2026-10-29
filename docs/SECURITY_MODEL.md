@@ -6,7 +6,8 @@ tests do not waive it. No process-sandbox or complete v1.0 claim is made.
 
 This build exposes local project/target management, static binary analysis, managed
 utilities/YARA-X, reviewed benign MCP calls, evidence/findings/reports, offline
-HAR/OpenAPI observations and individually reviewed bounded loopback HTTP replay.
+HAR/OpenAPI observations, individually reviewed bounded loopback HTTP replay,
+and separately approved fixed HTTPX/passive Subfinder jobs.
 AI chat is distinct from the allowlisted local-file job planner. Security modes
 cannot unlock absent active workflows; model output never becomes a shell command.
 
@@ -30,7 +31,11 @@ interrupted work. This is not hard process isolation or a general tool executor.
 
 Only embedded manifests can drive tool installation. Official downloads use pinned URLs, restricted HTTPS GitHub redirects, and matching archive/executable SHA-256. Only the pinned regular entry is copied; archives are not unpacked wholesale. Managed binaries are rehashed before a fixed --version invocation with timeout/kill-on-drop. Directory containment and symbolic links are checked. Uninstall removes only named managed files and preserves unexpected files.
 
-No arbitrary process/shell execution, untrusted plugin installation, target scanning or privileged package installation is exposed. A tool is not a process sandbox.
+No arbitrary process/shell execution, untrusted plugin installation, unrestricted
+scanning or privileged package installation is exposed. HTTPX sends approved
+bounded HTTP metadata probes; Subfinder uses selected passive sources. A tool is
+not a process sandbox. Version and execution commands have private temporary
+cwd/home configuration, with ambient credentials/proxy variables removed.
 
 The webview has no broad shell/filesystem/network permissions. Native dialogs are
 opened through a custom Rust command; file import/export uses bounded typed services.
@@ -42,7 +47,18 @@ host/path component and URL-origin boundaries are checked. Local analysis requir
 recorded permission, matching immutable import source identity and an active project.
 Workers recheck policy/cancellation at stage boundaries. No mode executes samples
 or unrestricted shell strings/scanners. Reviewed AI plans can queue only typed
-local-file jobs. Streaming ingestion uses a separate configurable disk budget;
+local-file jobs in the older file planner. Target-bound research sessions can
+additionally queue separately reviewed HTTPX/passive Subfinder capabilities.
+Their exact target/scope/tool/configuration fingerprint is checked before work
+and publication; the model cannot override it. HTTPX DNS destinations are pinned
+to numeric transport IPs, redirects and protocol fallback are disabled, and
+private/special DNS results are rejected. Explicit numeric lab targets have a
+separate allowed path. Passive-source disclosure requires approval; empty/error
+results do not establish source success or absence of subdomains. HTTPX TLS fields
+are not a verified certificate trust verdict. See RECON_TOOL_ADAPTERS.md for the
+per-job limits, source constraints and remaining runtime gaps.
+
+Streaming ingestion uses a separate configurable disk budget;
 the deep parser retains a 64 MiB input limit. Bounded prefixes, output cardinality
 limits, ZIP directory checks and panic containment defend parser entry points.
 These controls are not an OS process sandbox. Import cancellation removes incomplete
@@ -146,3 +162,12 @@ before WAL, and rechecks under the write transaction. Future/corrupt fixture fil
 remain byte-identical when rejected. This does not provide cross-version concurrent
 upgrade coordination or a full backup of artifact files and OS credentials. Stop
 older clients before upgrading and protect backups as private workspace data.
+
+
+Research provenance reads are materialized from actual stored records only.
+Graph review never invokes a tool/model. IDs bind session and persistent source
+identity, edges enforce same-session foreign keys, pages/exports use consistent
+read transactions and strict size/count limits. URL credentials/query/fragment and
+local import locations are omitted from graph metadata; linked previews are
+redacted/bounded. A graph edge is not artifact integrity or vulnerability proof.
+See EXPLORATION_GRAPH.md; removed-source/large-workspace limitations remain open.

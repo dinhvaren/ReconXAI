@@ -1,0 +1,40 @@
+[
+  {
+    "id": "subfinder",
+    "name": "ProjectDiscovery subfinder",
+    "category": "recon",
+    "platform": "windows-x86_64",
+    "version": "2.17.0",
+    "source": "https://github.com/projectdiscovery/subfinder/releases/tag/v2.17.0",
+    "url": "https://github.com/projectdiscovery/subfinder/releases/download/v2.17.0/subfinder_2.17.0_windows_amd64.zip",
+    "sha256": "a3fd612928d591fb31c1e59a2e06055e364421ba32251e553073f5673a2d3103",
+    "binary_sha256": "163c509636aaea3d333c5f3119fd9152cf661d7aef7212522509c14aa20475c6",
+    "archive": "zip",
+    "entry": "subfinder.exe",
+    "executable": "subfinder.exe",
+    "requires_admin": false,
+    "capabilities": [
+      "subfinder.passive"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "subfinder",
+    "name": "ProjectDiscovery subfinder",
+    "category": "recon",
+    "platform": "linux-x86_64",
+    "version": "2.17.0",
+    "source": "https://github.com/projectdiscovery/subfinder/releases/tag/v2.17.0",
+    "url": "https://github.com/projectdiscovery/subfinder/releases/download/v2.17.0/subfinder_2.17.0_linux_amd64.zip",
+    "sha256": "a39c3e5c7a26ef3c430915c4d6cbf7716a00f26769a75e9405aba796142eba37",
+    "binary_sha256": "bf4ad8590702b0bb92be9b3be185f96a230b047c9b97f2831cf8914344f0b15a",
+    "archive": "zip",
+    "entry": "subfinder",
+    "executable": "subfinder",
+    "requires_admin": false,
+    "capabilities": [
+      "subfinder.passive"
+    ],
+    "dependencies": []
+  }
+]

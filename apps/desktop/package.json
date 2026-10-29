@@ -21,6 +21,7 @@
     "test:http-workspace": "node ../../tests/e2e/http-workspace.mjs",
     "test:http-replay": "node ../../tests/e2e/http-replay.mjs",
     "test:research": "node ../../tests/e2e/research-session.mjs",
+    "test:recon-tools": "node ../../tests/e2e/recon-tools.mjs",
     "test:large-import": "node ../../tests/e2e/large-import.mjs"
   },
   "dependencies": {

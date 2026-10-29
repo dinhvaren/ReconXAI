@@ -29,7 +29,7 @@ pub struct ResearchCapability {
     pub name: String,
     pub available: bool,
     pub reason: String,
-    pub network_requests: u8,
+    pub network_requests: Option<u8>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResearchPreview {
@@ -44,6 +44,8 @@ pub struct ResearchPreview {
     pub fingerprint: String,
     pub capabilities: Vec<ResearchCapability>,
     pub limitations: Vec<String>,
+    #[serde(default)]
+    pub recon_reviews: Vec<ReconPlan>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -178,7 +180,7 @@ impl Core {
             name: "Review registered scope (offline)".into(),
             available: true,
             reason: "Existing target-registration handler; no network traffic".into(),
-            network_requests: 0,
+            network_requests: Some(0),
         }];
         for (id, name) in [
             ("local.metadata", "Extract binary metadata"),
@@ -207,19 +209,57 @@ impl Core {
                 } else {
                     "Existing read-only local-file Job Engine capability".into()
                 },
-                network_requests: 0,
+                network_requests: Some(0),
             });
         }
         let web = self.local_http_preview(&target.id);
-        caps.push(ResearchCapability{id:"local.http_head".into(),name:"One reviewed owned-loopback HEAD request".into(),available:web.is_ok() && request.mode!=ResearchMode::AuthorizedAuto,reason:if request.mode==ResearchMode::AuthorizedAuto{"Network requests always require separate manual execution review; unavailable in Authorized Auto".into()}else{web.as_ref().map(|_|"One request; no redirects, proxy, retries or scanner".into()).unwrap_or_else(|e|e.message.clone())},network_requests:1});
+        caps.push(ResearchCapability{id:"local.http_head".into(),name:"One reviewed owned-loopback HEAD request".into(),available:web.is_ok() && request.mode!=ResearchMode::AuthorizedAuto,reason:if request.mode==ResearchMode::AuthorizedAuto{"Network requests always require separate manual execution review; unavailable in Authorized Auto".into()}else{web.as_ref().map(|_|"One request; no redirects, proxy, retries or scanner".into()).unwrap_or_else(|e|e.message.clone())},network_requests:Some(1)});
+        let mut recon_reviews = Vec::new();
+        for (tool, cap, name) in [
+            (
+                ReconTool::Subfinder,
+                "subfinder.passive",
+                "Passive subdomain intelligence",
+            ),
+            (
+                ReconTool::Httpx,
+                "httpx.probe",
+                "Approved scoped HTTPX probing",
+            ),
+        ] {
+            let candidate = self.recon_plan(ReconConfig::for_target(&target.id, tool.clone()));
+            let available = candidate.is_ok() && request.mode != ResearchMode::AuthorizedAuto;
+            let reason = if request.mode == ResearchMode::AuthorizedAuto {
+                "Network/source disclosure requires a separate reviewed session".into()
+            } else {
+                candidate
+                    .as_ref()
+                    .map(|p| p.permissions.join("; "))
+                    .unwrap_or_else(|e| e.message.clone())
+            };
+            if let Ok(p) = candidate {
+                recon_reviews.push(p);
+            }
+            caps.push(ResearchCapability {
+                id: cap.into(),
+                name: name.into(),
+                available,
+                reason,
+                network_requests: if tool == ReconTool::Subfinder {
+                    None
+                } else {
+                    Some(4)
+                },
+            });
+        }
         let permitted: Vec<_> = caps.iter().filter(|c| c.available).collect();
         let context=serde_json::to_string_pretty(&json!({"target_id":target.id,"target_type":target.input.kind,"scope":"authorized and allowed","file":file.as_ref().map(|f|json!({"format":f.format,"size":f.size,"sha256":f.sha256})),"capabilities":permitted,"task":"Return strict JSON only: {\"steps\":[{\"capability_id\":\"an available ID\",\"reason\":\"brief rationale\"}]}. Choose 1 to 4 unique available capabilities. No tool arguments, commands, claims of vulnerabilities or unsupported analyzers. Network inventory, if available, is a single separately reviewed local HEAD, not a pentest."})).map_err(json_error)?;
         let options = provider
             .as_ref()
             .map(|p| self.ai_options(&p.id))
             .transpose()?;
-        let fingerprint=evidence::digest(&serde_json::to_vec(&json!({"target":target.input,"application_mode":self.settings()?.security_mode,"file":file.as_ref().map(|f|(&f.id,&f.sha256)),"request":request,"context":context,"provider":provider,"options":options})).map_err(json_error)?);
-        Ok(ResearchPreview{request,project_id:project.id,target_name:target.input.name,target_kind:target.input.kind,file_id:file.map(|f|f.id),model:provider.as_ref().map(|p|p.model.clone()),gateway:provider.map(|p|p.base_url),context,fingerprint,capabilities:caps,limitations:vec!["This session runs only the listed existing bounded capabilities, not an automated penetration test".into(),"Domain, source, APK, cloud, decompiler and arbitrary MCP/scanner analyzers remain unavailable unless explicitly listed".into(),"AI interpretation and any resulting finding require review; no automatic Verified status".into(),"No pause/resume, cost estimate or implicit egress; token usage is reported only when the model supplies it".into()]})
+        let fingerprint=evidence::digest(&serde_json::to_vec(&json!({"target":target.input,"application_mode":self.settings()?.security_mode,"file":file.as_ref().map(|f|(&f.id,&f.sha256)),"request":request,"context":context,"provider":provider,"options":options,"recon_reviews":recon_reviews})).map_err(json_error)?);
+        Ok(ResearchPreview{request,project_id:project.id,target_name:target.input.name,target_kind:target.input.kind,file_id:file.map(|f|f.id),model:provider.as_ref().map(|p|p.model.clone()),gateway:provider.map(|p|p.base_url),context,fingerprint,capabilities:caps,recon_reviews,limitations:vec!["This session runs only the listed existing bounded capabilities, not an automated penetration test".into(),"Domain, source, APK, cloud, decompiler and arbitrary MCP/scanner analyzers remain unavailable unless explicitly listed".into(),"AI interpretation and any resulting finding require review; no automatic Verified status".into(),"No pause/resume, cost estimate or implicit egress; token usage is reported only when the model supplies it".into()]})
     }
     fn validate_research_proposal(
         &self,
@@ -240,6 +280,30 @@ impl Core {
             {
                 return Err(policy(
                     "Unknown, duplicate, unavailable or unapproved capability",
+                ));
+            }
+        }
+        if preview.target_kind == TargetKind::Domain
+            && let Some(http) = proposal
+                .steps
+                .iter()
+                .position(|s| s.capability_id == "httpx.probe")
+        {
+            if let Some(passive) = proposal
+                .steps
+                .iter()
+                .position(|s| s.capability_id == "subfinder.passive")
+            {
+                if passive > http {
+                    return Err(policy(
+                        "Passive discovery must precede its HTTPX dependency",
+                    ));
+                }
+            } else if !self.assets(Some(&preview.project_id))?.iter().any(|a| {
+                a.target_id.as_deref() == Some(&preview.request.target_id) && a.kind == "subdomain"
+            }) {
+                return Err(policy(
+                    "Discover in-scope assets before HTTPX; include Subfinder before the HTTPX step",
                 ));
             }
         }
@@ -286,7 +350,7 @@ impl Core {
                 steps: preview
                     .capabilities
                     .iter()
-                    .filter(|c| c.available && c.network_requests == 0)
+                    .filter(|c| c.available && c.network_requests == Some(0))
                     .take(4)
                     .map(|c| PlanStep {
                         capability_id: c.id.clone(),
@@ -423,8 +487,41 @@ impl Core {
             ));
         }
         self.validate_research_proposal(&preview, &session.plan.proposal)?;
+        let mut discovery_dependency: Option<String> = None;
         for (index, step) in session.plan.proposal.steps.iter().enumerate() {
-            let job = if step.capability_id == "local.http_head" {
+            let job = if matches!(
+                step.capability_id.as_str(),
+                "httpx.probe" | "subfinder.passive"
+            ) {
+                if !network_approved || preview.request.mode == ResearchMode::AuthorizedAuto {
+                    return Err(policy(
+                        "Separately approve the displayed recon destinations, source sharing and budgets",
+                    ));
+                }
+                let tool = if step.capability_id == "httpx.probe" {
+                    ReconTool::Httpx
+                } else {
+                    ReconTool::Subfinder
+                };
+                let p = self.recon_plan(ReconConfig::for_target(
+                    &preview.request.target_id,
+                    tool.clone(),
+                ))?;
+                let id = self.recon_enqueue_in_tx(
+                    &tx,
+                    &p,
+                    true,
+                    if tool == ReconTool::Httpx {
+                        discovery_dependency.as_deref()
+                    } else {
+                        None
+                    },
+                )?;
+                if tool == ReconTool::Subfinder {
+                    discovery_dependency = Some(id.clone());
+                }
+                id
+            } else if step.capability_id == "local.http_head" {
                 if !network_approved || preview.request.mode == ResearchMode::AuthorizedAuto {
                     return Err(policy(
                         "Separately approve the single owned-loopback HEAD request; it is unavailable in Authorized Auto",

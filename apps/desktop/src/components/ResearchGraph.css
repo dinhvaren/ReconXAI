@@ -1,0 +1,56 @@
+.graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+  margin: 8px 0;
+}
+.graph-toolbar label {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+.graph-toolbar input,
+.graph-toolbar select {
+  width: 100%;
+}
+.research-graph-canvas {
+  width: 100%;
+  height: 500px;
+  border: 1px solid var(--rx-border);
+  border-radius: 6px;
+  touch-action: none;
+  background: var(--rx-bg-secondary);
+}
+.research-graph-canvas line {
+  stroke: var(--rx-text-muted);
+  opacity: 0.55;
+}
+.research-graph-canvas rect {
+  fill: var(--rx-surface);
+  stroke: var(--rx-border);
+}
+.research-graph-canvas text {
+  fill: var(--rx-text);
+  font-size: 13px;
+  pointer-events: none;
+}
+.research-graph-canvas g {
+  cursor: pointer;
+}
+.research-graph-canvas g.selected rect,
+.research-graph-canvas g.running rect,
+.research-graph-canvas g:focus rect {
+  stroke: var(--rx-accent);
+  stroke-width: 3px;
+}
+.graph-node-detail pre,
+.graph-record-preview {
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.graph-relationships {
+  max-height: 180px;
+  overflow: auto;
+}

@@ -2,9 +2,7 @@
 use super::*;
 use serde_json::{Value, json};
 const CANDIDATES: &[(&str, &str)] = &[
-    ("subfinder", "recon"),
     ("amass", "recon"),
-    ("httpx", "recon"),
     ("dnsx", "recon"),
     ("katana", "recon"),
     ("nuclei", "web"),
@@ -43,10 +41,16 @@ impl Core {
             .into_iter()
             .filter(|e| e.entity_id == id && e.action.starts_with("tool."))
             .collect::<Vec<_>>();
-        let jobs = if id == "yara-x" {
+        let kind = match id {
+            "yara-x" => Some("yara_signatures"),
+            "httpx" => Some("recon_httpx"),
+            "subfinder" => Some("recon_subfinder"),
+            _ => None,
+        };
+        let jobs = if let Some(kind) = kind {
             self.list_jobs(None)?
                 .into_iter()
-                .filter(|j| j.kind == "yara_signatures")
+                .filter(|j| j.kind == kind)
                 .take(20)
                 .collect::<Vec<_>>()
         } else {

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { request, errorText, type Snapshot } from "../api";
 import { Button } from "../components/controls";
 import { Heading, Modal } from "../components/ui";
+import ReconAssetInventory from "../components/ReconAssetInventory";
+import ResearchGraph from "../components/ResearchGraph";
 import JobHistory from "../components/JobHistory";
 import { selectPaths, type AnalysisJob } from "../research";
 import { useWorkspace } from "../workspace";
@@ -22,12 +24,18 @@ interface Preview {
   context: string;
   fingerprint: string;
   limitations: string[];
+  recon_reviews?: {
+    config: { tool: string; max_assets: number; timeout_secs: number };
+    target: string;
+    permissions: string[];
+    limits: string[];
+  }[];
   capabilities: {
     id: string;
     name: string;
     available: boolean;
     reason: string;
-    network_requests: number;
+    network_requests: number | null;
   }[];
 }
 interface Evidence {
@@ -359,8 +367,9 @@ export default function ResearchPage({
               <li key={c.id}>
                 <strong>{c.name}</strong> —{" "}
                 {c.available ? "Available" : "Unavailable"}. {c.reason}
-                {c.network_requests > 0 &&
-                  ` Request budget: ${c.network_requests}.`}
+                {c.network_requests !== null &&
+                  c.network_requests > 0 &&
+                  ` Maximum active URL probes: ${c.network_requests}.`}
               </li>
             ))}
           </ul>
@@ -470,6 +479,20 @@ export default function ResearchPage({
               {session.plan.preview.model ?? "Manual"} ·{" "}
               <code>{session.plan.id}</code>
             </p>
+            <details>
+              <summary>Explore stored provenance</summary>
+              <ResearchGraph
+                session={session.plan.id}
+                revision={
+                  session.jobs
+                    .map((j) => `${j.id}:${j.status}:${j.finished_at}`)
+                    .join("|") +
+                  session.findings.length +
+                  ":" +
+                  session.reports.length
+                }
+              />
+            </details>
             <ol>
               {session.plan.proposal.steps.map((step, i) => (
                 <li key={step.capability_id}>
@@ -496,6 +519,10 @@ export default function ResearchPage({
                 Cost: unavailable.
               </p>
             )}
+            {session.jobs.some((j) => j.kind.startsWith("recon_")) &&
+              project && (
+                <ReconAssetInventory project={project} target={target} />
+              )}
             {session.status === "awaiting_approval" && (
               <>
                 <label className="checkbox">
@@ -530,13 +557,59 @@ export default function ResearchPage({
                     </label>
                   </div>
                 )}
+                {session.plan.proposal.steps.some((s) =>
+                  ["httpx.probe", "subfinder.passive"].includes(
+                    s.capability_id,
+                  ),
+                ) && (
+                  <div aria-label="Recon execution review">
+                    {(session.plan.preview.recon_reviews ?? [])
+                      .filter((p) =>
+                        session.plan.proposal.steps.some((s) =>
+                          s.capability_id.startsWith(p.config.tool + "."),
+                        ),
+                      )
+                      .map((p) => (
+                        <div key={p.config.tool}>
+                          <p>
+                            <strong>{p.config.tool}</strong> ·{" "}
+                            <code>{p.target}</code>{" "}
+                            {p.config.tool === "subfinder"
+                              ? "Selected passive providers: 2 requests/second, 120 second deadline; no exact source request-count guarantee."
+                              : `Maximum ${p.config.max_assets} URL probes; per-probe timeout ${p.config.timeout_secs}s.`}
+                          </p>
+                          <ul>
+                            {p.permissions.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                            {p.limits.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={network}
+                        onChange={(e) => setNetwork(e.target.checked)}
+                      />
+                      I separately approve the displayed recon network
+                      operations and passive-source data sharing.
+                    </label>
+                  </div>
+                )}
                 <Button
                   variant="primary"
                   disabled={
                     busy ||
                     !approved ||
-                    (session.plan.proposal.steps.some(
-                      (s) => s.capability_id === "local.http_head",
+                    (session.plan.proposal.steps.some((s) =>
+                      [
+                        "local.http_head",
+                        "httpx.probe",
+                        "subfinder.passive",
+                      ].includes(s.capability_id),
                     ) &&
                       !network)
                   }

@@ -8,6 +8,8 @@ use std::{
     time::Duration,
 };
 mod local;
+mod recon;
+pub use recon::{ReconOutput, ReconToolRequest};
 pub mod packages;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -105,6 +107,8 @@ fn manifest(id: &str) -> Result<ToolManifest> {
     let manifests: Vec<ToolManifest> = serde_json::from_str(match id {
         "ripgrep" => include_str!("../../../manifests/tools/ripgrep.json"),
         "yara-x" => include_str!("../../../manifests/tools/yara-x.json"),
+        "httpx" => include_str!("../../../manifests/tools/httpx.json"),
+        "subfinder" => include_str!("../../../manifests/tools/subfinder.json"),
         _ => {
             return Err(AppError::new(
                 "UNKNOWN_TOOL",
@@ -164,7 +168,7 @@ impl ToolManager {
         let path = self.directory(m).join(&m.executable);
         let meta = std::fs::symlink_metadata(&path)
             .map_err(|_| AppError::new("TOOL_NOT_INSTALLED", "Managed tool is not installed"))?;
-        if !meta.is_file() || meta.file_type().is_symlink() || meta.len() > 32 * 1024 * 1024 {
+        if !meta.is_file() || meta.file_type().is_symlink() || meta.len() > 128 * 1024 * 1024 {
             return Err(AppError::new(
                 "INTEGRITY_FAILURE",
                 "Managed executable is not a regular bounded file",
@@ -177,7 +181,7 @@ impl ToolManager {
         std::fs::canonicalize(path).map_err(|_| io_error())
     }
     pub fn inventory(&self) -> Result<Vec<Inventory>> {
-        ["ripgrep", "yara-x"]
+        ["ripgrep", "yara-x", "httpx", "subfinder"]
             .iter()
             .map(|id| self.inventory_one(id))
             .collect()
@@ -327,13 +331,33 @@ impl ToolManager {
         let m = self.plan(id)?;
         let executable = self.verify_installed(&m)?;
         let mut command = tokio::process::Command::new(executable);
+        // Version commands can initialize upstream configuration too. Keep
+        // their cwd/home private just like a real recon invocation.
+        let version_home = tempfile::tempdir().map_err(|_| io_error())?;
+        command.current_dir(version_home.path());
         command.env_clear();
+        for key in [
+            "HOME",
+            "USERPROFILE",
+            "APPDATA",
+            "LOCALAPPDATA",
+            "XDG_CONFIG_HOME",
+            "XDG_CACHE_HOME",
+        ] {
+            command.env(key, version_home.path());
+        }
         for key in ["SystemRoot", "WINDIR", "TEMP", "TMP"] {
             if let Some(v) = std::env::var_os(key) {
                 command.env(key, v);
             }
         }
-        command.arg("--version").kill_on_drop(true);
+        command
+            .arg(if matches!(id, "httpx" | "subfinder") {
+                "-version"
+            } else {
+                "--version"
+            })
+            .kill_on_drop(true);
         #[cfg(windows)]
         {
             command.creation_flags(0x08000000);
@@ -351,14 +375,27 @@ impl ToolManager {
             },
             m.version
         );
+        let pd_version = matches!(id, "httpx" | "subfinder")
+            && String::from_utf8_lossy(&output.stderr)
+                .contains(&format!("Current Version: v{}", m.version));
         if !output.status.success()
             || output.stdout.len() > 8192
-            || !String::from_utf8_lossy(&output.stdout).starts_with(&expected)
+            || output.stderr.len() > 8192
+            || (!pd_version && !String::from_utf8_lossy(&output.stdout).starts_with(&expected))
         {
             return Err(AppError::new(
                 "TOOL_HEALTH_FAILURE",
                 "Verified tool did not report the expected version",
             ));
+        }
+        if matches!(id, "httpx" | "subfinder") {
+            let manager = self.clone();
+            let tool = id.to_string();
+            tokio::task::spawn_blocking(move || manager.recon_health(&tool))
+                .await
+                .map_err(|_| {
+                    AppError::new("TOOL_HEALTH_FAILURE", "Recon health worker failed")
+                })??;
         }
         let mut receipt = self
             .receipt(&m)
@@ -390,10 +427,10 @@ fn bounded_read(mut reader: impl Read) -> Result<Vec<u8>> {
     let mut binary = Vec::new();
     reader
         .by_ref()
-        .take(32 * 1024 * 1024 + 1)
+        .take(128 * 1024 * 1024 + 1)
         .read_to_end(&mut binary)
         .map_err(|_| AppError::new("TOOL_ARCHIVE", "Cannot read tool archive entry"))?;
-    if binary.len() > 32 * 1024 * 1024 {
+    if binary.len() > 128 * 1024 * 1024 {
         return Err(AppError::new(
             "TOOL_ARCHIVE",
             "Executable exceeds size limit",

@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-20",
+  "date": "2026-10-29",
   "version": "0.1.0",
   "release_ready": false,
-  "source_base_revision": "b041b667d6c918ce0e22c91f1c65222a2fe91aa2",
+  "source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f",
   "evidence_is_local_not_bundled": true,
   "modules": [
     {
@@ -17,9 +17,10 @@
       ],
       "runtime_evidence": [
         "artifacts/product-recovery-current-verification.json",
-        "artifacts\\research-session-1792506323444\\results.json"
+        "artifacts\\research-session-1792506323444\\results.json",
+        "docs/verification/research-provenance-20261029.json"
       ],
-      "limitations": "Bounded local capabilities and separately approved loopback HEAD only. MOCK AI workflow, no live account claim; no DAG/pause/standing-auto or complete pentest."
+      "limitations": "Bounded reviewed local/tool plans and read-only provenance work; MOCK AI only; no iterative autonomous offensive loop, multi-agent runtime, general DAG/pause/standing auto"
     },
     {
       "module": "Dashboard",
@@ -64,9 +65,10 @@
         "crates/reconx-core/src/recon.rs"
       ],
       "runtime_evidence": [
-        "artifacts/security-current-verification.json"
+        "artifacts/security-current-verification.json",
+        "docs/verification/research-provenance-20261029.json"
       ],
-      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+      "limitations": "Real bounded HTTPX and Subfinder install/version/source inventory/parser; live passive domain enumeration and public remote runtime unverified; broader recon PARTIAL"
     },
     {
       "module": "Web Security",
@@ -201,9 +203,10 @@
         "crates/reconx-core/src/tooling.rs"
       ],
       "runtime_evidence": [
-        "artifacts/security-current-verification.json"
+        "artifacts/security-current-verification.json",
+        "docs/verification/research-provenance-20261029.json"
       ],
-      "limitations": "Scope and remaining requirements: docs/RELEASE_READINESS.md and docs/module-status.json"
+      "limitations": "Reviewed pinned managed subset with real health/repair; generic package manager/dependency graph/rollback remain incomplete"
     },
     {
       "module": "Findings",
@@ -288,9 +291,10 @@
       "module": "Extensions",
       "status": "PARTIAL",
       "runtime_evidence": [
-        "artifacts/ux-extensions-current-verification.json"
+        "artifacts/ux-extensions-current-verification.json",
+        "docs/verification/research-provenance-20261029.json"
       ],
-      "limitations": "First-party YARA-X native adapter runtime verified; official MCP registry/community updates/setup incomplete"
+      "limitations": "Compiled verified native subset and MCP Everything protocol test; no claim all remote MCP/security products are installed or verified"
     },
     {
       "module": "Large-file streaming ingestion",
@@ -306,6 +310,68 @@
         "artifacts\\large-import-native-1792505626507\\results.json"
       ],
       "limitations": "Bounded import slice, actual fixture sizes through 1 GiB only; broad Reverse Engineering remains PARTIAL; docs/STREAMING_FILE_IMPORT.md"
+    },
+    {
+      "module": "Managed HTTPX/Subfinder",
+      "status": "PARTIAL",
+      "source_references": [
+        "crates/reconx-tools/src/recon.rs",
+        "crates/reconx-core/src/recon_tools.rs",
+        "crates/reconx-storage/migrations/018_recon_tools.sql"
+      ],
+      "runtime_evidence": [
+        "docs/verification/research-provenance-20261029.json"
+      ],
+      "limitations": "Runtime-verified bounded managed/owned-fixture slice; keyless sources only. Live passive domain enumeration and public remote/TLS runtime unverified."
+    },
+    {
+      "module": "Asset/Exploration Graph",
+      "status": "PARTIAL",
+      "source_references": [
+        "crates/reconx-core/src/research_graph.rs",
+        "crates/reconx-storage/migrations/019_research_graph.sql",
+        "apps/desktop/src/components/ResearchGraph.tsx"
+      ],
+      "runtime_evidence": [
+        "docs/verification/research-provenance-20261029.json"
+      ],
+      "verified_scope": "Persistent read-only session projection; actual nodes/edges, pagination/filter/inspection/export/restart; no AI-generated assets",
+      "limitations": "Not global graph/inference/complete transition history; removed-target/file refresh unsupported; bounded large-session behavior not benchmarked"
+    },
+    {
+      "module": "Unified Tool Execution",
+      "status": "PARTIAL",
+      "source_references": [
+        "crates/reconx-core/src/jobs.rs",
+        "crates/reconx-core/src/capabilities.rs",
+        "crates/reconx-core/src/mcp.rs"
+      ],
+      "runtime_evidence": [
+        "docs/verification/research-provenance-20261029.json"
+      ],
+      "limitations": "Existing typed provider services share Job Engine. No new universal invocation envelope/lifecycle interface"
+    },
+    {
+      "module": "Multi-Agent Runtime",
+      "status": "NOT_STARTED",
+      "source_references": [
+        "docs/MULTI_AGENT_ARCHITECTURE.md"
+      ],
+      "runtime_evidence": [],
+      "limitations": "Model routing settings exist; no actual agent bus/workers/DAG added; no fake personas/status cards"
+    },
+    {
+      "module": "Dedicated Traffic Recorder",
+      "status": "PARTIAL",
+      "source_references": [
+        "docs/TRAFFIC_RECORDING.md",
+        "crates/reconx-core/src/http_workspace.rs",
+        "crates/reconx-core/src/http_replay.rs"
+      ],
+      "runtime_evidence": [
+        "docs/verification/research-provenance-20261029.json"
+      ],
+      "limitations": "Existing real HAR/manual-loopback captures retained. No new opt-in per-project policy, global recording UI, proxy/CA or retention engine"
     }
   ],
   "release_blockers": [
@@ -350,7 +416,7 @@
     "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
   },
   "critical_recovery": {
-    "database_schema": 17,
+    "database_schema": 19,
     "shared_context": "RUNTIME_VERIFIED",
     "bounded_target_session": "RUNTIME_VERIFIED",
     "large_file_import": "RUNTIME_VERIFIED_BOUNDED_SLICE",
@@ -362,7 +428,9 @@
       512,
       1024
     ],
-    "next_task": "Populated-workspace UX/context acceptance, then reviewed native HTTPX lifecycle and fixed approved local capability"
+    "next_task": "Historical graph/source hardening and explicit opt-in owned HTTP recording"
   },
-  "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json"
+  "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json",
+  "current_recon_tools_verification": "docs/module-status.json#current_recon_tools_verification",
+  "current_research_graph_verification": "docs/verification/research-provenance-20261029.json"
 }

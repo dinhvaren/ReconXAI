@@ -13,6 +13,8 @@ beforeAll(() => {
 });
 vi.mock("./api", () => ({
   request: invoke,
+  installNativeExtension: (approval: unknown) =>
+    invoke("extensions_install", { approval }),
   errorText: (e: unknown) => String(e),
 }));
 const entry = {
@@ -42,6 +44,48 @@ const entry = {
 afterEach(() => {
   cleanup();
   invoke.mockReset();
+});
+it("search selection binds the installation plan to the visible extension", async () => {
+  const user = userEvent.setup();
+  const httpx = {
+    ...entry,
+    manifest: {
+      ...entry.manifest,
+      id: "httpx",
+      name: "ProjectDiscovery httpx",
+      description: "HTTP probing",
+    },
+  };
+  invoke.mockImplementation(async (op: string) => {
+    if (op === "extensions_catalog") return [entry, httpx];
+    if (op === "extensions_history" || op === "files_list") return [];
+    if (op === "extensions_plan")
+      return {
+        extension: httpx,
+        fingerprint: "reviewed-httpx",
+        actions: [],
+        requires_admin: false,
+        network_access: "Pinned download",
+      };
+    throw Error(op);
+  });
+  render(
+    <ExtensionsPage
+      projectId="owned"
+      onOpenFiles={vi.fn()}
+      onOpenJobs={vi.fn()}
+    />,
+  );
+  await screen.findByRole("button", { name: "Install extension" });
+  await user.type(
+    screen.getByRole("searchbox", { name: "Search extensions" }),
+    "httpx",
+  );
+  await user.click(screen.getByRole("button", { name: "Install extension" }));
+  await screen.findByRole("button", { name: "Approve and install" });
+  expect(
+    invoke.mock.calls.find(([op]) => op === "extensions_plan")?.[1],
+  ).toEqual({ id: "httpx" });
 });
 it("requires review and consent, and keeps failed dependency checks visibly unsuccessful", async () => {
   const user = userEvent.setup();
@@ -119,5 +163,5 @@ it("filters discovery and reports absent updates without fabricated releases", a
       "No compatible extension update is available in this catalog.",
     ),
   ).toBeVisible();
-  expect(screen.getByRole("button", { name: "Run signatures" })).toBeDisabled();
+  expect(screen.queryByRole("button", { name: "Run signatures" })).not.toBeInTheDocument();
 });

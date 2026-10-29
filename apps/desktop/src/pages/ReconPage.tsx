@@ -4,6 +4,8 @@ import { request, errorText, type Snapshot } from "../api";
 import { useJobEvents, type AnalysisJob } from "../research";
 import { Heading, Modal, type Perform } from "../components/ui";
 import { EmptyState } from "../components/controls";
+import ReconAssetInventory from "../components/ReconAssetInventory";
+import ReconToolControls from "../components/ReconToolControls";
 import JobHistory from "../components/JobHistory";
 import StartResearchButton from "../components/StartResearchButton";
 import {
@@ -21,20 +23,6 @@ interface Plan {
   fingerprint: string;
   permissions: string[];
   limitations: string[];
-}
-interface Asset {
-  id: string;
-  target_id: string | null;
-  value: string;
-  last_seen: string;
-  job_id: string;
-  facts: {
-    status: number;
-    http_version: string;
-    reported_server: string | null;
-    content_type: string | null;
-    header_count: number;
-  };
 }
 export default function ReconPage({
   data,
@@ -58,8 +46,7 @@ export default function ReconPage({
       projectId ?? data.projects[0]?.id ?? "",
     ),
     [target, setTarget] = useWorkspaceTarget(initialTarget ?? "");
-  const [assets, setAssets] = useState<Asset[]>([]),
-    [jobs, setJobs] = useState<AnalysisJob[]>([]),
+  const [jobs, setJobs] = useState<AnalysisJob[]>([]),
     [plan, setPlan] = useState<Plan | null>(null),
     [approved, setApproved] = useState(false),
     [error, setError] = useState("");
@@ -67,27 +54,27 @@ export default function ReconPage({
   const load = useCallback(async () => {
     const version = ++loadVersion.current;
     if (!project) {
-      setAssets([]);
       setJobs([]);
       return;
     }
-    const [a, j] = await Promise.all([
-      request<Asset[]>("assets_list", { project }),
-      request<AnalysisJob[]>("jobs_list", { project }),
-    ]);
+    const j = await request<AnalysisJob[]>("jobs_list", { project });
     if (version !== loadVersion.current) return;
-    setAssets(a);
-    setJobs(j.filter((j) => j.kind === "local_http_inventory"));
-  }, [project]);
+    setJobs(
+      j.filter(
+        (j) =>
+          (j.kind === "local_http_inventory" || j.kind.startsWith("recon_")) &&
+          (!target || j.target_id === target),
+      ),
+    );
+  }, [project, target]);
   useEffect(() => {
-    setAssets([]);
     setJobs([]);
     setPlan(null);
     setApproved(false);
     return () => {
       loadVersion.current += 1;
     };
-  }, [project]);
+  }, [project, target]);
   useEffect(() => {
     void load().catch((e) => setError(errorText(e)));
   }, [load, data.audit[0]?.id]);
@@ -97,7 +84,10 @@ export default function ReconPage({
     setTarget(initialTarget ?? "");
   }, [projectId, initialTarget]);
   useJobEvents((j) => {
-    if (j.project_id === project && j.kind === "local_http_inventory")
+    if (
+      j.project_id === project &&
+      (j.kind === "local_http_inventory" || j.kind.startsWith("recon_"))
+    )
       void load().catch((e) => setError(errorText(e)));
   });
   const act = (fn: () => Promise<unknown>, message: string) =>
@@ -114,14 +104,14 @@ export default function ReconPage({
   const targets = (data.targets ?? []).filter(
     (t) =>
       t.project_id === project &&
-      ["url", "rest_api", "graphql"].includes(t.kind),
+      ["domain", "url", "rest_api", "graphql"].includes(t.kind),
   );
   return (
     <>
       <Heading
-        eyebrow="Owned local inventory"
+        eyebrow="Authorized reconnaissance"
         title="Reconnaissance"
-        description="Plan and review an owned local HTTP observation."
+        description="Discover permitted assets, inspect real observations and keep research evidence together."
         action={
           <div className="inline-actions">
             <StartResearchButton />
@@ -130,8 +120,19 @@ export default function ReconPage({
         }
       />
       {error && <p role="alert">{error}</p>}
+      <ReconToolControls
+        target={target}
+        navigate={navigate}
+        onQueued={() => void load().catch((e) => setError(errorText(e)))}
+      />
+      <p>
+        AI model:{" "}
+        {data.providers?.find((p) => p.id === data.settings.default_provider_id)
+          ?.model ?? "Not configured"}
+        . Select a model and review the complete workflow in Start AI Research.
+      </p>
       <section className="panel records-panel">
-        <h2>Plan local HTTP inventory</h2>
+        <h2>Research target</h2>
         <div className="records-toolbar">
           <label>
             Inventory project
@@ -159,7 +160,7 @@ export default function ReconPage({
               value={target}
               onChange={(e) => setTarget(e.target.value)}
             >
-              <option value="">Select URL / API target</option>
+              <option value="">Select domain / URL / API target</option>
               {targets.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -190,7 +191,7 @@ export default function ReconPage({
         ) : (
           <>
             <details className="module-details">
-              <summary>Execution policy and adapter limits</summary>
+              <summary>Legacy loopback HEAD: policy and limits</summary>
               <p>
                 Requirements: an authorized loopback URL, matching scope, and
                 Authorized Auto or Lab Research selected in both Settings and
@@ -204,111 +205,50 @@ export default function ReconPage({
                 per minute; two running jobs across clients.
               </p>
             </details>
-            <div className="inline-actions">
-              <Button
-                className="button primary"
-                disabled={!target || busy}
-                onClick={() =>
-                  void act(async () => {
-                    setPlan(
-                      await request<Plan>("recon_preview", { id: target }),
-                    );
-                    setApproved(false);
-                  }, "Local execution plan ready")
-                }
-                disabledReason={
-                  !target
-                    ? "Select a target first"
-                    : "An operation is in progress"
-                }
-              >
-                Preview local HEAD plan
-              </Button>
-              <Button
-                className="button secondary"
-                onClick={() => navigate("Settings", project)}
-              >
-                Open security settings
-              </Button>
-            </div>
+            <details>
+              <summary>Manual loopback HEAD</summary>
+              <div className="inline-actions">
+                <Button
+                  className="button secondary"
+                  disabled={!target || busy}
+                  onClick={() =>
+                    void act(async () => {
+                      setPlan(
+                        await request<Plan>("recon_preview", { id: target }),
+                      );
+                      setApproved(false);
+                    }, "Local execution plan ready")
+                  }
+                  disabledReason={
+                    !target
+                      ? "Select a target first"
+                      : "An operation is in progress"
+                  }
+                >
+                  Preview local HEAD plan
+                </Button>
+                <Button
+                  className="button secondary"
+                  onClick={() => navigate("Settings", project)}
+                >
+                  Open security settings
+                </Button>
+              </div>
+            </details>
           </>
         )}
       </section>
-      {(!!assets.length || !!jobs.length || !!target) && (
+      {project && (
+        <ReconAssetInventory
+          project={project}
+          target={target}
+          revision={jobs.map((j) => j.id + j.status).join(":")}
+        />
+      )}
+      {(!!jobs.length || !!target) && (
         <>
           <section className="panel records-panel">
-            <h2>Observed endpoints</h2>
-            <p>
-              Actual completed observations. HTTP status and reported server
-              names do not establish a vulnerability.
-            </p>
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Endpoint</th>
-                    <th>HTTP</th>
-                    <th>Reported metadata</th>
-                    <th>Last observed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assets.map((a) => (
-                    <tr key={a.id}>
-                      <td className="break-value">
-                        {a.value}
-                        <small className="record-meta">{a.id}</small>
-                      </td>
-                      <td>
-                        {a.facts.status}
-                        <small className="record-meta">
-                          {a.facts.http_version}
-                        </small>
-                      </td>
-                      <td>
-                        {a.facts.reported_server ?? "Not available"}
-                        <small className="record-meta">
-                          {a.facts.content_type ?? "Content type not supplied"}
-                        </small>
-                      </td>
-                      <td>
-                        {new Date(a.last_seen).toLocaleString()}
-                        <small className="record-meta">Job {a.job_id}</small>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {!assets.length && (
-              <p>
-                No observed endpoints yet. Nothing is contacted until you
-                approve a plan.
-              </p>
-            )}
-            <div className="inline-actions">
-              <Button
-                className="button secondary"
-                onClick={() => void act(load, "Inventory refreshed")}
-              >
-                Refresh inventory
-              </Button>
-              <Button
-                className="button secondary"
-                onClick={() => navigate("Evidence", project)}
-              >
-                Open inventory evidence
-              </Button>
-              <Button
-                className="button secondary"
-                onClick={() => navigate("Reports", project)}
-              >
-                Prepare research report
-              </Button>
-            </div>
-          </section>
-          <section className="panel records-panel">
-            <h2>Local inventory jobs</h2>
+            <h2>Recent recon jobs</h2>
             <JobHistory
               jobs={jobs}
               onCancel={(id) =>
@@ -324,9 +264,11 @@ export default function ReconPage({
       <details className="module-details">
         <summary>Available reconnaissance adapters</summary>
         <p>
-          DNS/RDAP/certificate transparency, historical URLs, crawling and
-          external scanner adapters remain unimplemented. Registering those
-          target types does not make them executable through this page.
+          DNS/RDAP/certificate transparency, historical URLs, crawling and other
+          scanner adapters remain unimplemented. HTTPX and Subfinder use
+          reviewed Marketplace extensions and separate network approval.
+          Registering those target types does not make them executable through
+          this page.
         </p>
       </details>
       <Modal
@@ -367,7 +309,7 @@ export default function ReconPage({
               I approve this exact request to my authorized local service.
             </label>
             <Button
-              className="button primary"
+              className="button secondary"
               disabled={busy || !approved}
               onClick={() =>
                 void act(async () => {

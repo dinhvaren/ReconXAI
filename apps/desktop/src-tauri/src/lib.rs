@@ -1,8 +1,8 @@
 use reconx_core::{
     AppError, ArtifactReview, Core, EvidenceInput, FindingInput, JobEngine, JobInput, JobKind,
     JobReview, McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig,
-    ReportFormat, ReportInput, Result, Settings, TargetExport, TargetInput, ThemePreference,
-    ToolProgress,
+    ReconConfig, ReconPlan, ReportFormat, ReportInput, Result, Settings, TargetExport, TargetInput,
+    ThemePreference, ToolProgress,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -15,6 +15,20 @@ use zeroize::Zeroizing;
 #[derive(Default)]
 struct ActiveStreams(Mutex<HashMap<String, watch::Sender<bool>>>);
 struct ActiveJobs(Mutex<Option<JobEngine>>);
+
+#[tauri::command]
+async fn install_native_extension(
+    core: tauri::State<'_, Core>,
+    approval: reconx_core::ExtensionApproval,
+    updates: tauri::ipc::Channel<ToolProgress>,
+) -> Result<Value> {
+    value(
+        core.extension_install_with_progress(approval, move |p| {
+            let _ = updates.send(p);
+        })
+        .await?,
+    )
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -232,6 +246,18 @@ enum Request {
     },
     ResearchReport {
         id: String,
+    },
+    ResearchGraph {
+        id: String,
+        query: reconx_core::ResearchGraphQuery,
+    },
+    ResearchGraphExport {
+        id: String,
+        path: std::path::PathBuf,
+    },
+    ResearchGraphRecord {
+        id: String,
+        node: String,
     },
     ManagedMcpPlan {
         id: String,
@@ -539,6 +565,16 @@ enum Request {
         fingerprint: String,
         approved: bool,
     },
+    ReconToolPlan {
+        config: ReconConfig,
+    },
+    ReconToolRun {
+        plan: ReconPlan,
+        approved: bool,
+    },
+    ReconToolHistory {
+        target: Option<String>,
+    },
     AssetsList {
         project: Option<String>,
     },
@@ -730,6 +766,9 @@ fn local(core: Core, request: Request) -> Result<Value> {
             value(core.research_finding(&id, &title, &details)?)
         }
         Request::ResearchReport { id } => value(core.research_report(&id)?),
+        Request::ResearchGraph { id, query } => value(core.research_graph(&id, query)?),
+        Request::ResearchGraphExport { id, path } => value(core.research_graph_export(&id, &path)?),
+        Request::ResearchGraphRecord { id, node } => value(core.research_graph_record(&id, &node)?),
         Request::AiCatalog => value(core.ai_catalog()),
         Request::AiManager => value(core.ai_manager()?),
         Request::AiRoutingSave { routes } => {
@@ -813,6 +852,9 @@ fn local(core: Core, request: Request) -> Result<Value> {
             fingerprint,
             approved,
         } => value(core.local_http_enqueue(&id, &fingerprint, approved)?),
+        Request::ReconToolPlan { config } => value(core.recon_plan(config)?),
+        Request::ReconToolRun { plan, approved } => value(core.recon_enqueue(plan, approved)?),
+        Request::ReconToolHistory { target } => value(core.recon_history(target.as_deref())?),
         Request::AssetsList { project } => value(core.assets(project.as_deref())?),
         Request::EvidenceList { project } => value(core.evidence_list(project.as_deref())?),
         Request::EvidenceShow { id } => value(core.evidence_show(&id)?),
@@ -1243,6 +1285,7 @@ pub fn run() {
             stream_chat,
             cancel_stream,
             install_tool,
+            install_native_extension,
             import_file_stream,
             apply_window_theme
         ])

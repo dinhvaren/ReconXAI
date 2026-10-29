@@ -1,8 +1,9 @@
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use reconx_core::{
     AppError, Core, EvidenceInput, FindingInput, JobEngine, JobInput, JobKind, JobReview,
-    McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig, ReportFormat,
-    ReportInput, Result, SecurityMode, Settings, TargetExport, TargetInput, TargetKind,
+    McpApproval, McpServerConfig, PlanReview, ProjectExport, ProviderConfig, ReconConfig,
+    ReconPlan, ReconTool, ReportFormat, ReportInput, Result, SecurityMode, Settings, TargetExport,
+    TargetInput, TargetKind,
 };
 use serde_json::{Value, json};
 use std::{
@@ -27,6 +28,9 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Read-only provenance graphs over stored research results; never executes tools.
+    #[command(subcommand)]
+    Graph(GraphCommand),
     /// Persistent target-bound sessions over the existing reviewed capabilities.
     #[command(subcommand)]
     Research(ResearchCommand),
@@ -82,6 +86,33 @@ enum Command {
     Audit,
     Completions {
         shell: clap_complete::Shell,
+    },
+}
+#[derive(Subcommand)]
+enum GraphCommand {
+    Nodes {
+        session: String,
+        #[arg(long, default_value = "")]
+        graph: String,
+        #[arg(long, default_value = "")]
+        kind: String,
+        #[arg(long, default_value = "")]
+        search: String,
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+        #[arg(long, default_value_t = 100)]
+        limit: usize,
+    },
+    /// Edges whose endpoints occur in this bounded node page.
+    Edges {
+        session: String,
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+    },
+    Export {
+        session: String,
+        #[arg(long)]
+        output: PathBuf,
     },
 }
 #[derive(Subcommand)]
@@ -277,13 +308,36 @@ fn http_import_cli(core: &Core, kind: &str, args: &HttpImportArgs) -> Result<Val
 }
 #[derive(Subcommand)]
 enum ReconCommand {
+    /// Preview fixed managed-tool arguments, scope and data-sharing requirements.
+    Plan {
+        target: String,
+        #[arg(long)]
+        tool: String,
+        #[arg(long, default_value_t = 4)]
+        max_assets: u8,
+        #[arg(long, default_value_t = 10)]
+        timeout_secs: u32,
+    },
+    History {
+        #[arg(long)]
+        target: Option<String>,
+    },
+    Export {
+        #[arg(long)]
+        project: String,
+        #[arg(long)]
+        output: PathBuf,
+    },
     /// Preview one HEAD request after checking target authorization and scope.
     Preview { target: String },
     /// Queue the exact approved plan. Desktop or `jobs run` executes the job.
     Run {
-        target: String,
+        #[arg(required_unless_present = "plan")]
+        target: Option<String>,
         #[arg(long)]
-        fingerprint: String,
+        plan: Option<PathBuf>,
+        #[arg(long, required_unless_present = "plan")]
+        fingerprint: Option<String>,
         #[arg(long)]
         approve: bool,
     },
@@ -1154,6 +1208,38 @@ async fn execute(cli: &Cli) -> Result<Value> {
     }
     let core = Core::open(cli.database.clone())?;
     match &cli.command {
+        Command::Graph(command) => match command {
+            GraphCommand::Nodes {
+                session,
+                graph,
+                kind,
+                search,
+                offset,
+                limit,
+            } => serialize(core.research_graph(
+                session,
+                reconx_core::ResearchGraphQuery {
+                    graph: graph.clone(),
+                    kind: kind.clone(),
+                    search: search.clone(),
+                    offset: *offset,
+                    limit: *limit,
+                },
+            )?),
+            GraphCommand::Edges { session, offset } => {
+                let page = core.research_graph(
+                    session,
+                    reconx_core::ResearchGraphQuery {
+                        offset: *offset,
+                        ..Default::default()
+                    },
+                )?;
+                Ok(
+                    json!({"session_id":session,"revision":page.revision,"edges":page.edges,"next_node_offset":page.next_offset,"scope":"Edges between nodes in this page; use graph export for the bounded complete graph"}),
+                )
+            }
+            GraphCommand::Export { session, output } => core.research_graph_export(session, output),
+        },
         Command::Http(command) => match command {
             HttpCommand::Requests { project, target } => {
                 serialize(core.http_drafts(project, target.as_deref())?)
@@ -1309,11 +1395,53 @@ async fn execute(cli: &Cli) -> Result<Value> {
         },
         Command::Recon(command) => match command {
             ReconCommand::Preview { target } => serialize(core.local_http_preview(target)?),
+            ReconCommand::Plan {
+                target,
+                tool,
+                max_assets,
+                timeout_secs,
+            } => {
+                let mut config = ReconConfig::for_target(target, enum_input::<ReconTool>(tool)?);
+                config.max_assets = *max_assets;
+                config.timeout_secs = *timeout_secs;
+                serialize(core.recon_plan(config)?)
+            }
+            ReconCommand::History { target } => serialize(core.recon_history(target.as_deref())?),
+            ReconCommand::Export { project, output } => {
+                let value = core.recon_export(project)?;
+                write_new(
+                    output,
+                    &serde_json::to_string_pretty(&value).map_err(|_| {
+                        AppError::new("SERIALIZATION", "Cannot serialize inventory")
+                    })?,
+                )?;
+                Ok(value)
+            }
             ReconCommand::Run {
                 target,
                 fingerprint,
+                plan,
                 approve,
-            } => serialize(core.local_http_enqueue(target, fingerprint, *approve)?),
+            } => {
+                if let Some(path) = plan {
+                    let p: ReconPlan = serde_json::from_str(&read_file(path)?).map_err(|_| {
+                        AppError::new("INVALID_INPUT", "Invalid reviewed recon plan")
+                    })?;
+                    serialize(core.recon_enqueue(p, *approve)?)
+                } else {
+                    serialize(
+                        core.local_http_enqueue(
+                            target
+                                .as_deref()
+                                .ok_or_else(|| AppError::new("INVALID_INPUT", "Choose a target"))?,
+                            fingerprint.as_deref().ok_or_else(|| {
+                                AppError::new("INVALID_INPUT", "Review a plan fingerprint")
+                            })?,
+                            *approve,
+                        )?,
+                    )
+                }
+            }
             ReconCommand::Assets { project } => serialize(core.assets(project.as_deref())?),
         },
         Command::Evidence(command) => match command {

@@ -111,6 +111,14 @@ async fn manual_file_session_executes_existing_jobs_and_exports_reviewed_reports
     let out = done(&core, &session.plan.id);
     assert_eq!(out.status, "completed", "{out:?}");
     assert_eq!(out.evidence.len(), 3);
+    let graph = core
+        .research_graph(&out.plan.id, ResearchGraphQuery::default())
+        .unwrap();
+    let target_node = graph.nodes.iter().find(|n| n.kind == "target").unwrap();
+    assert_eq!(
+        target_node.attributes["value"], "Local artifact location omitted",
+        "Graph metadata must omit local import paths"
+    );
     for e in &out.evidence {
         core.evidence_verify(&e.id).unwrap();
     }
@@ -299,6 +307,16 @@ async fn mock_ai_plan_requires_consent_and_separate_network_approval_and_collect
     let s = core.research_plan(review(&p, true)).await.unwrap();
     assert_eq!(ai.calls.lock().unwrap().len(), 1);
     assert!(http.calls.lock().unwrap().is_empty());
+    let before = core
+        .research_graph(&s.plan.id, ResearchGraphQuery::default())
+        .unwrap();
+    assert!(
+        !before
+            .nodes
+            .iter()
+            .any(|n| matches!(n.kind.as_str(), "task" | "tool_invocation" | "observation"))
+    );
+    assert!(http.calls.lock().unwrap().is_empty());
     assert!(
         core.research_approve(&s.plan.id, &p.fingerprint, true, false)
             .is_err()
@@ -312,6 +330,31 @@ async fn mock_ai_plan_requires_consent_and_separate_network_approval_and_collect
     let engine = JobEngine::start(core.clone(), 2, |_| {}).unwrap();
     let s = done(&core, &s.plan.id);
     assert_eq!(s.status, "completed", "{s:?}");
+    let graph = core
+        .research_graph(&s.plan.id, ResearchGraphQuery::default())
+        .unwrap();
+    assert!(graph.revision > before.revision);
+    assert_eq!(graph.nodes.iter().filter(|n| n.kind == "url").count(), 1);
+    assert_eq!(graph.nodes.iter().filter(|n| n.kind == "task").count(), 2);
+    assert!(graph.edges.iter().any(|e| e.relation == "SUPPORTED_BY"));
+    let observation = graph
+        .nodes
+        .iter()
+        .find(|n| n.kind == "observation")
+        .unwrap();
+    assert_eq!(observation.attributes["status"], 200);
+    assert!(s.jobs.iter().any(|j| j.id == observation.source_id));
+    assert_eq!(
+        core.research_graph(&s.plan.id, ResearchGraphQuery::default())
+            .unwrap()
+            .revision,
+        graph.revision
+    );
+    assert_eq!(
+        ai.calls.lock().unwrap().len(),
+        1,
+        "Graph review never calls AI"
+    );
     {
         let calls = http.calls.lock().unwrap();
         assert_eq!(calls.len(), 1);

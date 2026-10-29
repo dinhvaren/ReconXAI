@@ -1,0 +1,40 @@
+[
+  {
+    "id": "httpx",
+    "name": "ProjectDiscovery httpx",
+    "category": "recon",
+    "platform": "windows-x86_64",
+    "version": "1.12.0",
+    "source": "https://github.com/projectdiscovery/httpx/releases/tag/v1.12.0",
+    "url": "https://github.com/projectdiscovery/httpx/releases/download/v1.12.0/httpx_1.12.0_windows_amd64.zip",
+    "sha256": "14d8ccaa2d95ce9365162682f1a2ba3f14d2000bb4bfb0924af65ec5163ae021",
+    "binary_sha256": "95129b2771ad64e675a436279bdfb72cbf00000ebab482f045d021fffff6fbeb",
+    "archive": "zip",
+    "entry": "httpx.exe",
+    "executable": "httpx.exe",
+    "requires_admin": false,
+    "capabilities": [
+      "httpx.probe"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "httpx",
+    "name": "ProjectDiscovery httpx",
+    "category": "recon",
+    "platform": "linux-x86_64",
+    "version": "1.12.0",
+    "source": "https://github.com/projectdiscovery/httpx/releases/tag/v1.12.0",
+    "url": "https://github.com/projectdiscovery/httpx/releases/download/v1.12.0/httpx_1.12.0_linux_amd64.zip",
+    "sha256": "9d8439e8b6c9aa7d1e2314817a392e00d5178da3af5652f7475f88868f418f76",
+    "binary_sha256": "6d78b83b4da452a7e0bd3613c4fae04cbf523209f083904b563f4d4406a680b0",
+    "archive": "zip",
+    "entry": "httpx",
+    "executable": "httpx",
+    "requires_admin": false,
+    "capabilities": [
+      "httpx.probe"
+    ],
+    "dependencies": []
+  }
+]

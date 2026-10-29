@@ -341,6 +341,9 @@ impl Core {
         analysis: Option<&AnalysisRecord>,
     ) -> Result<Evidence> {
         let kind = match job.kind.as_str() {
+            // Raw scanner output and normalized job results have distinct
+            // provenance, and UNIQUE(job_id,kind) must retain both records.
+            "recon_httpx" | "recon_subfinder" => EvidenceKind::StructuredJson,
             "mcp_tool" => EvidenceKind::McpInvocation,
             "yara_signatures" => EvidenceKind::YaraMatches,
             "binary_metadata" => EvidenceKind::BinaryMetadata,

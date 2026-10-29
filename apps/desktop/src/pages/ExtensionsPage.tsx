@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { errorText, request } from "../api";
+import {
+  errorText,
+  request,
+  installNativeExtension,
+  type ToolProgress,
+} from "../api";
 import type { ExtensionEntry, ExtensionPlan } from "../extensions";
 import type { AnalysisJob, ImportedFile } from "../research";
 import {
@@ -19,16 +24,21 @@ export default function ExtensionsPage({
   onOpenFiles,
   onOpenJobs,
   onOpenMcp,
+  onOpenRecon,
 }: {
   projectId?: string;
   onOpenFiles: () => void;
   onOpenJobs: () => void;
   onOpenMcp?: () => void;
+  onOpenRecon?: () => void;
 }) {
   const [entries, setEntries] = useState<ExtensionEntry[]>([]);
   const [files, setFiles] = useState<ImportedFile[]>([]);
+  const [installProgress, setInstallProgress] = useState<ToolProgress | null>(
+    null,
+  );
   const [history, setHistory] = useState<AnalysisJob[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selectedId, setSelected] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("discover");
   const [category, setCategory] = useState("");
@@ -63,6 +73,29 @@ export default function ExtensionsPage({
       active = false;
     };
   }, [refresh]);
+  const needle = query.toLowerCase();
+  const visible = entries
+    .filter(
+      (e) =>
+        `${e.manifest.name} ${e.manifest.description} ${e.manifest.id}`
+          .toLowerCase()
+          .includes(needle) &&
+        (!category ||
+          e.manifest.category.toLowerCase() === category.toLowerCase()) &&
+        (view !== "installed" || e.installed) &&
+        (view !== "updates" || e.update_available),
+    )
+    .sort((a, b) =>
+      view === "recent"
+        ? (b.installed?.updated_at ?? "").localeCompare(
+            a.installed?.updated_at ?? "",
+          )
+        : a.manifest.name.localeCompare(b.manifest.name),
+    );
+  const selected = visible.some((e) => e.manifest.id === selectedId)
+    ? selectedId
+    : (visible[0]?.manifest.id ?? "");
+  const entry = visible.find((e) => e.manifest.id === selected);
   const loadHistory = useCallback(async () => {
     if (selected)
       setHistory(
@@ -103,26 +136,6 @@ export default function ExtensionsPage({
       setBusy(false);
     }
   };
-  const entry = entries.find((e) => e.manifest.id === selected);
-  const needle = query.toLowerCase();
-  const visible = entries
-    .filter(
-      (e) =>
-        `${e.manifest.name} ${e.manifest.description} ${e.manifest.id}`
-          .toLowerCase()
-          .includes(needle) &&
-        (!category ||
-          e.manifest.category.toLowerCase() === category.toLowerCase()) &&
-        (view !== "installed" || e.installed) &&
-        (view !== "updates" || e.update_available),
-    )
-    .sort((a, b) =>
-      view === "recent"
-        ? (b.installed?.updated_at ?? "").localeCompare(
-            a.installed?.updated_at ?? "",
-          )
-        : a.manifest.name.localeCompare(b.manifest.name),
-    );
   const reviewInstall = () =>
     run(async () => {
       setPlan(
@@ -303,7 +316,9 @@ export default function ExtensionsPage({
                               id: selected,
                             });
                             setNotice(
-                              "Executable integrity, version and real benign signature scan passed.",
+                              selected === "reconx.yara-signatures"
+                                ? "Executable integrity, version and real benign signature scan passed."
+                                : "Verified binary and adapter health checks passed.",
                             );
                           })
                         }
@@ -393,52 +408,72 @@ export default function ExtensionsPage({
                     <code>SHA-256 {d.manifest.sha256}</code>
                   </div>
                 ))}
-                <h3>Run file signatures</h3>
-                <label>
-                  Imported file
-                  <select
-                    aria-label="Extension input file"
-                    value={file}
-                    onChange={(e) => setFile(e.target.value)}
-                  >
-                    <option value="">Select an imported file</option>
-                    {files.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Toolbar label="Extension invocation">
-                  <Button
-                    variant="primary"
-                    disabled={busy || entry.status !== "ready" || !file}
-                    disabledReason={
-                      busy
-                        ? "An extension operation is in progress"
-                        : entry.status !== "ready"
-                          ? "Install, health-check and enable this extension"
-                          : "Select an explicitly imported project file"
-                    }
-                    onClick={() =>
-                      void run(async () => {
-                        const job = await request<AnalysisJob>(
-                          "extensions_invoke",
-                          { id: selected, file_id: file },
-                        );
-                        setNotice(`Signature job queued: ${job.id}`);
-                      })
-                    }
-                  >
-                    Run signatures
-                  </Button>
-                  <Button variant="ghost" onClick={onOpenFiles}>
-                    Import a file
-                  </Button>
-                  <Button variant="ghost" onClick={onOpenJobs}>
-                    Open jobs
-                  </Button>
-                </Toolbar>
+                {["httpx", "subfinder"].includes(entry.manifest.id) ? (
+                  <div>
+                    <h3>Target-bound recon</h3>
+                    <p>
+                      Open Reconnaissance or Start AI Research to review scope,
+                      passive-source disclosure and active probe budgets.
+                    </p>
+                    <Button
+                      variant="primary"
+                      disabled={!onOpenRecon}
+                      disabledReason="Open the target-bound Recon workspace from the main navigation"
+                      onClick={onOpenRecon}
+                    >
+                      Open Reconnaissance
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <h3>Run file signatures</h3>
+                    <label>
+                      Imported file
+                      <select
+                        aria-label="Extension input file"
+                        value={file}
+                        onChange={(e) => setFile(e.target.value)}
+                      >
+                        <option value="">Select an imported file</option>
+                        {files.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Toolbar label="Extension invocation">
+                      <Button
+                        variant="primary"
+                        disabled={busy || entry.status !== "ready" || !file}
+                        disabledReason={
+                          busy
+                            ? "An extension operation is in progress"
+                            : entry.status !== "ready"
+                              ? "Install, health-check and enable this extension"
+                              : "Select an explicitly imported project file"
+                        }
+                        onClick={() =>
+                          void run(async () => {
+                            const job = await request<AnalysisJob>(
+                              "extensions_invoke",
+                              { id: selected, file_id: file },
+                            );
+                            setNotice(`Signature job queued: ${job.id}`);
+                          })
+                        }
+                      >
+                        Run signatures
+                      </Button>
+                      <Button variant="ghost" onClick={onOpenFiles}>
+                        Import a file
+                      </Button>
+                      <Button variant="ghost" onClick={onOpenJobs}>
+                        Open jobs
+                      </Button>
+                    </Toolbar>
+                  </>
+                )}
                 {history.length > 0 && (
                   <>
                     <h3>Invocation history</h3>
@@ -456,7 +491,7 @@ export default function ExtensionsPage({
                 <details>
                   <summary>Integration boundaries</summary>
                   <p>
-                    This native adapter runs fixed YARA-X signatures. The MCP
+                    Native adapters use compiled, fixed tool arguments. The MCP
                     category also offers reviewed npm packages and untrusted
                     Registry discovery. General community installation and OS
                     sandboxing remain unavailable. Subprocesses use fixed
@@ -535,26 +570,43 @@ export default function ExtensionsPage({
               onClick={() =>
                 void run(async () => {
                   try {
-                    await request("extensions_install", {
-                      approval: {
+                    setInstallProgress(null);
+                    await installNativeExtension(
+                      {
                         id: plan.extension.manifest.id,
                         fingerprint: plan.fingerprint,
                         approved: true,
                       },
-                    });
+                      setInstallProgress,
+                    );
                   } catch (e) {
                     setPlan(undefined);
                     throw e;
                   }
                   setPlan(undefined);
                   setNotice(
-                    "Extension installed. Integrity, version and actual benign signature scan passed.",
+                    plan.extension.manifest.id === "reconx.yara-signatures"
+                      ? "Extension installed. Integrity, version and actual benign signature scan passed."
+                      : "Extension installed. Verified binary and adapter health checks passed.",
                   );
                 })
               }
             >
               {busy ? "Installing and checking…" : "Approve and install"}
             </Button>
+            {busy && installProgress && (
+              <div role="status">
+                {installProgress.phase} ·{" "}
+                {installProgress.downloaded.toLocaleString()} bytes
+                {installProgress.total ? (
+                  <progress
+                    aria-label="Extension download progress"
+                    max={installProgress.total}
+                    value={installProgress.downloaded}
+                  />
+                ) : null}
+              </div>
+            )}
           </div>
         </Modal>
       )}

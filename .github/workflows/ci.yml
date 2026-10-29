@@ -102,6 +102,19 @@ jobs:
         env:
           RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
           RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+      - name: Windows reviewed managed recon and stored provenance
+        if: runner.os == 'Windows'
+        run: node tests/e2e/recon-tools.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+          RECONX_VERIFY_ASSET: '1'
+      - name: Linux real managed tools on owned loopback fixtures
+        if: runner.os == 'Linux'
+        run: python3 scripts/recon_tools_smoke.py --binary target/release/reconx --output artifacts/recon-tool-smoke --approve-downloads
+      - name: Linux persistent read-only provenance over stored fixture results
+        if: runner.os == 'Linux'
+        run: python3 scripts/research_graph_smoke.py --binary target/release/reconx --source artifacts/recon-tool-smoke/workspace --output artifacts/research-graph-smoke
       - name: Windows native durable local jobs
         if: runner.os == 'Windows'
         run: node tests/e2e/jobs.mjs
@@ -200,6 +213,10 @@ jobs:
             artifacts/outputs-*/reviewed-report.pdf
             artifacts/recon-local-*/results.json
             artifacts/recon-local-*/*.png
+            artifacts/recon-tools-native-*/results.json
+            artifacts/recon-tools-native-*/*.png
+            artifacts/recon-tool-smoke/results.json
+            artifacts/research-graph-smoke/results.json
             artifacts/native-ai-providers-*/results.json
             artifacts/native-ai-providers-*/*.png
             artifacts/http-workspace-*/results.json

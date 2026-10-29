@@ -130,6 +130,10 @@ impl Core {
         }
         caps.push(json!({"id":"local.scope_review","provider":"local","name":"Registration/scope review (no network requests)","available":true,"ai_plannable":false,"permissions":["local-metadata-only"]}));
         caps.push(json!({"id":"local.http_head","provider":"local","name":"Manually approved loopback HTTP availability","available":self.settings()?.security_mode!=SecurityMode::PassiveAuto,"ai_plannable":false,"target_types":["url","rest_api","graphql"],"permissions":["loopback-only","declared-authorization","exact-manual-approval"],"timeout_ms":5000,"input_schema":{"type":"object","properties":{"target_id":{"type":"string"},"fingerprint":{"type":"string"},"approved":{"const":true}},"required":["target_id","fingerprint","approved"],"additionalProperties":false}}));
+        for id in ["httpx", "subfinder"] {
+            let entry = self.extension_entry(id)?;
+            caps.push(json!({"id":format!("{}.{}",id,if id=="httpx"{"probe"}else{"passive"}),"provider":"managed-tool","name":entry.manifest.name,"available":entry.status=="ready","required_tool":id,"target_types":if id=="httpx"{vec!["domain","url","rest_api","graphql"]}else{vec!["domain"]},"ai_plannable":false,"target_session_only":true,"permissions":entry.manifest.permissions}));
+        }
         for server in self.mcp_servers()? {
             for tool in &server.tools {
                 let name = tool["name"].as_str().unwrap_or("");

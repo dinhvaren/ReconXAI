@@ -1,5 +1,42 @@
 //! Typed local jobs. SQLite is the queue and concurrency authority across clients.
 use super::*;
+
+#[cfg(test)]
+mod recon_dependency_tests {
+    use super::*;
+
+    #[test]
+    fn probe_waits_for_passive_dependency_and_fails_closed_on_discovery_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let core = Core::open(Some(dir.path().join("dependency.db"))).unwrap();
+        let project = core.create_project("Dependency fixture", "").unwrap();
+        let conn = core.db.connect().unwrap();
+        for (id, kind) in [("passive", "recon_subfinder"), ("probe", "recon_httpx")] {
+            conn.execute("INSERT INTO analysis_jobs(id,project_id,kind,status,created_at,logs_json) VALUES(?1,?2,?3,'queued',?4,'[]')",params![id,project.id,kind,now()]).unwrap();
+        }
+        conn.execute("INSERT INTO recon_tool_approvals(job_id,plan_json,dependency_job_id,approved_at) VALUES('probe','{}','passive',?1)",[now()]).unwrap();
+        assert!(
+            core.claim_job(Some("probe"), "fixture-worker")
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(core.job("probe").unwrap().status, "queued");
+        conn.execute(
+            "UPDATE analysis_jobs SET status='failed',error_code='TOOL_OUTPUT' WHERE id='passive'",
+            [],
+        )
+        .unwrap();
+        assert!(
+            core.claim_job(Some("probe"), "fixture-worker")
+                .unwrap()
+                .is_none()
+        );
+        let probe = core.job("probe").unwrap();
+        assert_eq!(probe.status, "failed");
+        assert_eq!(probe.error_code.as_deref(), Some("DEPENDENCY_FAILED"));
+        assert!(probe.started_at.is_none());
+    }
+}
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -256,6 +293,7 @@ impl Core {
     }
     fn claim_job(&self, id: Option<&str>, owner: &str) -> Result<Option<AnalysisJob>> {
         self.reconcile_jobs()?;
+        self.db.connect()?.execute("UPDATE analysis_jobs SET status='failed',stage='Discovery dependency did not complete',error_code='DEPENDENCY_FAILED',finished_at=?1 WHERE status='queued' AND id IN (SELECT r.job_id FROM recon_tool_approvals r JOIN analysis_jobs d ON d.id=r.dependency_job_id WHERE d.status IN ('failed','cancelled','interrupted'))",[now()]).map_err(db_error)?;
         let mut conn = self.db.connect()?;
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -270,7 +308,7 @@ impl Core {
         if active >= MAX_RUNNING {
             return Ok(None);
         }
-        let next:Option<String>=tx.query_row("SELECT id FROM analysis_jobs WHERE status='queued' AND (?1 IS NULL OR id=?1) ORDER BY created_at,id LIMIT 1",[id],|r|r.get(0)).optional().map_err(db_error)?;
+        let next:Option<String>=tx.query_row("SELECT id FROM analysis_jobs WHERE status='queued' AND (?1 IS NULL OR id=?1) AND NOT EXISTS(SELECT 1 FROM recon_tool_approvals r JOIN analysis_jobs d ON d.id=r.dependency_job_id WHERE r.job_id=analysis_jobs.id AND d.status<>'completed') ORDER BY created_at,id LIMIT 1",[id],|r|r.get(0)).optional().map_err(db_error)?;
         let Some(next) = next else { return Ok(None) };
         tx.execute("UPDATE analysis_jobs SET status='running',started_at=?1,worker_id=?2,lease_until=?3,stage='Policy validation',progress=1,logs_json=json_insert(logs_json,'$[#]','Worker claimed job; validating current policy') WHERE id=?4 AND status='queued'",params![now(),owner,Utc::now().timestamp_millis()+LEASE_MS,next]).map_err(db_error)?;
         Self::audit(&tx, "job.started", &next, "running")?;
@@ -309,6 +347,9 @@ impl Core {
         }
         if let Some(file) = &job.file_id {
             self.require_file_authorization(&self.imported_file(file)?)?;
+        }
+        if job.kind.starts_with("recon_") {
+            self.recon_job_plan(job)?;
         }
         if job.kind == "local_http_inventory" {
             self.local_http_job_plan(job)?;
@@ -354,7 +395,9 @@ impl Core {
         }
         let mut replay_artifact = None;
         if let Some(http) = prepared.http.as_ref() {
-            if job.kind == "manual_http_replay" {
+            if job.kind.starts_with("recon_") {
+                prepared.result = self.commit_recon_tool(&tx, job, http)?;
+            } else if job.kind == "manual_http_replay" {
                 let pending = self.commit_http_replay(&tx, job, http)?;
                 prepared.result = pending.result.clone();
                 replay_artifact = Some(pending);
@@ -445,6 +488,7 @@ impl Core {
                     PreparedJob{result,analysis:None,http:None}
                 },
                 "local_http_inventory"=>self.prepare_local_http(&job,&mut update)?,
+                "recon_httpx"|"recon_subfinder"=>self.prepare_recon_tool(&job,&mut update)?,
                 "offline_http_review"=>self.prepare_http_review(&job,&mut update)?,
                 "offline_schema_review"=>self.prepare_http_schema(&job,&mut update)?,
                 "manual_http_replay"=>self.prepare_http_replay(&job,&mut update)?,

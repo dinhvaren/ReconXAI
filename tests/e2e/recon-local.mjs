@@ -138,10 +138,13 @@ async function addTarget(name, value) {
   await dialog.waitFor({ state: "hidden" });
   return (await command(["target", "list"])).find((t) => t.name === name);
 }
+async function previewManualHead() {
+  const preview=page.getByRole("button",{name:"Preview local HEAD plan",exact:true});
+  if (!await preview.isVisible()) await page.getByText("Manual loopback HEAD",{exact:true}).click();
+  await preview.click();
+}
 async function approve() {
-  await page
-    .getByRole("button", { name: "Preview local HEAD plan", exact: true })
-    .click();
+  await previewManualHead();
   const dialog = page.getByRole("dialog", {
     name: "Approve local HTTP plan",
     exact: true,
@@ -198,9 +201,7 @@ try {
     await page.getByLabel("Inventory target", { exact: true }).inputValue(),
     target.id,
   );
-  await page
-    .getByRole("button", { name: "Preview local HEAD plan", exact: true })
-    .click();
+  await previewManualHead();
   await page
     .locator("p[role=alert]")
     .filter({ hasText: "HTTP sends traffic" })
@@ -228,9 +229,7 @@ try {
   await page
     .getByLabel("Inventory target", { exact: true })
     .selectOption(target.id);
-  await page
-    .getByRole("button", { name: "Preview local HEAD plan", exact: true })
-    .click();
+  await previewManualHead();
   const plan = page.getByRole("dialog", {
     name: "Approve local HTTP plan",
     exact: true,
@@ -272,7 +271,7 @@ try {
     "Exact approval runs one real HEAD through the shared job worker, normalizes an actual asset and shows a persisted safe job result in Desktop and CLI",
   );
   await page
-    .getByRole("button", { name: "Open inventory evidence", exact: true })
+    .getByRole("button", { name: "Evidence", exact: true })
     .click();
   await page
     .getByRole("row")
