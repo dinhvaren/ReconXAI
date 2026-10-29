@@ -1,0 +1,679 @@
+{
+  "generated_at": "2026-10-29T13:35:26.495557+00:00",
+  "version": "0.1.0",
+  "database_schema": 19,
+  "release_ready": false,
+  "source_base_revision": "15f25820bd28e3f32a613957bd78ec91504209d0",
+  "source_state": "Tested working tree; Rust/SQL hashes bind both platform builds",
+  "previous_checkpoint": "docs/verification/research-provenance-20261029.json",
+  "implemented": [
+    "Read/export historical session graph after target deletion without authorizing new execution",
+    "Preserve real prior file metadata after record removal; never invent a missing hash",
+    "Keep actual job/evidence/observed-asset provenance after FK nullification",
+    "Six concurrent graph readers share one stable snapshot revision; reject cross-project file reassignment without replacing the previous snapshot"
+  ],
+  "windows_rust": {
+    "passed": 204,
+    "failed": 0,
+    "ignored": 2,
+    "log": "artifacts/research-history-windows-rust.log"
+  },
+  "linux_core_cli_rust": {
+    "passed": 204,
+    "failed": 0,
+    "ignored": 2,
+    "log": "artifacts/research-history-linux.log",
+    "distribution": "Parrot/WSL2; Linux GUI UNVERIFIED"
+  },
+  "frontend": {
+    "passed": 46,
+    "failed": 0,
+    "log": "artifacts/research-history-ui-final-frontend-tests.log",
+    "build": "artifacts/research-history-ui-final-frontend-build.log"
+  },
+  "native": {
+    "command": "node tests/e2e/recon-tools.mjs",
+    "exit_code": 0,
+    "started_at": "2026-10-29T13:33:40.025045+00:00",
+    "finished_at": "2026-10-29T13:34:15.827190+00:00",
+    "log": "artifacts/research-history-native-recon-tools.log",
+    "binary_sha256": {
+      "RECONX_DESKTOP_EXE": "6007a0473c98e29562957f397c94a8f40dd5337fd6073509c5bd7f45996365d5",
+      "RECONX_CLI_EXE": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39"
+    },
+    "status": "passed",
+    "groups": 13,
+    "record": "artifacts/recon-tools-native-1793280820356/results.json",
+    "captures": 35
+  },
+  "windows_cli": {
+    "status": "passed",
+    "timestamp": "2026-10-29T08:21:24.663272+00:00",
+    "binary_sha256": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39",
+    "old_schema": 19,
+    "new_schema": 19,
+    "session_id": "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+    "nodes": 16,
+    "edges": 17,
+    "checks": [
+      "Consistent SQLite backup of an owned real HTTPX workspace migrates to schema019 with original jobs/targets/results unchanged",
+      "Stored graph projects real observations, hashed evidence and directed relationships without executing another job",
+      "CLI filtering/pagination, repeated-process persistence/idempotent revision, integrity check and complete graph export pass",
+      "Removing the copied fixture target preserves graph IDs, observed assets, jobs, evidence integrity and historical export after restart"
+    ],
+    "commands": [
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+          "--kind",
+          "evidence",
+          "--search",
+          "ddcb4c94-d28b-4a34-a48f-65a86e6debb7"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "evidence",
+          "verify",
+          "ddcb4c94-d28b-4a34-a48f-65a86e6debb7"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+          "--limit",
+          "2"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+          "--graph",
+          "asset"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "export",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+          "--output",
+          "D:\\ReconXAI\\artifacts\\research-history-cli-acceptance\\graph.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "target",
+          "remove",
+          "cbdfe183-8c53-4390-808d-d2eab443ac0b"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "evidence",
+          "verify",
+          "ddcb4c94-d28b-4a34-a48f-65a86e6debb7"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "export",
+          "595c2029-d9d8-40b3-b56a-55ef24a5d5c1",
+          "--output",
+          "D:\\ReconXAI\\artifacts\\research-history-cli-acceptance\\historical-graph.json"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "network": "No new tool/AI execution; graph reads stored fixture observations"
+  },
+  "linux_cli": {
+    "status": "passed",
+    "timestamp": "2026-10-29T08:16:52.439200+00:00",
+    "binary_sha256": "6b96dd072b8cc299378debc1134ee27d82403f79dae962cbd6f7e26eabbb8a9a",
+    "old_schema": 19,
+    "new_schema": 19,
+    "session_id": "eb6ae1f4-c812-43c7-a577-618733427b1e",
+    "nodes": 16,
+    "edges": 17,
+    "checks": [
+      "Consistent SQLite backup of an owned real HTTPX workspace migrates to schema019 with original jobs/targets/results unchanged",
+      "Stored graph projects real observations, hashed evidence and directed relationships without executing another job",
+      "CLI filtering/pagination, repeated-process persistence/idempotent revision, integrity check and complete graph export pass",
+      "Removing the copied fixture target preserves graph IDs, observed assets, jobs, evidence integrity and historical export after restart"
+    ],
+    "commands": [
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e",
+          "--kind",
+          "evidence",
+          "--search",
+          "3b131065-e3c4-4213-9ced-d0fc3d89f89d"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "evidence",
+          "verify",
+          "3b131065-e3c4-4213-9ced-d0fc3d89f89d"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e",
+          "--limit",
+          "2"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e",
+          "--graph",
+          "asset"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "export",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e",
+          "--output",
+          "/var/tmp/reconx-research-history-20261029/graph-acceptance/graph.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "target",
+          "remove",
+          "9d9cd7a5-ddaf-4066-8950-5f4c037dc7b6"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "evidence",
+          "verify",
+          "3b131065-e3c4-4213-9ced-d0fc3d89f89d"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "nodes",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e"
+        ],
+        "exit_code": 0
+      },
+      {
+        "args": [
+          "graph",
+          "export",
+          "eb6ae1f4-c812-43c7-a577-618733427b1e",
+          "--output",
+          "/var/tmp/reconx-research-history-20261029/graph-acceptance/historical-graph.json"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "network": "No new tool/AI execution; graph reads stored fixture observations"
+  },
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started_at": "2026-10-29T08:12:03.325519+00:00",
+      "finished_at": "2026-10-29T08:12:04.125032+00:00",
+      "exit_code": 0,
+      "log": "artifacts\\research-history-windows-fmt.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started_at": "2026-10-29T08:12:04.126060+00:00",
+      "finished_at": "2026-10-29T08:12:29.460658+00:00",
+      "exit_code": 0,
+      "log": "artifacts\\research-history-windows-clippy.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "-j2"
+      ],
+      "started_at": "2026-10-29T08:12:29.460658+00:00",
+      "finished_at": "2026-10-29T08:16:53.789182+00:00",
+      "exit_code": 0,
+      "log": "artifacts\\research-history-windows-rust.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "reconx",
+        "-p",
+        "reconx-desktop",
+        "--features",
+        "reconx-desktop/custom-protocol",
+        "-j2"
+      ],
+      "started_at": "2026-10-29T08:16:53.789182+00:00",
+      "finished_at": "2026-10-29T08:21:08.733295+00:00",
+      "exit_code": 0,
+      "log": "artifacts\\research-history-windows-build.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "reconx-desktop",
+        "--features",
+        "custom-protocol",
+        "-j2"
+      ],
+      "exit_code": 0,
+      "log": "artifacts/research-history-ui-final-desktop-build.log",
+      "scope": "Final Desktop rebundle after completed frontend build; Rust production source unchanged"
+    }
+  ],
+  "linux_command": "wsl.exe -d Parrot -- bash /mnt/d/ReconXAI/artifacts/run-research-history-linux.sh",
+  "linux_exit_code": 0,
+  "linux_source_comparison": {
+    "files_checked": 78,
+    "mismatches": []
+  },
+  "source_hashes": {
+    "apps/cli/src/main.rs": "75f4c10eafed0aaa93598cab17644071dd316a2573d85f13fa9f97af581b16fb",
+    "apps/cli/tests/cli.rs": "1b968e1afa5b7131772ae608d9ca1e459b2a82477ac34af4e25a0908644f4d35",
+    "apps/desktop/src-tauri/build.rs": "487059eaf8a947b80f20a9aacac038a5047b2ad69d2401b827376c67d6fe847f",
+    "apps/desktop/src-tauri/src/lib.rs": "e02a6f1fd943b75bdbcc777e0f75a1a8e19d4d1f8b68251f98a3969482245bd2",
+    "apps/desktop/src-tauri/src/main.rs": "5742af6a0d240d229408d03edfee20dd8cbf2cee044947e2cbd68532ff715bea",
+    "crates/reconx-ai/src/catalog.rs": "71780a35989336736ba443cf90b54e4ad5034f37800459eb2886743d8f5723e0",
+    "crates/reconx-ai/src/lib.rs": "6aa67b4aaa629a76cdc3ea372ae9a947e84d49f3d9edec588f1d945c548c7c98",
+    "crates/reconx-ai/src/options.rs": "1c0acbc3e1a95a27de1d7e85dec249628dcd7779acac70eb5a90adc67efd2f6a",
+    "crates/reconx-ai/src/streaming.rs": "6c285a1c47230fb01ee792fd672cb9b17d5cb0867ddcf7213416ab487d6158c3",
+    "crates/reconx-ai/tests/gateway.rs": "48e57dcb9ece1591b48446b86325dea0fed390fe9d42537cf16731c17868dbc7",
+    "crates/reconx-ai/tests/streaming.rs": "34af635c18b86034bb8de19d5b50f3eef3868b1400ac6a0000a19902f6f1d429",
+    "crates/reconx-analysis/src/lib.rs": "d623c3f7d292c846b535beba611f403a8a81cfd2dfe6b711ca088a37e8e438f6",
+    "crates/reconx-core/src/ai_manager.rs": "a750020b9ed27fe3d98c9809f0fbced231eeff85ac85bcef6a9f20b23009d11e",
+    "crates/reconx-core/src/capabilities.rs": "72892a30f7897ff2b7a1814af0a65ad7c7371cd7c6847ea709d731991ca801b5",
+    "crates/reconx-core/src/evidence.rs": "dda59f28aa2764f0929e1df5008dc86ace8d05e52c13983639a5a81116a40835",
+    "crates/reconx-core/src/extensions.rs": "b64b478b0027ad5da932036d066048d0eee9ab0bdd781b134ac87a120f0ad6cf",
+    "crates/reconx-core/src/file_ingest.rs": "66631551e5e1ae5f925e0623abc7ccbe7c339ea501773bd8aae54ffe1708004b",
+    "crates/reconx-core/src/findings.rs": "802252703f1dac6ee36d7943383962f661999743fb15422241c0ec13218a6f2d",
+    "crates/reconx-core/src/http.rs": "95efeb7d181c7509620279159ff2f568052a7eb93a09239943113d5b67b4e340",
+    "crates/reconx-core/src/http/auth.rs": "b41fca0e1a71f8177ec9d638a11035dc3842995af6fdeddbe68b96263a63380e",
+    "crates/reconx-core/src/http/replay.rs": "a6d52dcbf03760282f15c43b46f94fc64a4d2493137c97b1f672548e53151617",
+    "crates/reconx-core/src/http/schema.rs": "1fc1399169484ad34f2db36ed669bfff81be3a0bef7d8e8eb792b6438faf6af2",
+    "crates/reconx-core/src/jobs.rs": "917da9b369fa688f13ef1505aca835b1a4e48d64b8eebd1cd49e633ff7f84f35",
+    "crates/reconx-core/src/lib.rs": "09f8c1a19867066e4ae328f280bbbb33bc427124e313ba79a7db6f422f681b38",
+    "crates/reconx-core/src/managed_mcp.rs": "8e2d69271799553035510a2cea4583677dfa7174d6cf6aa08a56be08742ffa25",
+    "crates/reconx-core/src/mcp.rs": "7d90e7195f99e03c20ff6d4421b702d64ad2437b35ffd46aa6184966f2ea0a2d",
+    "crates/reconx-core/src/mcp_http.rs": "bf962b2cead516dad853e00783e051f74d285cd903bf5f9ea9e5ff551d0bdec2",
+    "crates/reconx-core/src/recon.rs": "578b171b32bc3bc72500eec3e7ac641b3ca0abfee4a1986bcc12a4b053c5fb60",
+    "crates/reconx-core/src/recon_tools.rs": "9078b5afbb3e744262a6c2ed984c6599232ebe7951253bcd6f2c229b8851110b",
+    "crates/reconx-core/src/registry.rs": "5300c73bcbc68e0f271282d6c93ce8e8f7c7df65ac2ec1e777cdfaca149e098a",
+    "crates/reconx-core/src/reporting.rs": "61e095dcbb417152e32d4bb512221fb9350fa89d840a793eeb40bcbf9a96d102",
+    "crates/reconx-core/src/research_graph.rs": "16f2aab557a6f9741fe10b11cb1b41b5e9e07d25da4937c516fc02d76be5dd42",
+    "crates/reconx-core/src/research_sessions.rs": "074a1f4b65ab993fa262f8ac4f94ac38fc2a7597b4de8f04fa3e7dd17d7a6d91",
+    "crates/reconx-core/src/reverse.rs": "c320c0cb264076e69717bf421ab23a1f49d679ae1266f532e24d5c4523986ceb",
+    "crates/reconx-core/src/targets.rs": "6faaa2224fb44bd406f256d12d52eaf68cabf9ab4cc793728939bccbdecab5c1",
+    "crates/reconx-core/src/tooling.rs": "d67c0589dedf00a494a2b7afd42a1e7a5bcc903391f29b3977dcd74369a020eb",
+    "crates/reconx-core/tests/ai_manager.rs": "be9d87b98d3326a7ddba68b8f9582543fc553f5730f2749e5ceb1dc5888e00ff",
+    "crates/reconx-core/tests/extensions.rs": "90796322e4eedb18bce506cbabb417fb65db7a8e41f8441e7ee77e5ec908ad30",
+    "crates/reconx-core/tests/fallback.rs": "31fd1ff834bc05049fe6e8c7c77f522a2b90e11e8a52c0c34c9153440b5f6dbf",
+    "crates/reconx-core/tests/http_replay.rs": "0ec62ce40b03da2a69bd623bb5937b06532ec6bd4ba91dd894f7e5d6f12042d9",
+    "crates/reconx-core/tests/http_schema.rs": "bb9b259f03027777e0a4c09b574d96407439171eddec667b3bc036078a9fd01b",
+    "crates/reconx-core/tests/http_workspace.rs": "19335549ea957d7f9b2d2328b034f51066a03ad0bb1648ce889c222cea1db347",
+    "crates/reconx-core/tests/integrations.rs": "927b94a6be344db677fcee5775025ed25877eb3ccd1edc32aa130a10964312f1",
+    "crates/reconx-core/tests/jobs.rs": "df0cdb81b1feea0d00b8e82d08cccae2ed3323511f87c2f18c3c7d564152adea",
+    "crates/reconx-core/tests/large_import.rs": "11271044acbb7f184f6275553decd1b53de978de78cb7f723cc0cee9bb38196e",
+    "crates/reconx-core/tests/local_inventory.rs": "874c47cb3582d1a232093f7e31d8bb4ee67dc02ce1ad462d617d2c518daace65",
+    "crates/reconx-core/tests/managed_mcp.rs": "95c68dd39535a5c731ff13ae2a6b3bf8dd18ca525690e8ca2c87666b425d1cba",
+    "crates/reconx-core/tests/outputs.rs": "6c795d3102daee5fe1dfe061f0ad8d1a7e320e6b0bd74e827242b9021370f7cc",
+    "crates/reconx-core/tests/recon_tools.rs": "aa2503dcd240890140940e271c1d0150059a1ac6ec1092e5eb7d68bfff1e0d5d",
+    "crates/reconx-core/tests/release_workflows.rs": "01ed3622cfa6f70d387e8e9925a1629c46c8469021753319f4aff7dbc1fc6857",
+    "crates/reconx-core/tests/research_graph.rs": "594a58d3ab67fc7048d4754ce7f4a25af5c6958bedc3e12fc16abbe8a6c2f93c",
+    "crates/reconx-core/tests/research_inputs.rs": "c35e993a453d3383ac28a65e8c40b53d7f075bc97662f6857ed82ea3a2e54b8c",
+    "crates/reconx-core/tests/research_sessions.rs": "bccbd57948c8d9ab5a4b47e08cbc40d2658e84a6569d58a83b1f4a6e36d770e0",
+    "crates/reconx-core/tests/workspace.rs": "76334a7fbdbb007931c2306da526283f67fc9bfe320b940985859423c4d06201",
+    "crates/reconx-security/src/lib.rs": "be713662fd85638a26e3a2b77cbf1db85638eb1e30eebc5a5599b85cc34d9eb7",
+    "crates/reconx-storage/migrations/001_foundation.sql": "d5a719198f1bbfa3d57d34b00d6b904798da873c1b287f4e9d06bb44d422eedf",
+    "crates/reconx-storage/migrations/002_research_inputs.sql": "619bb837d55792f672e7cf218de2046399953136e74fad4e9179b65fdfc54632",
+    "crates/reconx-storage/migrations/003_job_engine.sql": "88501ef87cb83ec2a6234814bbba5e8c59433686955c084af95427c2f130151e",
+    "crates/reconx-storage/migrations/004_capabilities.sql": "f7103ea795c0a6d37112e23f2706a31e5cc0d506b5a541f017178bda1bc08592",
+    "crates/reconx-storage/migrations/005_research_outputs.sql": "576f47e5789ee5a7a4d1b0bc0e9c654539dc5cacb5f8b838f4145764d0eb325e",
+    "crates/reconx-storage/migrations/006_local_inventory.sql": "bedb4719a6db029f57a360f1fe6e485ee236aa5b72e55dc122d94d1c863d5759",
+    "crates/reconx-storage/migrations/009_ai_provider_manager.sql": "2ddcb38ec1c641958994b5418995d43c6b075fa097b4d2552063fe357d4e4484",
+    "crates/reconx-storage/migrations/010_http_workspace.sql": "05b01e4dbd9fc6a41589a6f6cc9ed784b773288a9b5dbeb929175d5a9f6bf7a4",
+    "crates/reconx-storage/migrations/011_offline_schema_review.sql": "ded8ec118a3e5bf878b68e7d2db25861b369ed6ef1b8d5332808d3fedc1878eb",
+    "crates/reconx-storage/migrations/012_manual_http_replay.sql": "5374bb2cec777f2f9ba4ccc1d31763c5d26f6e28db0c5c4fcb9b398a4cb380b9",
+    "crates/reconx-storage/migrations/013_schema_review_options.sql": "33110862a9eba8e8dcb175aa19b587b7511ca41404c0b0d56d384e56195fd3a4",
+    "crates/reconx-storage/migrations/014_extensions.sql": "fa42bfc4dce8e7cb2f340a6ef61a54ca899dee56c96280a15a9d463e44e91dd3",
+    "crates/reconx-storage/migrations/015_mcp_registry.sql": "b767cb5b761e4bd795304845c24131044fe554813922c5f84c344030cc09aee8",
+    "crates/reconx-storage/migrations/016_managed_mcp.sql": "b120712a3fed5abc6187b7e7f66f412f47d4e111fcdd82304cf8f28fe8083a77",
+    "crates/reconx-storage/migrations/017_research_sessions.sql": "4135e07c3ad6eae3393d751c9c8e458da510e5ee87ea15a4c9e83a9246909f07",
+    "crates/reconx-storage/migrations/018_recon_tools.sql": "7a38102bfe2a42faf76eb3867e4d4645642637c8f031d2764cc0b701474f87dd",
+    "crates/reconx-storage/migrations/019_research_graph.sql": "078b1dcd3bbd23ae2d6441b3d97d6a3d4851b379114f4f6438f11991ac19e10e",
+    "crates/reconx-storage/src/lib.rs": "f09fe6a4a692fca80463b4a7731fedda155be696b5af9ad2de5f1465d36fb3f9",
+    "crates/reconx-tools/src/lib.rs": "7e525a846e4f5f109a5098ff4a556e26499254e574048d58ed745e278a5847c5",
+    "crates/reconx-tools/src/local.rs": "a956c7df8d81f02185de0aa91ecbd4b2a729d4cf24d0f76dda9e81042e441c0e",
+    "crates/reconx-tools/src/packages.rs": "3d876deb8bd9590354ea851d3c398c8f0fc4ec038aa438aeb0246d69dd7a5e13",
+    "crates/reconx-tools/src/recon.rs": "3a933aa0fd250035414aaa880e5fd318d316f94dd822a42fa301a8d0b6a1af83",
+    "tests/e2e/native-sample.rs": "98c99f0128965be12c4c50ebe33c34a95676f566a19bf6b9ef6d7227617f6536"
+  },
+  "artifacts": {
+    "artifacts/windows-research-history-ui-20261029/reconx.exe": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39",
+    "artifacts/windows-research-history-ui-20261029/reconx-desktop.exe": "6007a0473c98e29562957f397c94a8f40dd5337fd6073509c5bd7f45996365d5",
+    "artifacts/linux-research-history-20261029/reconx": "6b96dd072b8cc299378debc1134ee27d82403f79dae962cbd6f7e26eabbb8a9a"
+  },
+  "authenticode": [
+    {
+      "Path": "D:\\ReconXAI\\artifacts\\windows-research-history-ui-20261029\\reconx.exe",
+      "Status": 2,
+      "StatusMessage": "The file D:\\ReconXAI\\artifacts\\windows-research-history-ui-20261029\\reconx.exe is not digitally signed. You cannot run this script on the current system. For more information about running scripts and setting execution policy, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170"
+    },
+    {
+      "Path": "D:\\ReconXAI\\artifacts\\windows-research-history-ui-20261029\\reconx-desktop.exe",
+      "Status": 2,
+      "StatusMessage": "The file D:\\ReconXAI\\artifacts\\windows-research-history-ui-20261029\\reconx-desktop.exe is not digitally signed. You cannot run this script on the current system. For more information about running scripts and setting execution policy, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170"
+    }
+  ],
+  "limits": [
+    "No multi-agent runtime/general DAG/autonomous offensive continuation implemented",
+    "Dedicated opt-in traffic recorder/proxy/retention not implemented; existing capture only",
+    "No new cloud or live passive enumeration test; mock AI remains MOCK_VERIFIED",
+    "Linux GUI, package lifecycle, signing/updater and known dependency-security gates remain open",
+    "Historical metadata is provenance, not current authorization or automatic evidence verification"
+  ],
+  "dependency_advisories_refreshed": false,
+  "retained_failed_attempts": [
+    {
+      "record": "artifacts/recon-tools-native-1793262095617/results.json",
+      "log": "artifacts/research-history-native-failed-20261029.log",
+      "cause": "Test incorrectly required an unbounded linked record; existing backend correctly omits previews over 32 KiB. Test corrected to validate bounded response plus independent evidence hash; production limit retained."
+    },
+    {
+      "log": "artifacts/research-history-ui-frontend-build.log",
+      "cause": "New test incorrectly used Playwright exact option in Testing Library; TypeScript rejected it; test API corrected, then frontend tests and TS/Vite rerun successfully"
+    },
+    {
+      "record": "artifacts/recon-tools-native-1793280658336/results.json",
+      "log": "artifacts/research-history-native-closed-locator.log",
+      "cause": "Test reused a locator from the already closed pre-restart WebView; corrected to query the current page without production changes"
+    }
+  ],
+  "native_regressions": {
+    "http-replay.mjs": {
+      "command": "node tests/e2e/http-replay.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:15.909189+00:00",
+      "finished_at": "2026-10-29T13:34:28.362100+00:00",
+      "log": "artifacts/research-history-native-http-replay.log",
+      "binary_sha256": {
+        "RECONX_DESKTOP_EXE": "6007a0473c98e29562957f397c94a8f40dd5337fd6073509c5bd7f45996365d5",
+        "RECONX_CLI_EXE": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39"
+      },
+      "status": "passed",
+      "groups": 11,
+      "record": "artifacts/http-replay-1793280856229/results.json",
+      "captures": 6
+    },
+    "outputs.mjs": {
+      "command": "node tests/e2e/outputs.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:28.444022+00:00",
+      "finished_at": "2026-10-29T13:34:42.553353+00:00",
+      "log": "artifacts/research-history-native-outputs.log",
+      "binary_sha256": {
+        "RECONX_DESKTOP_EXE": "6007a0473c98e29562957f397c94a8f40dd5337fd6073509c5bd7f45996365d5",
+        "RECONX_CLI_EXE": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39"
+      },
+      "status": "passed",
+      "groups": 6,
+      "record": "artifacts/outputs-1793280868781/results.json",
+      "captures": 21
+    },
+    "recon-local.mjs": {
+      "command": "node tests/e2e/recon-local.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:42.631336+00:00",
+      "finished_at": "2026-10-29T13:34:55.741063+00:00",
+      "log": "artifacts/research-history-native-recon-local.log",
+      "binary_sha256": {
+        "RECONX_DESKTOP_EXE": "6007a0473c98e29562957f397c94a8f40dd5337fd6073509c5bd7f45996365d5",
+        "RECONX_CLI_EXE": "b30b58d483538fbaa0d4b70457c06bf73cd2facea854ab6546c92fd59c159e39"
+      },
+      "status": "passed",
+      "groups": 7,
+      "record": "artifacts/recon-local-1793280882961/results.json",
+      "captures": 7
+    }
+  },
+  "native_commands": [
+    {
+      "command": "node tests/e2e/recon-tools.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:33:40.025045+00:00",
+      "finished_at": "2026-10-29T13:34:15.827190+00:00",
+      "log": "artifacts/research-history-native-recon-tools.log"
+    },
+    {
+      "command": "node tests/e2e/http-replay.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:15.909189+00:00",
+      "finished_at": "2026-10-29T13:34:28.362100+00:00",
+      "log": "artifacts/research-history-native-http-replay.log"
+    },
+    {
+      "command": "node tests/e2e/outputs.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:28.444022+00:00",
+      "finished_at": "2026-10-29T13:34:42.553353+00:00",
+      "log": "artifacts/research-history-native-outputs.log"
+    },
+    {
+      "command": "node tests/e2e/recon-local.mjs",
+      "exit_code": 0,
+      "started_at": "2026-10-29T13:34:42.631336+00:00",
+      "finished_at": "2026-10-29T13:34:55.741063+00:00",
+      "log": "artifacts/research-history-native-recon-local.log"
+    }
+  ],
+  "frontend_source_sha256": {
+    "apps/desktop/src/AiProviderManager.test.tsx": "a11b9016794cd13015262a747138c87f47ef7c906f3ef7534263eefa3e905991",
+    "apps/desktop/src/App.test.tsx": "ddb62a4d9b196ca5d4ebabcc8abf572f960b9b5426447855f53b287365e25668",
+    "apps/desktop/src/App.tsx": "c0b606860f03fc06ba61667bd5cb6577f2ad7c7fb1c4bfd5c5da36764716992a",
+    "apps/desktop/src/Controls.test.tsx": "ed64ed044fc68778acd87f242bf6c036705e13f3c44a8d8c83975a30d1153874",
+    "apps/desktop/src/ExtensionsPage.test.tsx": "a15479429f5822cca334b3a5bde15f535a606f65eafbd3e3cd0af1a24513c5cd",
+    "apps/desktop/src/HttpPage.test.tsx": "65bdaa3865b1a0642010590e8aa5d6afd9aeb4677388e075586a2c2e3bbf17b5",
+    "apps/desktop/src/HttpReplay.test.tsx": "18db511e2db9fb528ff16b03fc93b8ae190cf27b4c65c1c68648ad5405769e58",
+    "apps/desktop/src/ManagedMcp.test.tsx": "af6280546fa00a533b061fe25c8a96c3efe0c753a078a95b373e4f9ec9e7b74e",
+    "apps/desktop/src/ReconPage.test.tsx": "bb178d28e849e534b199b8672f6e0768f050a928b6ebb8c323227f7d02480a62",
+    "apps/desktop/src/ReconToolControls.test.tsx": "ca559a468424a5eff98a09d7c04ca9bddc24e10c62cebe9c3aecf8a53c0355dd",
+    "apps/desktop/src/Research.test.tsx": "989020cdd4bb6e304545509b0d80e9fa1e836102c4db0ac1af83ccf0f6ee09d5",
+    "apps/desktop/src/ResearchGraph.test.tsx": "032d41171b8bce73ded9ca9f9b4fefc8591cfc4965276fe283cdb3f25a933926",
+    "apps/desktop/src/ai.css": "8c6514a4f87306e86ff3a67c4409b03ca454f5237d24d160e232170d99158b15",
+    "apps/desktop/src/ai.ts": "a3f7a71564a285e34c3244fe77bd4bed25115632bdec67d8ffdc22e5fcdc1157",
+    "apps/desktop/src/api.ts": "05b44a2b5b6fdbcd42e14b44c01959cc876e4ac16c54d9c6d2db5e9187179cce",
+    "apps/desktop/src/assets/art/orbital-dark.svg": "83620538f38af6b598704c92d667ff167b57b7376d238678df13081157b41858",
+    "apps/desktop/src/assets/art/orbital-light.svg": "508791894fea8c68617d2b84cd10794f76ddb322c9839f80688d1384827c9b87",
+    "apps/desktop/src/assets/art/orbital.svg": "62c9fc8ae222a9c48b8aa76a2a1454aa5bf0746953b26f22d623f1bb210a3f7f",
+    "apps/desktop/src/assets/art/prism-dark.svg": "7632f25080594d589d3ee0e14ea95d1cae1efc5c773b41f3685838119600f107",
+    "apps/desktop/src/assets/art/prism-light.svg": "0e5cc239ae8cac8d03eacd3c0b80c1f93f9d03522dc864f34404f8343f04e7dc",
+    "apps/desktop/src/assets/art/prism.svg": "9257614ff31c2cf45c0fd524ed99134c96d45b82319a6f06768f2c317fde578e",
+    "apps/desktop/src/assets/art/workspace-dark.svg": "59a1df8c2211f33288e9763df1228b5991a0c374d5462d94d669bcc087cd5f0f",
+    "apps/desktop/src/assets/art/workspace-light.svg": "a6c482ca59bbf17d98e8cf7f23cbd137ace7ffffef4508019740cf7240ad2304",
+    "apps/desktop/src/assets/art/workspace.svg": "9bb4223f6d8cbf24c1266de30b8c4d5e29b5e5b497284ebc08c93bbf7ad20e1b",
+    "apps/desktop/src/assets/fonts/Manrope-variable.ttf": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6",
+    "apps/desktop/src/assets/fonts/OFL.txt": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+    "apps/desktop/src/assets/fonts/dmsans/DMSans-variable.ttf": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d",
+    "apps/desktop/src/assets/fonts/dmsans/OFL.txt": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+    "apps/desktop/src/assets/fonts/ibmplexmono/IBMPlexMono-Medium.ttf": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+    "apps/desktop/src/assets/fonts/ibmplexmono/IBMPlexMono-Regular.ttf": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+    "apps/desktop/src/assets/fonts/ibmplexmono/OFL.txt": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+    "apps/desktop/src/assets/fonts/sources.json": "d39eeff4ac97e22ab83d4ec1babb1df183f729a2d7ed98156974a21e96fddefa",
+    "apps/desktop/src/assets/fonts/sourcesans3/LICENSE.md": "56af9b9c6715597e458284a474dc118a50a4150e9d547c70f7b4a33c3e6a9328",
+    "apps/desktop/src/assets/fonts/sourcesans3/SourceSans3VF-Upright.ttf": "1147db9a3f0edd4956068de77930148acce2742dd76d57f7239b2b1c687ac63f",
+    "apps/desktop/src/assets/fonts/sourcesans3/sources.json": "35b8831b9e6a79f77222f93c037544d1509c66fd5e13d1e447f8b8000b949987",
+    "apps/desktop/src/components/ActivitySidebar.tsx": "95c951214458579eb3a717bf986f3d26417785ceccd7a2674e5df267a13d4764",
+    "apps/desktop/src/components/AiProviderManager.tsx": "d86e8283d0b9c63cc64ab32f20f1ed9e7ed6a4ef441092ba3e54d7f64c9686f8",
+    "apps/desktop/src/components/FileResearchPanel.tsx": "61e38eba2f279aaebc224f6262f10d63b93f0ef005cc9d603e9d8143f6b562e9",
+    "apps/desktop/src/components/HttpAuthManager.tsx": "7a69508fd51180b86478013944b9c5ea5960269c6da6a14dc6fadbfa9f60f5ea",
+    "apps/desktop/src/components/HttpRequestWorkspace.tsx": "d3031ec66f28ae4e4fa4468c2eca66cb413644e844bdca416cd26e15ca3ce078",
+    "apps/desktop/src/components/JobHistory.tsx": "00113889fd8dbfd94da9954bf6edee5512b83b404a610fb295d89b4cdb2292fa",
+    "apps/desktop/src/components/ManagedMcpDetails.tsx": "5c2e32d6ac7834c6d8e6e6c18294296b7008864e82f58ff7e4b0e617166fe469",
+    "apps/desktop/src/components/QuickActions.tsx": "e2dadb08618f487782cb8ea54efe5d93bedad0cbd0f7360a7ef1728900dd21c4",
+    "apps/desktop/src/components/ReconAssetInventory.tsx": "b1465e1b7ca96c7839e78540a05971f7888cb208d8782fa5e3c9ae3210f87685",
+    "apps/desktop/src/components/ReconToolControls.tsx": "96be7852ec3791bb6aaeaedd7f6c72038a2bbe1ec710be9c14f6c4eca44135ce",
+    "apps/desktop/src/components/RegistryBrowser.tsx": "34e61b92e6690152886fb652cf5b8be1d8e74d02bb0ef56a8f10d6fd35d8d2c8",
+    "apps/desktop/src/components/ResearchGraph.css": "a528dc8bdbeefba2996a525066f1c932e70fdc0b4e0dcc283c507fe3b71b1f31",
+    "apps/desktop/src/components/ResearchGraph.tsx": "e506f9b180416dc7312a6543e227572a899f44d9c697ba61896bfda3788f4a72",
+    "apps/desktop/src/components/SchemaResults.tsx": "229b267a8924c6b20a2f6ddc99a5a12ff369d1fb367417501fdf7c971485bcfd",
+    "apps/desktop/src/components/StartResearchButton.tsx": "3166ec13f65da41f4baae20b73efcbdd18631734abd65e93c58b1c88409bc559",
+    "apps/desktop/src/components/TargetDialog.tsx": "f6ff5efec527e9834750dc4c3a7c8fb48788cf255884a6f803e851614b3bf7da",
+    "apps/desktop/src/components/ThemeMenu.tsx": "2ca066ae3df8532f59a7db4cea4b818d030b7ccbc20f461e820305eb41ad1f36",
+    "apps/desktop/src/components/controls.tsx": "534d54b2344066259dd0a9587927c833f419d04c7b2b74a0e9a5f9d78b642dab",
+    "apps/desktop/src/components/icons.tsx": "49795df505852a6c538ee2bb13c115ad840d1c77e63901c2d34ce5db9c099b6f",
+    "apps/desktop/src/components/navigation.ts": "52fb6adaf196e8f68d326ee8e4cda755e96927662a866ca5d6f652ab2816b9b6",
+    "apps/desktop/src/components/ui.tsx": "8546517cfe07d59f9ee2ee7bb1e7750b08e673b2b1525e0a3ac739a3e98d46c7",
+    "apps/desktop/src/controls.css": "01749d493e0ddf33342c22ede707c9ed74274adfdf0a1df01be979b3128ca461",
+    "apps/desktop/src/extensions.css": "5d7cd647bdc90744c2b77d672ccb9fc8224d3eb7dfa5f7a29a0f962c65ad1466",
+    "apps/desktop/src/extensions.ts": "fba9d5b96e17de5ea338659d1158daa008465bcc782a6c7517aba3c01c48787a",
+    "apps/desktop/src/http.css": "ba57a882e605107ce2907a04185d5ef3b8c50f4906bd25fc0418156ed5bea92e",
+    "apps/desktop/src/http.ts": "638e1cba985836f4d07ec6aeb43cf25e310364ef48c56ba3853f1a41f7e26e5f",
+    "apps/desktop/src/integrations.css": "b2c4e2cffee56f7d372469f25510d8e7bee11c8928d82efbbf69d35e1298f233",
+    "apps/desktop/src/main.tsx": "f4b5223f15129f28267acd53e508387efaed8237a89edfb67181257cef9a27be",
+    "apps/desktop/src/pages/Dashboard.tsx": "84b01a2d6de7fbe6498db2312e19c00a3131b340e540fc08f95092ea6ba5adec",
+    "apps/desktop/src/pages/ExtensionsPage.tsx": "5447d243e405756af9dbdf47757ef55adc8e7e5ebef5dc106dedd99a62b95c2a",
+    "apps/desktop/src/pages/HttpPage.tsx": "463b7485a0851b969d4a35cb29dd5dad286988635411b4fa25ecb8b98d4309c8",
+    "apps/desktop/src/pages/JobsPage.tsx": "06074a1fa2e4147b7f14de9de612e193bd078d128c2eeda5fea45f4b0419f030",
+    "apps/desktop/src/pages/McpPage.tsx": "fb63fbecf2cd8a8b15a16eb80396f32695875c166be99addefdb966600cbb230",
+    "apps/desktop/src/pages/OrchestrationPage.tsx": "bc60522c717951e7372e9eae0109981b94952167fbef67a49cfde73ee26e6575",
+    "apps/desktop/src/pages/ReconPage.tsx": "ea6c4086fa971a4c825ae96396cb5c57cd4c12c6b72bff57629eb716581f7faa",
+    "apps/desktop/src/pages/RecordsPage.tsx": "43fe3e81ab4328e4be010f3f692c4d015f6db23e44f94def4b358860c820d67c",
+    "apps/desktop/src/pages/ResearchPage.tsx": "b276ff2017663f3922e4126a2823bdce57e90055fc930f38f6eb6113d8baf1d0",
+    "apps/desktop/src/pages/ReversePage.tsx": "d16561b4ebefabc22f3868a15b510deaefdafbcc1af2da1525ee8803f445b1a1",
+    "apps/desktop/src/pages/TargetsPage.tsx": "c57298201844b9799a4a0c5b417f828a45711a55a9f92626ee5f6512b271727c",
+    "apps/desktop/src/pages/WorkspacePages.tsx": "6ad413271670259b8c7d45a5a638e9bc43a2f56b6a3f4af1c9299a4d25320b0d",
+    "apps/desktop/src/records.css": "e4009efd5d43aa4c88f7d20d14d93410de4accb9177c2f492b3f0ea24026c9ac",
+    "apps/desktop/src/research.ts": "095987e681403fdb8355a4a01e87ed3c742b15cbf4dbe9adcf33e7d50da2887f",
+    "apps/desktop/src/styles.css": "da79ef098fe42dbbe2c51f2bb0ef3cd7c06c6582f274fc0dfb4ead5b84a29bf0",
+    "apps/desktop/src/test-setup.ts": "9b328c4843431fa76d8de00008fc159e95f99a840211085ff3b8f25e53d14409",
+    "apps/desktop/src/theme.tsx": "faa38438b2e7fe8f9c052f8c74008165c7e6554b8a390d5bf8fe0a515efd66c7",
+    "apps/desktop/src/typography.css": "229b94bb38e5314486fbdac0ccd2f69efadc79396f0a7cfb22dac53715545dec",
+    "apps/desktop/src/workbench.css": "ed93f946e7d2e7a1c747f501f8f6994246f9dd2574b27fd3bf59da7d1eec020e",
+    "apps/desktop/src/workspace.tsx": "26263094957ccd9e2fabbce4dfe8d8f24e410918a372cf866f9384bd2022e092"
+  },
+  "acceptance_source_sha256": {
+    "scripts/research_graph_smoke.py": "964b64836668d33e5457e415fbce45be721f347ad80e793586daa4fbc5975580",
+    "tests/e2e/recon-tools.mjs": "3da5b69eedc078fb596a4d9288504711025959e17f1a3a1f12ad300c8bbe5d4f",
+    "tests/e2e/http-replay.mjs": "6aa38413b348ea45f2e5eeb6e8e219cf0c15624c20f2389f046c3f8ba38b80f7",
+    "tests/e2e/outputs.mjs": "1db66d876dd08087fe80650ae55624d7485d1567df9059f811a97efb37379684",
+    "tests/e2e/recon-local.mjs": "b875b0d757b15adb0dbfc34bbc1f2b31acd946e155255273153c4f428a2613f7"
+  }
+}

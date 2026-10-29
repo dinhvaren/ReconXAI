@@ -754,6 +754,40 @@ try {
   checks.push(
     "Research view rendered with no document overflow in 3 themes and 4 resolutions (12 captures)",
   );
+  const beforeHistoryHttp = calls.length, beforeHistoryAi = aiCalls.length;
+  const beforeHistory = await service({op:"research_graph",id:binary.plan.id,query:{}});
+  await command(["target","remove",imported.target_id]);
+  const history = await service({op:"research_graph",id:binary.plan.id,query:{}});
+  assert.deepEqual(history.nodes.map(n=>n.id).sort(),beforeHistory.nodes.map(n=>n.id).sort());
+  assert.equal(history.nodes.find(n=>n.kind==="target").attributes.source_state,"removed");
+  const fileNode=history.nodes.find(n=>n.kind==="file");
+  assert.equal(fileNode.attributes.source_state,"present");
+  assert.equal(calls.length,beforeHistoryHttp);assert.equal(aiCalls.length,beforeHistoryAi);
+  const historicalEvidence=history.nodes.find(n=>n.kind==="evidence");
+  const inspectedHistory=await service({op:"research_graph_record",id:binary.plan.id,node:historicalEvidence.id});
+  assert.equal(inspectedHistory.source_id,historicalEvidence.source_id);
+  assert.equal(inspectedHistory.source_table,"evidence");
+  if(inspectedHistory.omitted) assert.match(inspectedHistory.reason,/32 KiB/);
+  else assert.equal(inspectedHistory.record.evidence.id,historicalEvidence.source_id);
+  assert.equal((await command(["evidence","verify",historicalEvidence.source_id])).integrity,"matched");
+  assert.equal((await command(["graph","nodes",binary.plan.id])).revision,history.revision);
+  await page.waitForFunction(()=>document.querySelector('select[aria-label="Current target"]')?.value==="");
+  await page.getByLabel("Research history",{exact:true}).selectOption(binary.plan.id);
+  await page.getByText(/This target no longer exists\. Session history is read-only/).waitFor();
+  assert(await page.getByRole("button",{name:"Prepare research report",exact:true}).isDisabled());
+  assert(await page.getByRole("button",{name:"Save reviewable finding",exact:true}).isDisabled());
+  await page.getByText(/This target no longer exists\. Session history is read-only/).scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.join(artifact,"history-read-only.png")});
+  await page.getByText("Explore stored provenance",{exact:true}).click();
+  // The earlier provenance locator belonged to the pre-restart WebView.
+  const historyProvenance=page.getByLabel("Research provenance",{exact:true});
+  await historyProvenance.getByRole("button",{name:/^target:/}).click();
+  await page.waitForFunction(()=>document.querySelector('.graph-node-detail pre')?.textContent?.includes('"source_state": "removed"'));
+  await page.setViewportSize({width:1440,height:900});
+  await historyProvenance.locator('.graph-node-detail').scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.join(artifact,"history-removed-target.png")});
+  assert.equal(calls.length,beforeHistoryHttp);assert.equal(aiCalls.length,beforeHistoryAi);
+  checks.push("Actual native history selector, read-only graph/evidence inspector, CLI and screenshot retain a removed-target session without any HTTP/model execution or new finding/report writes");
   await writeFile(
     path.join(artifact, "results.json"),
     JSON.stringify(

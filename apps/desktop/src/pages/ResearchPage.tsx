@@ -120,10 +120,11 @@ export default function ResearchPage({
       if (active.current) setBusy(false);
     }
   };
-  const accept = (value: Session) => {
+  const accept = (value: Session, allowUnselectedHistory = false) => {
     if (
       value.plan.preview.project_id !== selection.current.project ||
-      value.plan.preview.request.target_id !== selection.current.target
+      (value.plan.preview.request.target_id !== selection.current.target &&
+        !(allowUnselectedHistory && selection.current.target === null))
     )
       return;
     setSession(value);
@@ -196,11 +197,12 @@ export default function ResearchPage({
     )
       return;
     let closed = false;
+    const ticket = generation.current;
     const timer = setInterval(
       () =>
         void request<Session>("research_show", { id: session.plan.id })
           .then((s) => {
-            if (!closed) accept(s);
+            if (!closed && ticket === generation.current) accept(s, true);
           })
           .catch((e) => {
             if (!closed) setError(errorText(e));
@@ -216,10 +218,25 @@ export default function ResearchPage({
     (t) => t.id === target && t.project_id === project,
   );
   const complete = session?.status === "completed";
+  const sessionTargetExists = Boolean(
+    session &&
+    data.targets?.some(
+      (t) =>
+        t.id === session.plan.preview.request.target_id &&
+        t.project_id === project,
+    ),
+  );
+  const historicalOnly = Boolean(
+    session &&
+    (!sessionTargetExists || target !== session.plan.preview.request.target_id),
+  );
   const sessionId = session?.plan.id;
   const refresh = async () => {
-    if (sessionId)
-      accept(await request<Session>("research_show", { id: sessionId }));
+    const ticket = generation.current;
+    if (sessionId) {
+      const value = await request<Session>("research_show", { id: sessionId });
+      if (ticket === generation.current) accept(value, true);
+    }
     await loadHistory();
   };
   return (
@@ -443,11 +460,12 @@ export default function ResearchPage({
               disabled={busy}
               onChange={(e) =>
                 void act(async () => {
-                  accept(
-                    await request<Session>("research_show", {
-                      id: e.target.value,
-                    }),
-                  );
+                  const ticket = generation.current;
+                  const value = await request<Session>("research_show", {
+                    id: e.target.value,
+                  });
+                  if (ticket !== generation.current) return;
+                  accept(value, true);
                   setContext("");
                   setApproved(false);
                   setNetwork(false);
@@ -479,6 +497,15 @@ export default function ResearchPage({
               {session.plan.preview.model ?? "Manual"} ·{" "}
               <code>{session.plan.id}</code>
             </p>
+            {historicalOnly && (
+              <p role="status">
+                {sessionTargetExists
+                  ? "No active session target is selected."
+                  : "This target no longer exists."}{" "}
+                Session history is read-only; stored evidence, graphs and
+                existing reports remain available.
+              </p>
+            )}
             <details>
               <summary>Explore stored provenance</summary>
               <ResearchGraph
@@ -523,7 +550,7 @@ export default function ResearchPage({
               project && (
                 <ReconAssetInventory project={project} target={target} />
               )}
-            {session.status === "awaiting_approval" && (
+            {session.status === "awaiting_approval" && !historicalOnly && (
               <>
                 <label className="checkbox">
                   <input
@@ -681,7 +708,7 @@ export default function ResearchPage({
                 Evidence appears after a capability produces an actual result.
               </p>
             )}
-            {complete && provider && (
+            {complete && provider && !historicalOnly && (
               <Button
                 disabled={busy}
                 onClick={() =>
@@ -761,6 +788,7 @@ export default function ResearchPage({
                 Finding title
                 <input
                   aria-label="Research finding title"
+                  disabled={historicalOnly}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={300}
@@ -770,14 +798,21 @@ export default function ResearchPage({
                 Technical details
                 <textarea
                   aria-label="Research finding details"
+                  disabled={historicalOnly}
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   rows={4}
                 />
               </label>
               <Button
-                disabled={busy || !title.trim() || !details.trim()}
-                disabledReason="Enter an evidence-supported title and details"
+                disabled={
+                  busy || historicalOnly || !title.trim() || !details.trim()
+                }
+                disabledReason={
+                  historicalOnly
+                    ? "Select this session's existing target to create a finding"
+                    : "Enter an evidence-supported title and details"
+                }
                 onClick={() =>
                   void act(async () => {
                     await request("research_finding", {
@@ -802,7 +837,12 @@ export default function ResearchPage({
               </ul>
               <Button
                 variant="primary"
-                disabled={busy}
+                disabled={busy || historicalOnly}
+                disabledReason={
+                  historicalOnly
+                    ? "History is read-only; open an existing report"
+                    : undefined
+                }
                 onClick={() =>
                   void act(async () => {
                     setReport(

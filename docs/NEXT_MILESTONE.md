@@ -1,3 +1,75 @@
+## Current follow-up checkpoint — 2026-10-29: resilient provenance history
+
+Version **0.1.0**, schema **019**, **v1.0 NOT READY**. This follow-up supersedes
+only the historical graph limitation in the checkpoint below. Source base
+`15f25820bd28e3f32a613957bd78ec91504209d0`; exact source hashes, commands and runtime records:
+[research-history-20261029.json](verification/research-history-20261029.json).
+Local proof: `artifacts/research-current-verification.json`; final Git delivery:
+`artifacts/research-git-delivery.json` when present. No new migration.
+
+Completed: graph review/export survives removed target and imported-file records;
+original IDs, actual job/evidence links and observed assets persist. Missing
+sources are explicitly marked `source_state: removed`; a never-projected missing
+file has no fabricated name/hash/specifications. Historical metadata cannot grant
+execution approval. The actual Desktop history selector now opens removed-target
+sessions without an active target; new finding/report/AI/approval actions remain
+disabled, while existing evidence, graphs and reports remain readable. Delayed
+history reads cannot cross a project change. Cross-project file changes fail closed and preserve the last
+snapshot. Six concurrent readers converge on one revision. No real user record
+was deleted: removal tests use disposable databases or a backup of an owned fixture.
+
+| Verification on this follow-up | Actual result | Evidence |
+|---|---|---|
+| Windows Rust workspace / Clippy / fmt | 204 passed, 0 failed, 2 opt-in ignored; both checks pass | `artifacts/research-history-windows-commands.json` |
+| Linux Core/CLI | 204 passed, 0 failed, 2 ignored; Clippy and release CLI pass; 78 Rust/SQL files match | `artifacts/research-history-linux.log`, source-comparison JSON |
+| Frontend / TypeScript / Vite | 46 passed; production build passes | `artifacts/research-history-ui-final-frontend-tests.log`, frontend-build log |
+| Windows native research/recon/graph | 13 acceptance groups, including actual historical-record IPC; 35 captures | `artifacts/recon-tools-native-1793280820356/results.json` |
+| Native HTTP / outputs / legacy HEAD | 11 / 6 / 7 groups, separately executed on this candidate | `artifacts/research-history-native-regressions.json` |
+| Windows/Linux release graph CLI | 4 acceptance groups per platform; copied real observation/evidence survives target removal and restart | release fixture records in proof |
+
+Current unsigned development candidates:
+`artifacts/windows-research-history-ui-20261029/{reconx-desktop.exe,reconx.exe}`;
+`artifacts/linux-research-history-20261029/reconx`. Checksums/manifests are included.
+The earlier accepted candidates remain intact. Counts are per suite/platform,
+not a sum of repeated tests. Native HTTP/output/HEAD suites are recorded separately with their own fixtures;
+no checkpoint counts are added across repeated runs.
+
+Changed code/tests: `crates/reconx-core/src/research_graph.rs`,
+`crates/reconx-core/tests/research_graph.rs`, `scripts/research_graph_smoke.py`,
+`tests/e2e/recon-tools.mjs`, `apps/desktop/src/pages/ResearchPage.tsx`,
+`apps/desktop/src/Research.test.tsx`. Documentation/status/proof updates accompany them.
+The broader five-capability request remains **PARTIAL**; this does not implement
+multi-agent scheduling, a new recorder or an autonomous offensive loop. Linux GUI,
+live cloud/passive source access, installers/signing/updater and existing dependency
+security release gates remain open. Advisory data was not refreshed.
+
+Next safe action: implement an explicit opt-in policy for recording ReconX-owned
+HTTP traffic using the existing shared capture service, with project isolation,
+redaction, body/retention budgets and real job/session/evidence references. Keep
+proxy interception and CA trust changes disabled. Further graph work includes
+large-session budget failures/complete transition history; removed-source handling
+is now covered and should not be reimplemented. No background work continues
+after the session ends.
+
+Reproduce this follow-up:
+
+```powershell
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings
+cargo test --locked --workspace -j2
+npm --prefix apps/desktop test
+npm --prefix apps/desktop run build
+cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2
+$env:RECONX_DESKTOP_EXE = 'D:\ReconXAI\artifacts\windows-research-history-ui-20261029\reconx-desktop.exe'
+$env:RECONX_CLI_EXE = 'D:\ReconXAI\artifacts\windows-research-history-ui-20261029\reconx.exe'
+$env:RECONX_VERIFY_ASSET = '1'
+node tests/e2e/recon-tools.mjs
+python scripts/research_graph_smoke.py --binary $env:RECONX_CLI_EXE --source artifacts/research-graph-recon-release-acceptance/workspace --output artifacts/history-repro-UNUSED
+```
+
+Use a fresh output path. Linux exact build/test command and staged source hashes
+are in the proof; Linux Desktop is not inferred from Core/CLI success.
+
 ## Current verified checkpoint — 2026-10-29
 
 Version **0.1.0**, SQLite schema **019**, **v1.0 NOT READY**. This supersedes

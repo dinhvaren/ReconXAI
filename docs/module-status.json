@@ -42,8 +42,11 @@
       ],
       "verified_adapters": [
         "ripgrep",
-        "yara-x"
-      ]
+        "yara-x",
+        "httpx",
+        "subfinder"
+      ],
+      "verification": "Pinned real installs/owned HTTPX GET/offline Subfinder source health; no claim of live passive enumeration"
     },
     {
       "id": "mcp_hub",
@@ -60,7 +63,7 @@
     {
       "id": "workflow_engine",
       "status": "IN_PROGRESS",
-      "verification": "Reviewed local-file AI plans execute real typed jobs; deterministic local mock model",
+      "verification": "Reviewed local/tool plans execute real existing jobs; mock AI only, no general multi-agent DAG or autonomous offensive loop.",
       "remaining": [
         "general agent registry/routing",
         "DAG scheduling",
@@ -71,7 +74,7 @@
     {
       "id": "reconnaissance",
       "status": "IN_PROGRESS",
-      "verification": "Windows actual manually approved loopback HEAD only; full passive/active recon remains incomplete",
+      "verification": "Reviewed typed HTTPX jobs on owned local fixtures; Subfinder installation/source inventory/parser; local HEAD retained. Remote/live passive enumeration unverified.",
       "remaining": [
         "DNS/RDAP/CT/history",
         "broader safe normalized observations",
@@ -501,7 +504,7 @@
       "id": "session_provenance_graph",
       "status": "RUNTIME_VERIFIED",
       "scope": "Bounded read-only session projection, not complete global exploration/asset graph",
-      "verification": "docs/verification/research-provenance-20261029.json"
+      "verification": "docs/verification/research-history-20261029.json"
     },
     {
       "id": "multi_agent_runtime",
@@ -515,20 +518,20 @@
     }
   ],
   "verification": {
-    "rust_passed": 202,
+    "rust_passed": 204,
     "rust_failed": 0,
     "rust_ignored_default": 2,
-    "frontend_passed": 44,
+    "frontend_passed": 46,
     "frontend_failed": 0,
     "native_checks_current": {
-      "research_recon_graph": 12,
+      "research_recon_graph": 13,
       "http_replay": 11,
       "outputs": 6,
       "legacy_head": 7
     },
-    "native_research_captures": 33,
+    "native_research_captures": 35,
     "record": "artifacts/research-current-verification.json",
-    "scope": "Bounded managed recon + read-only graph; mock AI only; no autonomous pentest/multi-agent/recording completion claim"
+    "scope": "Current history follow-up: research/recon/graph plus HTTP/output/manual HEAD native regressions; no sum across repeated suites"
   },
   "v1_release": {
     "ready": false,
@@ -561,12 +564,12 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 202,
+        "passed": 204,
         "failed": 0,
         "ignored": 2,
-        "record": "artifacts/research-graph-linux.log"
+        "record": "artifacts/research-history-linux.log"
       },
-      "optimized_cli_record": "artifacts/linux-research-graph-20261029/build-manifest.json"
+      "optimized_cli_record": "artifacts/linux-research-history-20261029/build-manifest.json"
     }
   },
   "page_inventory": [
@@ -938,7 +941,7 @@
     "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
     "broader_module": "PARTIAL",
     "schema": 19,
-    "proof": "docs/verification/research-provenance-20261029.json",
+    "proof": "docs/verification/research-history-20261029.json",
     "nodes_from": "actual source records only",
     "graph_types": [
       "asset",
@@ -949,12 +952,30 @@
     "edge_limit": 20000,
     "default_page": 100,
     "max_page": 200,
-    "native_groups": 12,
-    "captures": 33
+    "native_groups": 13,
+    "captures": 35,
+    "removed_sources": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "concurrent_readers": 6
   },
   "ci_recon_graph_acceptance": {
     "status": "CONFIGURED_NOT_REMOTE_VERIFIED",
     "workflow": ".github/workflows/ci.yml",
     "local_validation": "YAML parsed; no duplicate named steps; no release publication added"
+  },
+  "verification_history_before_history_followup_20261029": {
+    "rust_passed": 202,
+    "rust_failed": 0,
+    "rust_ignored_default": 2,
+    "frontend_passed": 44,
+    "frontend_failed": 0,
+    "native_checks_current": {
+      "research_recon_graph": 12,
+      "http_replay": 11,
+      "outputs": 6,
+      "legacy_head": 7
+    },
+    "native_research_captures": 33,
+    "record": "artifacts/research-current-verification.json",
+    "scope": "Bounded managed recon + read-only graph; mock AI only; no autonomous pentest/multi-agent/recording completion claim"
   }
 }

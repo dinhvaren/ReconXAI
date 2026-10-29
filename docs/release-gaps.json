@@ -2,7 +2,7 @@
   "date": "2026-10-29",
   "version": "0.1.0",
   "release_ready": false,
-  "source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f",
+  "source_base_revision": "15f25820bd28e3f32a613957bd78ec91504209d0",
   "evidence_is_local_not_bundled": true,
   "modules": [
     {
@@ -333,10 +333,11 @@
         "apps/desktop/src/components/ResearchGraph.tsx"
       ],
       "runtime_evidence": [
-        "docs/verification/research-provenance-20261029.json"
+        "docs/verification/research-provenance-20261029.json",
+        "docs/verification/research-history-20261029.json"
       ],
-      "verified_scope": "Persistent read-only session projection; actual nodes/edges, pagination/filter/inspection/export/restart; no AI-generated assets",
-      "limitations": "Not global graph/inference/complete transition history; removed-target/file refresh unsupported; bounded large-session behavior not benchmarked"
+      "verified_scope": "Persistent read-only session projection; actual nodes/edges, pagination/filter/inspection/export/restart; no AI-generated assets; historical removed sources and concurrent readers verified",
+      "limitations": "Not global graph/inference/complete transition history; bounded large-session behavior not benchmarked"
     },
     {
       "module": "Unified Tool Execution",
@@ -432,5 +433,7 @@
   },
   "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json",
   "current_recon_tools_verification": "docs/module-status.json#current_recon_tools_verification",
-  "current_research_graph_verification": "docs/verification/research-provenance-20261029.json"
+  "current_research_graph_verification": "docs/verification/research-provenance-20261029.json",
+  "latest_followup_verification": "docs/verification/research-history-20261029.json",
+  "previous_source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f"
 }

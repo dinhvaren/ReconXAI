@@ -1,3 +1,20 @@
+## Follow-up checkpoint — 2026-10-29: historical provenance accepted
+
+The removed-target/file history gap in the older checkpoint below is now fixed
+and verified through Core/CLI and the real Windows history selector/graph. No new
+migration; schema019 and version0.1.0 remain. Current evidence and source hashes:
+[research-history-20261029.json](verification/research-history-20261029.json).
+Windows/Linux Core/CLI each pass 204 Rust tests (2 opt-in ignores); frontend 46;
+native research/recon/graph 13 groups/35 captures, with HTTP/output/HEAD regression
+suites separately rerun. Linux GUI and v1.0 release acceptance remain unverified.
+
+Next safe implementation: explicit opt-in capture policy for ReconX-owned HTTP
+operations, using existing storage/capture services with project isolation,
+redaction and bounded retention. Historical source removal is completed and must
+not be repeated. Broader graph history/budget cases remain, alongside the other
+release gates in [RELEASE_READINESS.md](RELEASE_READINESS.md). No autonomous
+offensive loop, new multi-agent runtime or proxy interception is claimed.
+
 ## Current verified checkpoint — 2026-10-29
 
 Version **0.1.0**, SQLite schema **019**, **v1.0 NOT READY**. This supersedes

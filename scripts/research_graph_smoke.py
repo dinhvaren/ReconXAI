@@ -37,5 +37,19 @@ with sqlite3.connect(db) as c:
  assert c.execute('PRAGMA integrity_check').fetchone()[0]=='ok' and not c.execute('PRAGMA foreign_key_check').fetchall()
  assert c.execute('SELECT count(*) FROM research_graph_nodes WHERE session_id=?',[session]).fetchone()[0]==g['total_nodes']
  assert c.execute('SELECT target_id FROM research_sessions WHERE id=?',[session]).fetchone()[0]==target
-result={'status':'passed','timestamp':dt.datetime.now(dt.timezone.utc).isoformat(),'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'old_schema':before_version,'new_schema':19,'session_id':session,'nodes':g['total_nodes'],'edges':g['total_edges'],'checks':['Consistent SQLite backup of an owned real HTTPX workspace migrates to schema019 with original jobs/targets/results unchanged','Stored graph projects real observations, hashed evidence and directed relationships without executing another job','CLI filtering/pagination, repeated-process persistence/idempotent revision, integrity check and complete graph export pass'],'commands':commands,'network':'No new tool/AI execution; graph reads stored fixture observations'}
+# Exercise actual target removal only in the copied owned fixture. Stored jobs,
+# results, observations and evidence remain readable, with an unavailable target.
+call('target','remove',target)
+history=call('graph','nodes',session)
+assert {n['id'] for n in history['nodes']}=={n['id'] for n in g['nodes']}
+assert history['total_edges']==g['total_edges']
+assert next(n for n in history['nodes'] if n['kind']=='target')['attributes']['source_state']=='removed'
+assert call('evidence','verify',e['source_id'])['integrity']=='matched'
+assert call('graph','nodes',session)['revision']==history['revision']
+call('graph','export',session,'--output',out/'historical-graph.json')
+with sqlite3.connect(db) as c:
+ assert c.execute('SELECT id,status,result_json FROM analysis_jobs ORDER BY id').fetchall()==jobs_before
+ assert c.execute('SELECT target_id FROM research_sessions WHERE id=?',[session]).fetchone()[0] is None
+ assert c.execute('PRAGMA integrity_check').fetchone()[0]=='ok' and not c.execute('PRAGMA foreign_key_check').fetchall()
+result={'status':'passed','timestamp':dt.datetime.now(dt.timezone.utc).isoformat(),'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'old_schema':before_version,'new_schema':19,'session_id':session,'nodes':g['total_nodes'],'edges':g['total_edges'],'checks':['Consistent SQLite backup of an owned real HTTPX workspace migrates to schema019 with original jobs/targets/results unchanged','Stored graph projects real observations, hashed evidence and directed relationships without executing another job','CLI filtering/pagination, repeated-process persistence/idempotent revision, integrity check and complete graph export pass','Removing the copied fixture target preserves graph IDs, observed assets, jobs, evidence integrity and historical export after restart'],'commands':commands,'network':'No new tool/AI execution; graph reads stored fixture observations'}
 (out/'results.json').write_text(json.dumps(result,indent=2),encoding='utf-8');print(json.dumps(result,indent=2))

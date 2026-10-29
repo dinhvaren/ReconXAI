@@ -174,3 +174,137 @@ it("opens a target-bound research context without sending any AI or HTTP request
   expect(operations).not.toContain("research_plan");
   expect(operations).not.toContain("research_approve");
 });
+
+function historicalSession() {
+  return {
+    plan: {
+      id: "historical-session",
+      created_at: "2026-10-29",
+      planning_usage: null,
+      preview: {
+        project_id: "p1",
+        target_name: "Removed fixture",
+        model: null,
+        request: { target_id: "removed-target" },
+        capabilities: [],
+      },
+      proposal: { steps: [] },
+    },
+    status: "completed",
+    jobs: [],
+    evidence: [],
+    findings: [],
+    reports: [],
+    interpretation: null,
+  };
+}
+
+it("opens removed-target history with no active target and keeps new execution and writes disabled", async () => {
+  const operations: string[] = [];
+  vi.mocked(invoke).mockImplementation(async (_command, args) => {
+    const r = (args as { request: { op: string } }).request;
+    operations.push(r.op);
+    if (r.op === "workspace_selection")
+      return { revision: 1, project_id: "p1", target_id: null };
+    if (r.op === "research_list") return ["historical-session"];
+    if (r.op === "research_show") return historicalSession();
+    if (r.op === "research_graph")
+      return {
+        session_id: "historical-session",
+        revision: 1,
+        nodes: [],
+        edges: [],
+        total_nodes: 0,
+        total_edges: 0,
+        matched_nodes: 0,
+        next_offset: null,
+      };
+    throw new Error(`Unexpected ${r.op}`);
+  });
+  render(
+    <WorkspaceProvider>
+      <ResearchPage data={{ ...data, targets: [] }} navigate={() => {}} />
+    </WorkspaceProvider>,
+  );
+  await screen.findByRole("option", { name: /Removed fixture/ });
+  await userEvent.selectOptions(
+    screen.getByLabelText("Research history"),
+    "historical-session",
+  );
+  expect(
+    await screen.findByText(/This target no longer exists/),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Prepare research report" }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: "Save reviewable finding" }),
+  ).toBeDisabled();
+  expect(screen.getByLabelText("Research finding title")).toBeDisabled();
+  expect(
+    screen.queryByRole("button", { name: "Execute approved plan" }),
+  ).not.toBeInTheDocument();
+  expect(operations).not.toContain("research_approve");
+  expect(operations).not.toContain("research_plan");
+});
+
+it("rejects a delayed explicit history selection after changing project", async () => {
+  let release!: (value: ReturnType<typeof historicalSession>) => void;
+  let reads = 0;
+  let persisted: WorkspaceSelection = {
+    revision: 1,
+    project_id: "p1",
+    target_id: null,
+  };
+  vi.mocked(invoke).mockImplementation(async (_command, args) => {
+    const r = (
+      args as { request: { op: string; project: string; target: string } }
+    ).request;
+    if (r.op === "workspace_selection") return persisted;
+    if (r.op === "workspace_select")
+      return (persisted = {
+        revision: 2,
+        project_id: r.project,
+        target_id: r.target,
+      });
+    if (r.op === "research_list")
+      return r.project === "p1" ? ["historical-session"] : [];
+    if (r.op === "research_show") {
+      if (++reads === 1) return historicalSession();
+      return new Promise<ReturnType<typeof historicalSession>>((resolve) => {
+        release = resolve;
+      });
+    }
+    throw new Error(`Unexpected ${r.op}`);
+  });
+  const projects = [
+    ...data.projects,
+    { id: "p2", name: "Other project", archived: false },
+  ];
+  render(
+    <WorkspaceProvider>
+      <Controls />
+      <ResearchPage
+        data={{ ...data, projects } as Snapshot}
+        navigate={() => {}}
+      />
+    </WorkspaceProvider>,
+  );
+  await screen.findByRole("option", { name: /Removed fixture/ });
+  await userEvent.selectOptions(
+    screen.getByLabelText("Research history"),
+    "historical-session",
+  );
+  await waitFor(() => expect(release).toBeTypeOf("function"));
+  await userEvent.click(screen.getByText("Change workspace"));
+  await waitFor(() =>
+    expect(screen.getByTestId("selection")).toHaveTextContent("p2/t2"),
+  );
+  await act(async () => release(historicalSession()));
+  expect(
+    screen.queryByText(/This target no longer exists/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("historical-session", { exact: true }),
+  ).not.toBeInTheDocument();
+});

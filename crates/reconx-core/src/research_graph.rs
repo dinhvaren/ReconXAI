@@ -181,28 +181,43 @@ impl Core {
             .map_err(db_error)?;
         let s = self.research_session(id)?;
         let project = self.project(&s.plan.preview.project_id)?;
-        let target = self.target(&s.plan.preview.request.target_id)?;
-        if target.input.project_id != project.id {
+        let target_id = &s.plan.preview.request.target_id;
+        // Deleting a target clears live foreign keys, but the reviewed plan keeps
+        // its original ID. History reads must not require a currently executable
+        // target or reconstruct authorization from historical metadata.
+        let target = match self.target(target_id) {
+            Ok(target) => Some(target),
+            Err(error) if error.code == "NOT_FOUND" => None,
+            Err(error) => return Err(error),
+        };
+        if target
+            .as_ref()
+            .is_some_and(|t| t.input.project_id != project.id)
+        {
             return Err(graph_error(
                 "Session target no longer belongs to its project",
             ));
         }
         let mut g = Projection::default();
-        let target_value = if matches!(
-            target.input.kind,
-            TargetKind::Domain
-                | TargetKind::Subdomain
-                | TargetKind::Url
-                | TargetKind::RestApi
-                | TargetKind::Graphql
-                | TargetKind::Ipv4
-                | TargetKind::Ipv6
-                | TargetKind::Cidr
-                | TargetKind::Hostname
-        ) {
-            safe_label(&target.input.value)
+        let target_value = if let Some(target) = &target {
+            if matches!(
+                target.input.kind,
+                TargetKind::Domain
+                    | TargetKind::Subdomain
+                    | TargetKind::Url
+                    | TargetKind::RestApi
+                    | TargetKind::Graphql
+                    | TargetKind::Ipv4
+                    | TargetKind::Ipv6
+                    | TargetKind::Cidr
+                    | TargetKind::Hostname
+            ) {
+                safe_label(&target.input.value)
+            } else {
+                "Local artifact location omitted".into()
+            }
         } else {
-            "Local artifact location omitted".into()
+            "Source record removed; no current destination".into()
         };
         let p = g.node(
             id,
@@ -212,7 +227,7 @@ impl Core {
             &project.name,
             json!({"id":project.id}),
         )?;
-        let t = g.node(id,"asset","target",("targets",&target.id),&target.input.name,json!({"kind":target.input.kind,"value":target_value,"scope_status":target.scope_status}))?;
+        let t = g.node(id,"asset","target",("targets",target_id),target.as_ref().map_or(s.plan.preview.target_name.as_str(), |t| t.input.name.as_str()),json!({"kind":target.as_ref().map_or(s.plan.preview.target_kind,|t|t.input.kind),"value":target_value,"scope_status":target.as_ref().map_or("unavailable",|t|t.scope_status.as_str()),"source_state":if target.is_some(){"present"}else{"removed"}}))?;
         g.edge(&t, "BELONGS_TO_PROJECT", &p)?;
         let session = g.node(id,"exploration","session",("research_sessions",id),"Research session",json!({"status":s.status,"created_at":s.plan.created_at,"mode":s.plan.preview.request.mode}))?;
         let plan = g.node(id,"exploration","plan",("research_sessions",id),"Reviewed research plan",json!({"step_count":s.plan.proposal.steps.len(),"fingerprint":s.plan.preview.fingerprint}))?;
@@ -230,23 +245,56 @@ impl Core {
             g.edge(&plan, "APPROVED_BY", &a)?;
         }
         if let Some(file_id) = &s.plan.preview.file_id {
-            let (name, attributes):(String,String)=tx.query_row(
-                "SELECT name,json_object('sha256',sha256,'size',size,'format',format) FROM imported_files WHERE id=?1 AND project_id=?2 AND target_id=?3",
-                params![file_id,project.id,target.id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(db_error)?
-                .ok_or_else(||graph_error("The session file is missing or no longer associated with this target"))?;
+            let file:Option<(String,String,Option<String>,String)>=tx.query_row(
+                "SELECT name,project_id,target_id,json_object('sha256',sha256,'size',size,'format',format) FROM imported_files WHERE id=?1",
+                [file_id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).optional().map_err(db_error)?;
+            let (name, mut attributes) = if let Some((name, owner, file_target, attributes)) = file
+            {
+                if owner != project.id
+                    || !(file_target.as_ref() == Some(target_id)
+                        || (target.is_none() && file_target.is_none()))
+                {
+                    return Err(graph_error(
+                        "The session file no longer belongs to its original project and target",
+                    ));
+                }
+                let mut attributes: Value =
+                    serde_json::from_str(&attributes).map_err(json_error)?;
+                attributes["source_state"] = json!("present");
+                (name, attributes)
+            } else {
+                // Reuse only this session's previously materialized metadata. If
+                // never projected, the saved plan proves the ID, not a file hash.
+                let previous: Option<(String,String)> = tx.query_row(
+                    "SELECT label,attributes_json FROM research_graph_nodes WHERE session_id=?1 AND source_table='imported_files' AND source_id=?2 AND kind='file'",
+                    params![id,file_id],|r|Ok((r.get(0)?,r.get(1)?))).optional().map_err(db_error)?;
+                let (name, attributes) =
+                    previous.unwrap_or_else(|| ("Removed file record".into(), "{}".into()));
+                let mut attributes: Value =
+                    serde_json::from_str(&attributes).map_err(json_error)?;
+                attributes["source_state"] = json!("removed");
+                attributes["integrity"] =
+                    json!("Historical metadata only; source record unavailable");
+                (name, attributes)
+            };
+            // Never reconstruct or expose an original local path on history reads.
+            reporting::redact_value(&mut attributes);
             let file = g.node(
                 id,
                 "asset",
                 "file",
                 ("imported_files", file_id),
                 &name,
-                serde_json::from_str(&attributes).map_err(json_error)?,
+                attributes,
             )?;
             g.edge(&t, "CONTAINS", &file)?;
         }
         let mut jobs = BTreeMap::new();
         for job in &s.jobs {
-            if job.project_id != project.id || job.target_id.as_deref() != Some(&target.id) {
+            if job.project_id != project.id
+                || !(job.target_id.as_ref() == Some(target_id)
+                    || (target.is_none() && job.target_id.is_none()))
+            {
                 return Err(graph_error("Job association crosses session boundaries"));
             }
             let n = g.node(id,"exploration","task",("analysis_jobs",&job.id),&job.kind,json!({"status":job.status,"created_at":job.created_at,"started_at":job.started_at,"finished_at":job.finished_at,"error_code":job.error_code}))?;
@@ -285,7 +333,7 @@ impl Core {
                 }
                 // Resolve a real inventory row, but use this job's immutable result
                 // for historical metadata: rediscovery can update assets.job_id.
-                let asset:Option<String>=tx.query_row("SELECT id FROM assets WHERE project_id=?1 AND target_id=?2 AND kind=?3 AND value=?4",params![project.id,target.id,kind,value],|r|r.get(0)).optional().map_err(db_error)?;
+                let asset:Option<String>=tx.query_row("SELECT id FROM assets a WHERE project_id=?1 AND kind=?3 AND value=?4 AND (target_id=?2 OR (?5 AND target_id IS NULL AND (job_id=?6 OR EXISTS(SELECT 1 FROM research_graph_nodes n WHERE n.session_id=?7 AND n.source_table='assets' AND n.source_id=a.id)))) ORDER BY id LIMIT 1",params![project.id,target_id,kind,value,target.is_none(),job.id,id],|r|r.get(0)).optional().map_err(db_error)?;
                 let Some(asset_id) = asset else {
                     continue;
                 };

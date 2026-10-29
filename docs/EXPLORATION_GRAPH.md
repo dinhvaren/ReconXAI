@@ -87,7 +87,9 @@ isolation, restart persistence, export and migration backup preservation.
 The current graph is session-scoped, not a global cross-project intelligence
 graph. It does not implement graph inference, agent decisions, semantic
 clustering, complete state-transition history or speculative hypothesis nodes.
-Refreshing a session after its target/file has been removed is not supported;
-existing source/evidence records are preserved. Graph refresh is bounded and may
+Historical graph review/export survives target or imported-file record removal.
+Missing sources are marked `source_state: removed`; original IDs and prior file
+metadata remain inspectable, but absent hashes are not invented. A missing target
+cannot authorize new execution. Cross-project association changes still fail closed. Graph refresh is bounded and may
 fail explicitly for very large sessions. These gaps keep the broader graph/module
 release requirement PARTIAL until independently accepted.

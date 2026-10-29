@@ -130,3 +130,13 @@ session/job/evidence/asset records. It is not an execution queue, agent runtime 
 network capability. Desktop and CLI call the same Core projection/page/export
 services; source identities and scope associations remain authoritative. See
 EXPLORATION_GRAPH.md for limits, privacy, consistency and acceptance boundaries.
+
+### Historical graph sources (schema019 follow-up)
+
+Graph projection retains reviewed-plan IDs after source-row removal. A missing
+target is a read-only historical reference with unavailable scope, never a new
+execution destination. Missing files retain prior session metadata when present;
+otherwise the graph does not fabricate a hash. Concurrent projection refreshes
+serialize transactionally. Desktop can open project history with no active target;
+generation checks reject delayed reads across project changes. Existing reports
+and evidence remain inspectable. See `docs/verification/research-history-20261029.json`.

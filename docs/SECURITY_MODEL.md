@@ -171,3 +171,13 @@ read transactions and strict size/count limits. URL credentials/query/fragment a
 local import locations are omitted from graph metadata; linked previews are
 redacted/bounded. A graph edge is not artifact integrity or vulnerability proof.
 See EXPLORATION_GRAPH.md; removed-source/large-workspace limitations remain open.
+
+### Historical provenance does not grant execution authority
+
+Removed targets/files remain inspectable only as recorded history. Graph
+`source_state` reports source-row availability, not artifact integrity or current
+authorization. Missing hashes are not reconstructed from AI text. New execution
+still revalidates the live target and policy; Desktop disables new research writes
+and interpretation without the session's selected existing target. Cross-project
+file reassignment fails closed without replacing the last valid graph snapshot.
+This is not an OS sandbox or an autonomous authorization grant.
