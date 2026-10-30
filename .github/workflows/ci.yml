@@ -66,8 +66,22 @@ jobs:
         working-directory: apps/desktop
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace
+      # Bound fixture concurrency without changing application execution timeouts.
+      - run: cargo test --locked --workspace -- --test-threads=2
       - run: cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol
+      - name: Windows reviewed offline agent CLI acceptance
+        if: runner.os == 'Windows'
+        run: python scripts/agent_runtime_smoke.py --binary target/release/reconx.exe --output artifacts/offline-agent-cli
+      - name: Linux reviewed offline agent CLI acceptance
+        if: runner.os == 'Linux'
+        run: python3 scripts/agent_runtime_smoke.py --binary target/release/reconx --output artifacts/offline-agent-cli
+      - name: Windows native reviewed offline agent DAG
+        if: runner.os == 'Windows'
+        run: node tests/e2e/agents.mjs
+        env:
+          RECONX_DESKTOP_EXE: ${{ github.workspace }}\target\release\reconx-desktop.exe
+          RECONX_CLI_EXE: ${{ github.workspace }}\target\release\reconx.exe
+          RECONX_VERIFY_ASSET: '1'
       - name: Windows native UX and single-theme-control regression
         if: runner.os == 'Windows'
         run: node tests/e2e/ux.mjs after
@@ -217,6 +231,10 @@ jobs:
             artifacts/recon-tools-native-*/*.png
             artifacts/recon-tool-smoke/results.json
             artifacts/research-graph-smoke/results.json
+            artifacts/offline-agent-cli/*.json
+            artifacts/offline-agent-cli/*.pdf
+            artifacts/offline-agents-native-*/results.json
+            artifacts/offline-agents-native-*/*.png
             artifacts/native-ai-providers-*/results.json
             artifacts/native-ai-providers-*/*.png
             artifacts/http-workspace-*/results.json

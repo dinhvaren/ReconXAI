@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-29",
+  "date": "2026-10-30",
   "version": "0.1.0",
   "release_ready": false,
-  "source_base_revision": "15f25820bd28e3f32a613957bd78ec91504209d0",
+  "source_base_revision": "0b8e0f8acc77db9b8e73249d35c11be26075e6d2",
   "evidence_is_local_not_bundled": true,
   "modules": [
     {
@@ -20,7 +20,7 @@
         "artifacts\\research-session-1792506323444\\results.json",
         "docs/verification/research-provenance-20261029.json"
       ],
-      "limitations": "Bounded reviewed local/tool plans and read-only provenance work; MOCK AI only; no iterative autonomous offensive loop, multi-agent runtime, general DAG/pause/standing auto"
+      "limitations": "Reviewed offline DAG and existing individually approved workflows; MOCK planning only; no iterative autonomous offensive loop or general standing auto"
     },
     {
       "module": "Dashboard",
@@ -354,12 +354,16 @@
     },
     {
       "module": "Multi-Agent Runtime",
-      "status": "NOT_STARTED",
+      "status": "PARTIAL",
       "source_references": [
+        "crates/reconx-core/src/agent_runtime.rs",
+        "crates/reconx-storage/migrations/020_local_agent_runtime.sql",
         "docs/MULTI_AGENT_ARCHITECTURE.md"
       ],
-      "runtime_evidence": [],
-      "limitations": "Model routing settings exist; no actual agent bus/workers/DAG added; no fake personas/status cards"
+      "runtime_evidence": [
+        "docs/verification/offline-agents-20261030.json"
+      ],
+      "limitations": "Reviewed offline typed roles and fixed DAG are verified; no distributed LLM bus, Web/API worker, general conditional DAG, automatic replanning or cloud token/cost budgets"
     },
     {
       "module": "Dedicated Traffic Recorder",
@@ -417,7 +421,7 @@
     "next_action": "Accept cached-runtime binding fix and real running-cancel/failed-update tests before replacing current candidate"
   },
   "critical_recovery": {
-    "database_schema": 19,
+    "database_schema": 20,
     "shared_context": "RUNTIME_VERIFIED",
     "bounded_target_session": "RUNTIME_VERIFIED",
     "large_file_import": "RUNTIME_VERIFIED_BOUNDED_SLICE",
@@ -434,6 +438,14 @@
   "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json",
   "current_recon_tools_verification": "docs/module-status.json#current_recon_tools_verification",
   "current_research_graph_verification": "docs/verification/research-provenance-20261029.json",
-  "latest_followup_verification": "docs/verification/research-history-20261029.json",
-  "previous_source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f"
+  "latest_followup_verification": "docs/verification/offline-agents-20261030.json",
+  "previous_source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f",
+  "current_offline_agent_verification": {
+    "proof": "docs/verification/offline-agents-20261030.json",
+    "schema": 20,
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "broader_module": "PARTIAL",
+    "linux_desktop": "UNVERIFIED",
+    "release_ready": false
+  }
 }

@@ -14,11 +14,13 @@ and reviewable unless their existing independent verification requirements pass.
 
 The current implementation is not an iterative autonomous pentest engine. There
 is no PLAN→EXECUTE→EVALUATE loop that automatically selects subsequent offensive
-actions. Generic pause/resume, continuation budgets, per-agent scheduling and
-automatic hypothesis validation are not implemented. No such capability is marked
-complete by adding a graph or a Start button.
+actions. Schema020 adds reviewed offline typed coordination, dependency jobs,
+job-boundary pause/resume, explicit bounded retries and invocation/wall-time
+limits. Generic subprocess suspension, cloud token/cost budgets, automatic
+hypothesis validation and standing authorization for network work remain absent.
+See MULTI_AGENT_ARCHITECTURE.md and DAG_SCHEDULER.md for exact semantics.
 
-The schema019 graph provides an inspectable record of what was planned, approved,
+The graph provides an inspectable record of what was planned, approved,
 executed and preserved. Reviewing that graph does not cause a continuation or data
 transmission. Existing network capabilities still require their explicit reviewed
 request/plan boundaries. Local-fixture tests are distinct from live provider or

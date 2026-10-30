@@ -249,6 +249,13 @@ impl Core {
             .map_err(db_error)?
             .ok_or_else(|| AppError::new("NOT_FOUND", "Job does not exist"))
     }
+    /// Pending execution excludes paused/stopped DAG attempts. The queue remains
+    /// durable; this only lets an until-idle CLI worker yield at a safe boundary.
+    pub fn jobs_pending_work(&self) -> Result<bool> {
+        self.reconcile_jobs()?;
+        self.reconcile_agent_runtimes()?;
+        self.db.connect()?.query_row("SELECT EXISTS(SELECT 1 FROM analysis_jobs j WHERE status='running' OR (status='queued' AND (NOT EXISTS(SELECT 1 FROM research_task_attempts a WHERE a.job_id=j.id) OR EXISTS(SELECT 1 FROM research_agent_tasks t JOIN research_runtimes r ON r.session_id=t.session_id WHERE t.job_id=j.id AND r.status='running' AND t.state IN ('PENDING','READY','RETRY_WAIT')))))",[],|r|r.get(0)).map_err(db_error)
+    }
     pub fn cancel_job(&self, id: &str) -> Result<()> {
         let mut conn = self.db.connect()?;
         let tx = conn
@@ -293,6 +300,7 @@ impl Core {
     }
     fn claim_job(&self, id: Option<&str>, owner: &str) -> Result<Option<AnalysisJob>> {
         self.reconcile_jobs()?;
+        self.reconcile_agent_runtimes()?;
         self.db.connect()?.execute("UPDATE analysis_jobs SET status='failed',stage='Discovery dependency did not complete',error_code='DEPENDENCY_FAILED',finished_at=?1 WHERE status='queued' AND id IN (SELECT r.job_id FROM recon_tool_approvals r JOIN analysis_jobs d ON d.id=r.dependency_job_id WHERE d.status IN ('failed','cancelled','interrupted'))",[now()]).map_err(db_error)?;
         let mut conn = self.db.connect()?;
         let tx = conn
@@ -308,9 +316,10 @@ impl Core {
         if active >= MAX_RUNNING {
             return Ok(None);
         }
-        let next:Option<String>=tx.query_row("SELECT id FROM analysis_jobs WHERE status='queued' AND (?1 IS NULL OR id=?1) AND NOT EXISTS(SELECT 1 FROM recon_tool_approvals r JOIN analysis_jobs d ON d.id=r.dependency_job_id WHERE r.job_id=analysis_jobs.id AND d.status<>'completed') ORDER BY created_at,id LIMIT 1",[id],|r|r.get(0)).optional().map_err(db_error)?;
+        let next:Option<String>=tx.query_row("SELECT id FROM analysis_jobs WHERE status='queued' AND (?1 IS NULL OR id=?1) AND NOT EXISTS(SELECT 1 FROM recon_tool_approvals r JOIN analysis_jobs d ON d.id=r.dependency_job_id WHERE r.job_id=analysis_jobs.id AND d.status<>'completed') AND (NOT EXISTS(SELECT 1 FROM research_task_attempts a WHERE a.job_id=analysis_jobs.id) OR EXISTS(SELECT 1 FROM research_agent_tasks t JOIN research_runtimes r ON r.session_id=t.session_id WHERE t.job_id=analysis_jobs.id AND t.state='READY' AND r.status='running' AND r.deadline_ms>?2 AND r.invocations<json_extract(r.limits_json,'$.max_invocations') AND (SELECT count(*) FROM research_agent_tasks x JOIN analysis_jobs j ON j.id=x.job_id WHERE x.session_id=r.session_id AND j.status='running')<json_extract(r.limits_json,'$.concurrency') AND NOT EXISTS(SELECT 1 FROM research_task_dependencies d JOIN research_agent_tasks p ON p.id=d.dependency_id WHERE d.task_id=t.id AND p.state<>'COMPLETED'))) ORDER BY created_at,id LIMIT 1",params![id,Utc::now().timestamp_millis()],|r|r.get(0)).optional().map_err(db_error)?;
         let Some(next) = next else { return Ok(None) };
         tx.execute("UPDATE analysis_jobs SET status='running',started_at=?1,worker_id=?2,lease_until=?3,stage='Policy validation',progress=1,logs_json=json_insert(logs_json,'$[#]','Worker claimed job; validating current policy') WHERE id=?4 AND status='queued'",params![now(),owner,Utc::now().timestamp_millis()+LEASE_MS,next]).map_err(db_error)?;
+        Self::agent_job_claimed(&tx, &next)?;
         Self::audit(&tx, "job.started", &next, "running")?;
         tx.commit().map_err(db_error)?;
         self.job(&next).map(Some)
@@ -331,6 +340,7 @@ impl Core {
             return Err(AppError::new("JOB_INTERRUPTED", "Worker is shutting down"));
         }
         let current = self.job(&job.id)?;
+        self.agent_job_checkpoint(job)?;
         Self::require_extension_job(&self.db.connect()?, &job.id)?;
         if current.status != "running" || current.cancel_requested {
             return Err(AppError::new("CANCELLED", "Local work was cancelled"));
@@ -367,6 +377,7 @@ impl Core {
         if changed != 1 {
             return Err(AppError::new("CANCELLED", "Job ownership or state changed"));
         }
+        self.agent_job_progress(job, progress)?;
         Ok(())
     }
     fn complete_job(
@@ -379,6 +390,7 @@ impl Core {
         let tx = conn
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
+        self.agent_job_checkpoint(job)?;
         Self::require_extension_job(&tx, &job.id)?;
         if job.kind == "extension_install" {
             self.commit_managed_install(&tx, job)?;
@@ -403,6 +415,16 @@ impl Core {
                 replay_artifact = Some(pending);
             } else {
                 prepared.result = self.commit_local_http(&tx, job, http)?;
+            }
+        }
+        if job.kind == "research_report" {
+            self.commit_agent_report(&tx, job, &mut prepared.result)?;
+            self.agent_job_checkpoint(job)?;
+            if Utc::now().timestamp_millis() - started.timestamp_millis() >= job.timeout_ms as i64 {
+                return Err(AppError::new(
+                    "JOB_TIMEOUT",
+                    "Report preparation exceeded the job timeout",
+                ));
             }
         }
         let changed=tx.execute("UPDATE analysis_jobs SET status='completed',progress=100,stage='Completed',finished_at=?1,result_json=?2,worker_id=NULL,lease_until=NULL,logs_json=json_insert(logs_json,'$[#]','Result committed') WHERE id=?3 AND status='running' AND worker_id=?4 AND cancel_requested=0",params![now(),serde_json::to_string(&prepared.result).map_err(json_error)?,job.id,owner]).map_err(db_error)?;
@@ -480,6 +502,7 @@ impl Core {
                     update(90,"Registration, authorization and exclusions reviewed locally; no network requests")?;
                     PreparedJob{result:serde_json::to_value(decision).map_err(json_error)?,analysis:None,http:None}
                 },
+                "research_evidence_validation"|"research_report"=>self.prepare_agent_job(&job,&mut update)?,
                 "yara_signatures"=>{
                     let file=self.imported_file(job.file_id.as_deref().ok_or_else(||AppError::new("NOT_FOUND","File was removed"))?)?;
                     let bytes=self.read_sample_with_progress(&file,&mut |done,total|update((10+done*40/total.max(1)) as u8,"Reading verified sample for YARA-X"))?;
@@ -516,6 +539,7 @@ impl Core {
         if let Err(error) = outcome {
             self.fail_job(&job.id, owner, &error)?;
         }
+        self.reconcile_agent_runtimes()?;
         let finished = self.job(&job.id)?;
         emit(finished.clone());
         Ok(finished)

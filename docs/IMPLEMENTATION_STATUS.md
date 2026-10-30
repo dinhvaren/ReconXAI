@@ -1,3 +1,92 @@
+## 2026-10-30 — reviewed offline agent DAG accepted
+
+Version **0.1.0**, schema **020**, **v1.0 NOT READY**. This checkpoint supersedes
+older statements that no offline agent scheduling or job-boundary pause exists.
+Source base `0b8e0f8acc77db9b8e73249d35c11be26075e6d2`; exact source hashes, commands, retained failures and candidate
+checksums: [offline-agents-20261030.json](verification/offline-agents-20261030.json).
+Full local evidence: `artifacts/agents-current-verification.json`.
+
+Implemented a reviewed offline vertical slice over the existing Job Engine:
+scope review → independent selected file analysis → SHA-256 evidence validation
+→ actual Report Engine snapshot. Six typed role descriptors record real planning,
+coordination and worker responsibilities; they are not six LLM personas. One
+IMMEDIATE transaction binds exact reviewed dependencies/limits to existing jobs.
+Schema020 adds coordination/attempt/message/state history without replacing data.
+Atomic claims enforce dependencies, current attempts, concurrency and budgets.
+Pause drains current jobs; resume revalidates scope and never repeats completed
+work. Interrupted work needs explicit bounded retry; historical attempt IDs persist.
+A full event journal cannot prevent cancellation. CLI `jobs run` now returns
+when only paused DAG jobs remain. Desktop/CLI share the same runtime and graph.
+
+A real ELF release test exposed PDF_GLYPH on extracted Unicode. PDF now displays
+unsupported characters explicitly as `[U+XXXX]` with a note; evidence and approved
+Unicode snapshots remain unchanged. No product timeout was relaxed.
+
+| Verification on final source/candidate | Actual result | Evidence |
+|---|---|---|
+| Windows Rust workspace | 215 passed, 0 failed, 2 opt-in ignored | `artifacts/agents-windows-post-pdf.log` |
+| Linux Core/CLI, Parrot/WSL | 215 passed, 0 failed, 2 ignored; release CLI succeeds | `artifacts/agents-linux-post-pdf.log` |
+| fmt / Windows+Linux warning-denied Clippy | Pass | `agents-fmt-final`, `agents-post-pdf-clippy`, Linux log |
+| Frontend / TypeScript / Vite | 50 passed; production build passes | `artifacts/agents-frontend-current.log`, build log |
+| Real CLI workflows | 4 acceptance groups/platform, owned PE/ELF and one MOCK planning call | Windows/Linux release-acceptance results |
+| Windows native offline DAG | 6 groups; actual tasks, approval, graph, restart and resume | `artifacts\offline-agents-native-1793329952904\results.json` |
+| Native existing recon/HTTP/output/HEAD | 13, 11, 6, 7 groups, respectively; separately executed | `artifacts/agents-final-native.json` |
+| Source parity | 81 Rust/SQL files match byte hashes | `artifacts/agents-linux-source-comparison.json` |
+
+Unsigned development candidates (previous candidates preserved):
+`artifacts/windows-offline-agents-20261030/{reconx-desktop.exe,reconx.exe}` and
+`artifacts/linux-offline-agents-20261030/reconx`, with manifests/checksums.
+No installer, signing, Linux GUI or live cloud inference is verified here.
+
+Retained failures: unbounded parallel Windows tests plus builds caused one old
+schema expansion job timeout; the isolated test passed in 12.17 seconds and final
+complete suites pass with two test threads. Product timeout remains unchanged.
+The first real ELF report failed on PDF glyph coverage; fixed and retested on
+final source. Harness mistakes (workflow tasks returns a list; initial Linux
+script BOM/CRLF) are retained locally, not reported as product successes.
+
+Overall multi-agent/autonomous requirements remain **PARTIAL**. No new traffic
+recorder, Web/API worker, general conditional DAG, worker model routing/token/cost
+budget, autonomous replanning or offensive continuation is implemented. Runtime
+network/model counts are zero by dispatch policy; cost is `null`, not a guessed
+zero price. Pause is at job boundaries, not subprocess suspension. Reconciliation
+is bounded to 100 noncompleted sessions/sweep; graph source history is capped.
+Large-workspace scheduling is not certified. Existing dependency/signing/installer
+release blockers remain; advisory data was not refreshed.
+
+Continuation: explicit opt-in recording of ReconX-owned HTTP traffic using existing
+capture services, with project/session/job/evidence links, redaction, body/quota/
+retention budgets and restart tests. Keep interception/CA trust changes disabled.
+Runtime follow-up includes fair reconciliation beyond 100 sessions and targeted
+running-cancel/large-history stress acceptance. General autonomous offensive
+chains are outside this implemented slice.
+
+Reproduce (use fresh fixture output paths):
+
+```powershell
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets -j2 -- -D warnings
+cargo test --locked --workspace -j2 -- --test-threads=2
+npm --prefix apps/desktop test
+npm --prefix apps/desktop run build
+cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2
+python scripts/agent_runtime_smoke.py --binary artifacts/windows-offline-agents-20261030/reconx.exe --sample artifacts/agent-benign.exe --output artifacts/agents-repro-UNUSED
+$env:RECONX_DESKTOP_EXE='D:\ReconXAI\artifacts\windows-offline-agents-20261030\reconx-desktop.exe'
+$env:RECONX_CLI_EXE='D:\ReconXAI\artifacts\windows-offline-agents-20261030\reconx.exe'
+$env:RECONX_VERIFY_ASSET='1'
+node tests/e2e/agents.mjs
+```
+
+Files/architecture: `crates/reconx-core/src/agent_runtime.rs`, `jobs.rs`,
+`research_sessions.rs`, `research_graph.rs`, `reporting.rs`, storage migration020,
+Tauri/CLI handlers, ResearchPage/AgentRuntimePanel/ResearchGraph, tests and CI.
+See MULTI_AGENT_ARCHITECTURE.md, DAG_SCHEDULER.md, AUTONOMOUS_RESEARCH.md,
+EXPLORATION_GRAPH.md, TRAFFIC_RECORDING.md and UNIFIED_TOOL_EXECUTION.md.
+Final local Git delivery is recorded in `artifacts/agents-git-delivery.json`.
+No background execution continues after the session ends.
+
+---
+
 ## Current follow-up checkpoint — 2026-10-29: resilient provenance history
 
 Version **0.1.0**, schema **019**, **v1.0 NOT READY**. This follow-up supersedes

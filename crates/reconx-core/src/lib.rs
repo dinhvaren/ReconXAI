@@ -15,6 +15,8 @@ use uuid::Uuid;
 use zeroize::Zeroizing;
 mod ai_manager;
 pub use ai_manager::*;
+mod agent_runtime;
+pub use agent_runtime::*;
 mod capabilities;
 mod evidence;
 mod file_ingest;

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -63,7 +63,7 @@
     {
       "id": "workflow_engine",
       "status": "IN_PROGRESS",
-      "verification": "Reviewed local/tool plans execute real existing jobs; mock AI only, no general multi-agent DAG or autonomous offensive loop.",
+      "verification": "Existing reviewed sessions plus schema020 offline role/DAG coordination; general model-driven/conditional/autonomous execution remains incomplete",
       "remaining": [
         "general agent registry/routing",
         "DAG scheduling",
@@ -508,8 +508,9 @@
     },
     {
       "id": "multi_agent_runtime",
-      "status": "NOT_STARTED",
-      "verification": "No empty agents are exposed; existing model routing is not an agent runtime"
+      "status": "PARTIAL",
+      "verification": "docs/verification/offline-agents-20261030.json",
+      "implemented_scope": "RUNTIME_VERIFIED reviewed offline role coordination, fixed DAG, bounded explicit retry and job-boundary pause/resume; not complete requested runtime"
     },
     {
       "id": "opt_in_owned_traffic_recorder",
@@ -518,20 +519,20 @@
     }
   ],
   "verification": {
-    "rust_passed": 204,
+    "rust_passed": 215,
     "rust_failed": 0,
     "rust_ignored_default": 2,
-    "frontend_passed": 46,
+    "frontend_passed": 50,
     "frontend_failed": 0,
+    "record": "docs/verification/offline-agents-20261030.json",
     "native_checks_current": {
-      "research_recon_graph": 13,
-      "http_replay": 11,
+      "agents": 6,
+      "recon-tools": 13,
+      "http-replay": 11,
       "outputs": 6,
-      "legacy_head": 7
+      "recon-local": 7
     },
-    "native_research_captures": 35,
-    "record": "artifacts/research-current-verification.json",
-    "scope": "Current history follow-up: research/recon/graph plus HTTP/output/manual HEAD native regressions; no sum across repeated suites"
+    "scope": "Reviewed offline typed coordination only; no autonomous offensive loop, new recorder or cloud verification"
   },
   "v1_release": {
     "ready": false,
@@ -547,7 +548,7 @@
       "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
     ]
   },
-  "database_schema_version": 19,
+  "database_schema_version": 20,
   "platform_verification": {
     "windows-x86_64": {
       "desktop": "TESTED",
@@ -564,10 +565,10 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 204,
+        "passed": 215,
         "failed": 0,
         "ignored": 2,
-        "record": "artifacts/research-history-linux.log"
+        "record": "artifacts/agents-linux-post-pdf.log"
       },
       "optimized_cli_record": "artifacts/linux-research-history-20261029/build-manifest.json"
     }
@@ -977,5 +978,29 @@
     "native_research_captures": 33,
     "record": "artifacts/research-current-verification.json",
     "scope": "Bounded managed recon + read-only graph; mock AI only; no autonomous pentest/multi-agent/recording completion claim"
+  },
+  "verification_history_before_offline_agents_20261030": {
+    "rust_passed": 204,
+    "rust_failed": 0,
+    "rust_ignored_default": 2,
+    "frontend_passed": 46,
+    "frontend_failed": 0,
+    "native_checks_current": {
+      "research_recon_graph": 13,
+      "http_replay": 11,
+      "outputs": 6,
+      "legacy_head": 7
+    },
+    "native_research_captures": 35,
+    "record": "artifacts/research-current-verification.json",
+    "scope": "Current history follow-up: research/recon/graph plus HTTP/output/manual HEAD native regressions; no sum across repeated suites"
+  },
+  "current_offline_agent_verification": {
+    "proof": "docs/verification/offline-agents-20261030.json",
+    "schema": 20,
+    "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
+    "broader_module": "PARTIAL",
+    "linux_desktop": "UNVERIFIED",
+    "release_ready": false
   }
 }

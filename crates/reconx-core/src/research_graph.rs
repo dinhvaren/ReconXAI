@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 
 const MAX_NODES: usize = 5000;
 const MAX_EDGES: usize = 20000;
+type GraphStateTransition = (i64, String, Option<String>, String, String, i64, String);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResearchGraphNode {
@@ -425,6 +426,88 @@ impl Core {
                 json!({"sha256":report.sha256,"created_at":report.created_at}),
             )?;
             g.edge(&session, "HAS_REPORT", &n)?;
+        }
+        // Agent nodes originate only from actual persisted assignments/tasks.
+        let runtime: Option<(String, String)> = tx
+            .query_row(
+                "SELECT status,limits_json FROM research_runtimes WHERE session_id=?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(db_error)?;
+        if let Some((status, limits)) = runtime {
+            let dag=g.node(id,"exploration","dag",("research_runtimes",id),"Reviewed offline DAG",json!({"status":status,"limits":serde_json::from_str::<Value>(&limits).map_err(json_error)?}))?;
+            g.edge(&session, "HAS_DAG", &dag)?;
+            let rows:Vec<(String,String)>=tx.prepare("SELECT agent_id,descriptor_json FROM research_agent_assignments WHERE session_id=?1 ORDER BY agent_id").map_err(db_error)?.query_map([id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+            let mut agents = BTreeMap::new();
+            for (agent, descriptor) in rows {
+                let n = g.node(
+                    id,
+                    "exploration",
+                    "agent",
+                    ("research_agent_assignments", &agent),
+                    &agent,
+                    serde_json::from_str(&descriptor).map_err(json_error)?,
+                )?;
+                g.edge(&dag, "ASSIGNED_TO", &n)?;
+                agents.insert(agent, n);
+            }
+            let rows:Vec<(String,String,String,String,String,i64)>=tx.prepare("SELECT id,agent_id,capability_id,state,job_id,attempt FROM research_agent_tasks WHERE session_id=?1 ORDER BY ordinal").map_err(db_error)?.query_map([id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+            let mut task_nodes = BTreeMap::new();
+            for (task, agent, cap, state, job, attempt) in rows {
+                let n = g.node(
+                    id,
+                    "exploration",
+                    "agent_task",
+                    ("research_agent_tasks", &task),
+                    &cap,
+                    json!({"state":state,"agent_id":agent,"job_id":job,"attempt":attempt}),
+                )?;
+                g.edge(&dag, "DECOMPOSES_INTO", &n)?;
+                if let Some(a) = agents.get(&agent) {
+                    g.edge(&n, "EXECUTED_BY", a)?;
+                }
+                if let Some(j) = jobs.get(&job) {
+                    g.edge(&n, "QUEUED_AS", j)?;
+                }
+                task_nodes.insert(task, n);
+            }
+            let rows:Vec<(String,String)>=tx.prepare("SELECT task_id,dependency_id FROM research_task_dependencies WHERE session_id=?1").map_err(db_error)?.query_map([id],|r|Ok((r.get(0)?,r.get(1)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+            for (a, b) in rows {
+                if let (Some(a), Some(b)) = (task_nodes.get(&a), task_nodes.get(&b)) {
+                    g.edge(a, "DEPENDS_ON", b)?;
+                }
+            }
+            let rows:Vec<GraphStateTransition>=tx.prepare("SELECT id,task_id,previous_state,next_state,job_id,attempt,created_at FROM research_task_transitions WHERE session_id=?1 ORDER BY id LIMIT 1001").map_err(db_error)?.query_map([id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?,r.get(6)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+            if rows.len() > 1000 {
+                return Err(graph_error("State-history graph exceeds 1000 transitions"));
+            }
+            for (key, task, previous, next, job, attempt, stamp) in rows {
+                let n=g.node(id,"exploration","state_transition",("research_task_transitions",&key.to_string()),&format!("{} → {next}",previous.as_deref().unwrap_or("Created")),json!({"previous":previous,"next":next,"job_id":job,"attempt":attempt,"created_at":stamp}))?;
+                if let Some(t) = task_nodes.get(&task) {
+                    g.edge(t, "HAS_STATE_CHANGE", &n)?;
+                }
+            }
+            let rows:Vec<(i64,Option<String>,String,String,String,String)>=tx.prepare("SELECT id,task_id,agent_id,message_type,payload_json,evidence_json FROM research_agent_messages WHERE session_id=?1 ORDER BY id LIMIT 2049").map_err(db_error)?.query_map([id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+            if rows.len() > 2048 {
+                return Err(graph_error("Agent event graph budget exceeded"));
+            }
+            for (key, task, agent, kind, payload, refs) in rows {
+                let n=g.node(id,"exploration","agent_message",("research_agent_messages",&key.to_string()),&kind,json!({"agent_id":agent,"payload":serde_json::from_str::<Value>(&payload).map_err(json_error)?}))?;
+                g.edge(&dag, "RECORDED", &n)?;
+                if let Some(t) = task.and_then(|t| task_nodes.get(&t)) {
+                    g.edge(&n, "ABOUT", t)?;
+                }
+                if let Some(a) = agents.get(&agent) {
+                    g.edge(a, "PRODUCED", &n)?;
+                }
+                for e in serde_json::from_str::<Vec<String>>(&refs).map_err(json_error)? {
+                    if let Some(e) = evidence_nodes.get(&e) {
+                        g.edge(&n, "SUPPORTED_BY", e)?;
+                    }
+                }
+            }
         }
         let digest =
             evidence::digest(&serde_json::to_vec(&(&g.nodes, &g.edges)).map_err(json_error)?);

@@ -365,6 +365,22 @@ fn report_text(snapshot: &Value) -> String {
     );
     out
 }
+fn pdf_display_text(text: &str, face: &ttf_parser::Face<'_>) -> String {
+    let mut rendered = String::with_capacity(text.len());
+    let mut escaped = false;
+    for c in text.chars() {
+        if matches!(c, '\n' | '\t') || (!c.is_control() && face.glyph_index(c).is_some()) {
+            rendered.push(c);
+        } else {
+            rendered.push_str(&format!("[U+{:04X}]", u32::from(c)));
+            escaped = true;
+        }
+    }
+    if escaped {
+        rendered.insert_str(0, "PDF display note: unsupported characters/control codes are shown as [U+XXXX].\nOriginal Unicode remains in the reviewed JSON/HTML snapshot and source evidence.\n\n");
+    }
+    rendered
+}
 fn pdf(text: &str) -> Result<Vec<u8>> {
     use krilla::{
         Document,
@@ -382,7 +398,7 @@ fn pdf(text: &str) -> Result<Vec<u8>> {
     let font = Font::new_variable(FONT.to_vec().into(), 0, &[(Tag::new(b"wght"), 400.0)])
         .ok_or_else(|| AppError::new("PDF_FONT", "Cannot load bundled report font"))?;
     let mut lines = Vec::new();
-    for raw in text.lines() {
+    for raw in pdf_display_text(text, &face).lines() {
         let mut line = String::new();
         let mut width = 0.0;
         for c in raw.chars() {
@@ -449,7 +465,17 @@ fn pdf(text: &str) -> Result<Vec<u8>> {
         .map_err(|_| AppError::new("PDF_RENDER", "Cannot render report PDF"))
 }
 impl Core {
-    pub fn report_prepare(&self, mut input: ReportInput) -> Result<ReportView> {
+    pub fn report_prepare(&self, input: ReportInput) -> Result<ReportView> {
+        let view = self.build_report(input)?;
+        let mut conn = self.db.connect()?;
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(db_error)?;
+        self.persist_report_in_tx(&tx, &view)?;
+        tx.commit().map_err(db_error)?;
+        Ok(view)
+    }
+    pub(super) fn build_report(&self, mut input: ReportInput) -> Result<ReportView> {
         let project = self.project(&input.project_id)?;
         input.project_id = project.id.clone();
         input.title = validate_text(&input.title, 200, "Report title")?;
@@ -577,20 +603,24 @@ impl Core {
             sha256: digest(&bytes),
             size: bytes.len() as u64,
         };
-        let path = self.output_path("reports", &record.id)?;
-        export_new(&path, &bytes)?;
-        let mut conn = self.db.connect()?;
-        let tx = conn
-            .transaction_with_behavior(TransactionBehavior::Immediate)
-            .map_err(db_error)?;
-        let template = serde_json::to_value(record.template).map_err(json_error)?;
-        tx.execute("INSERT INTO reports(id,project_id,title,template,created_at,sha256,size) VALUES(?1,?2,?3,?4,?5,?6,?7)",params![record.id,record.project_id,record.title,template.as_str(),record.created_at,record.sha256,record.size as i64]).map_err(db_error)?;
-        Self::audit(&tx, "report.prepared", &record.id, "redacted_snapshot")?;
-        tx.commit().map_err(db_error)?;
         Ok(ReportView {
             report: record,
             document,
         })
+    }
+    pub(super) fn persist_report_in_tx(&self, tx: &Connection, view: &ReportView) -> Result<()> {
+        let record = &view.report;
+        let bytes = serde_json::to_vec(&view.document).map_err(json_error)?;
+        if digest(&bytes) != record.sha256 || bytes.len() as u64 != record.size {
+            return Err(AppError::new(
+                "INTEGRITY_MISMATCH",
+                "Report changed before persistence",
+            ));
+        }
+        export_new(&self.output_path("reports", &record.id)?, &bytes)?;
+        let template = serde_json::to_value(record.template).map_err(json_error)?;
+        tx.execute("INSERT INTO reports(id,project_id,title,template,created_at,sha256,size) VALUES(?1,?2,?3,?4,?5,?6,?7)",params![record.id,record.project_id,record.title,template.as_str(),record.created_at,record.sha256,record.size as i64]).map_err(db_error)?;
+        Self::audit(tx, "report.prepared", &record.id, "redacted_snapshot")
     }
     pub fn reports(&self, project: Option<&str>) -> Result<Vec<ReportRecord>> {
         let project = project.map(|p| self.project(p).map(|p| p.id)).transpose()?;
@@ -710,6 +740,27 @@ impl Core {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn binary_unicode_pdf_uses_explicit_codepoints_without_changing_the_snapshot() {
+        let source = "Evidence: Tiếng Việt / 漢 / \u{1f9ea} / \u{0001}";
+        let face = ttf_parser::Face::parse(
+            include_bytes!(
+                "../../../apps/desktop/src/assets/fonts/sourcesans3/SourceSans3VF-Upright.ttf"
+            ),
+            0,
+        )
+        .unwrap();
+        let display = pdf_display_text(source, &face);
+        assert!(display.starts_with("PDF display note:"));
+        assert!(display.contains("Tiếng Việt"));
+        assert!(display.contains("[U+6F22]"));
+        assert!(display.contains("[U+1F9EA]"));
+        assert!(display.contains("[U+0001]"));
+        assert!(source.contains('漢'));
+        assert!(pdf(source).unwrap().starts_with(b"%PDF-"));
+        let ordinary = "Tiếng Việt - bounded evidence\nSecond line\t1";
+        assert_eq!(pdf_display_text(ordinary, &face), ordinary);
+    }
     #[test]
     fn legacy_report_with_raw_json_header_pairs_cannot_be_exported() {
         let unsafe_content = r#"{"response":{"headers":[{"name":"Set-Cookie","value":"fixture-private-cookie"},{"name":"Authorization","value_base64":"Zml4dHVyZS1wcml2YXRlLWF1dGg="}]}}"#;

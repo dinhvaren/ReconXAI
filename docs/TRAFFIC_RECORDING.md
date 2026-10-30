@@ -8,6 +8,8 @@ not a new universal traffic recorder or a claim that every scanner request is
 captured in full.
 
 HTTPX metadata observations are not complete HTTP request/response captures.
+The schema020 offline agent runtime dispatches no HTTP/scanner/MCP request and
+adds no synthetic traffic records. Its task/graph events are not new capture.
 Their graph nodes link actual job/inventory/evidence records; they do not invent
 request headers, bodies, cookies or TLS verification. A graph URL is not proof
 that a full traffic transaction was recorded.

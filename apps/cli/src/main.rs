@@ -28,6 +28,9 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Actual offline agent descriptors and persisted runtime state.
+    #[command(subcommand)]
+    Agents(AgentCommand),
     /// Read-only provenance graphs over stored research results; never executes tools.
     #[command(subcommand)]
     Graph(GraphCommand),
@@ -866,6 +869,25 @@ enum WorkspaceCommand {
 }
 #[derive(Subcommand)]
 enum ResearchCommand {
+    /// Review a bounded offline DAG over an existing unapproved research plan.
+    DagPreview {
+        id: String,
+        #[arg(long)]
+        limits: Option<PathBuf>,
+    },
+    /// Start the exact fingerprinted offline DAG review; never dispatches network/MCP.
+    DagStart {
+        input: PathBuf,
+    },
+    Pause {
+        id: String,
+    },
+    Resume {
+        id: String,
+    },
+    Retry {
+        id: String,
+    },
     Preview {
         target: String,
         #[arg(long)]
@@ -914,6 +936,12 @@ enum ResearchCommand {
 }
 #[derive(Subcommand)]
 enum WorkflowCommand {
+    Tasks {
+        session: String,
+    },
+    Graph {
+        session: String,
+    },
     Evidence {
         job: String,
     },
@@ -944,6 +972,15 @@ enum WorkflowCommand {
         plan: String,
         #[arg(long)]
         approve: bool,
+    },
+}
+#[derive(Subcommand)]
+enum AgentCommand {
+    List,
+    Status {
+        session: String,
+        #[arg(long, default_value_t = 0)]
+        after: i64,
     },
 }
 #[derive(Subcommand)]
@@ -1664,12 +1701,7 @@ async fn execute(cli: &Cli) -> Result<Value> {
                 let interrupted = tokio::signal::ctrl_c();
                 tokio::pin!(interrupted);
                 loop {
-                    if !watch
-                        && !core
-                            .list_jobs(None)?
-                            .iter()
-                            .any(|j| matches!(j.status.as_str(), "queued" | "running"))
-                    {
+                    if !watch && !core.jobs_pending_work()? {
                         break;
                     }
                     tokio::select! {_= &mut interrupted => break, _=tokio::time::sleep(std::time::Duration::from_millis(100))=>{}}
@@ -2258,6 +2290,28 @@ async fn execute(cli: &Cli) -> Result<Value> {
             )?),
         },
         Command::Research(command) => match command {
+            ResearchCommand::DagPreview { id, limits } => {
+                let limits = limits
+                    .as_ref()
+                    .map(|p| {
+                        serde_json::from_str::<reconx_core::AgentLimits>(&read_file(p)?).map_err(
+                            |_| AppError::new("INVALID_INPUT", "Invalid offline resource limits"),
+                        )
+                    })
+                    .transpose()?
+                    .unwrap_or_default();
+                serialize(core.agent_runtime_preview(id, limits)?)
+            }
+            ResearchCommand::DagStart { input } => {
+                serialize(core.agent_runtime_start(
+                    serde_json::from_str(&read_file(input)?).map_err(|_| {
+                        AppError::new("INVALID_INPUT", "Invalid offline DAG review")
+                    })?,
+                )?)
+            }
+            ResearchCommand::Pause { id } => serialize(core.agent_runtime_pause(id)?),
+            ResearchCommand::Resume { id } => serialize(core.agent_runtime_resume(id)?),
+            ResearchCommand::Retry { id } => serialize(core.agent_runtime_retry(id)?),
             ResearchCommand::Preview {
                 target,
                 provider,
@@ -2307,6 +2361,10 @@ async fn execute(cli: &Cli) -> Result<Value> {
             ResearchCommand::Report { id } => serialize(core.research_report(id)?),
         },
         Command::Workflow(command) => match command {
+            WorkflowCommand::Tasks { session } => serialize(core.agent_runtime(session, 0)?.tasks),
+            WorkflowCommand::Graph { session } => {
+                serialize(core.research_graph(session, Default::default())?)
+            }
             WorkflowCommand::Evidence { job } => serialize(core.job_evidence_preview(job)?),
             WorkflowCommand::Interpret { input } => {
                 let review: JobReview = serde_json::from_str(&read_file(input)?).map_err(|_| {
@@ -2328,6 +2386,12 @@ async fn execute(cli: &Cli) -> Result<Value> {
             }
         },
         Command::Audit => serialize(core.audit_events()?),
+        Command::Agents(command) => match command {
+            AgentCommand::List => serialize(reconx_core::research_agents()),
+            AgentCommand::Status { session, after } => {
+                serialize(core.agent_runtime(session, *after)?)
+            }
+        },
         Command::Completions { .. } => unreachable!(),
     }
 }

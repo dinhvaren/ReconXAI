@@ -84,9 +84,15 @@ on review, real owned HTTP observations, real Job Engine evidence, manual findin
 links, default redaction, stable IDs/revisions, pagination, cross-project/session
 isolation, restart persistence, export and migration backup preservation.
 
+Schema020 adds persisted offline DAG, assignment, agent-task, task-transition and
+structured-message nodes with actual dependency, job, assignment and evidence
+edges. Source rows are read inside the graph transaction; graph review dispatches
+no jobs. Projection reads at most 1,000 task transitions and 2,048 messages/session
+within the existing 5,000-node/20,000-edge budget. New node types have UI filters.
+
 The current graph is session-scoped, not a global cross-project intelligence
-graph. It does not implement graph inference, agent decisions, semantic
-clustering, complete state-transition history or speculative hypothesis nodes.
+graph. It does not implement graph inference, autonomous agent decisions, semantic
+clustering, unlimited transition history or speculative hypothesis nodes.
 Historical graph review/export survives target or imported-file record removal.
 Missing sources are marked `source_state: removed`; original IDs and prior file
 metadata remain inspectable, but absent hashes are not invented. A missing target

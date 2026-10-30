@@ -74,6 +74,7 @@ pub struct ResearchSession {
     pub findings: Vec<Finding>,
     pub reports: Vec<ReportRecord>,
     pub interpretation: Option<AiReply>,
+    pub runtime_enabled: bool,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -259,7 +260,7 @@ impl Core {
             .map(|p| self.ai_options(&p.id))
             .transpose()?;
         let fingerprint=evidence::digest(&serde_json::to_vec(&json!({"target":target.input,"application_mode":self.settings()?.security_mode,"file":file.as_ref().map(|f|(&f.id,&f.sha256)),"request":request,"context":context,"provider":provider,"options":options,"recon_reviews":recon_reviews})).map_err(json_error)?);
-        Ok(ResearchPreview{request,project_id:project.id,target_name:target.input.name,target_kind:target.input.kind,file_id:file.map(|f|f.id),model:provider.as_ref().map(|p|p.model.clone()),gateway:provider.map(|p|p.base_url),context,fingerprint,capabilities:caps,recon_reviews,limitations:vec!["This session runs only the listed existing bounded capabilities, not an automated penetration test".into(),"Domain, source, APK, cloud, decompiler and arbitrary MCP/scanner analyzers remain unavailable unless explicitly listed".into(),"AI interpretation and any resulting finding require review; no automatic Verified status".into(),"No pause/resume, cost estimate or implicit egress; token usage is reported only when the model supplies it".into()]})
+        Ok(ResearchPreview{request,project_id:project.id,target_name:target.input.name,target_kind:target.input.kind,file_id:file.map(|f|f.id),model:provider.as_ref().map(|p|p.model.clone()),gateway:provider.map(|p|p.base_url),context,fingerprint,capabilities:caps,recon_reviews,limitations:vec!["This session runs only the listed existing bounded capabilities, not an automated penetration test".into(),"Domain, source, APK, cloud, decompiler and arbitrary MCP/scanner analyzers remain unavailable unless explicitly listed".into(),"AI interpretation and any resulting finding require review; no automatic Verified status".into(),"Legacy batches cannot pause; the offline DAG pauses at job boundaries. Cost estimates are unavailable; model token usage is reported only when supplied".into()]})
     }
     fn validate_research_proposal(
         &self,
@@ -424,6 +425,19 @@ impl Core {
         } else {
             "completed"
         };
+        let runtime: Option<String> = conn
+            .query_row(
+                "SELECT status FROM research_runtimes WHERE session_id=?1",
+                [id],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(db_error)?;
+        let status = if cancelled_at.is_none() {
+            runtime.as_deref().unwrap_or(status)
+        } else {
+            status
+        };
         let evidence_ids:Vec<String>=conn.prepare("SELECT id FROM evidence WHERE job_id IN (SELECT job_id FROM research_session_jobs WHERE session_id=?1) UNION SELECT record_id FROM research_session_records WHERE session_id=?1 AND kind='interpretation'").map_err(db_error)?.query_map([id],|r|r.get(0)).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
         let mut findings = Vec::new();
         let mut reports = Vec::new();
@@ -440,6 +454,7 @@ impl Core {
         Ok(ResearchSession {
             plan,
             status: status.into(),
+            runtime_enabled: runtime.is_some(),
             approved_at,
             cancelled_at,
             jobs,
@@ -583,6 +598,7 @@ impl Core {
                 self.cancel_job_in_tx(&tx, &job.id)?;
             }
         }
+        Self::cancel_agent_runtime(&tx, id)?;
         tx.execute(
             "UPDATE research_sessions SET cancelled_at=COALESCE(cancelled_at,?1) WHERE id=?2",
             params![now(), id],

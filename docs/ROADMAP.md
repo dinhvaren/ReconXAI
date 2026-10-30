@@ -1,3 +1,9 @@
+## 2026-10-30 checkpoint
+
+Reviewed offline agent coordination and fixed DAG are accepted through schema020.
+Overall multi-agent, traffic recording, autonomous continuation and v1.0 remain PARTIAL.
+See NEXT_MILESTONE.md and verification/offline-agents-20261030.json for actual scope.
+
 ## Follow-up checkpoint — 2026-10-29: historical provenance accepted
 
 The removed-target/file history gap in the older checkpoint below is now fixed

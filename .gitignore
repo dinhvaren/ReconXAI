@@ -38,3 +38,4 @@ tests/
 !/tests/e2e/research-session.mjs
 !/tests/e2e/large-import.mjs
 !/tests/e2e/recon-tools.mjs
+!/tests/e2e/agents.mjs

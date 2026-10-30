@@ -4,6 +4,7 @@ import { Button } from "../components/controls";
 import { Heading, Modal } from "../components/ui";
 import ReconAssetInventory from "../components/ReconAssetInventory";
 import ResearchGraph from "../components/ResearchGraph";
+import AgentRuntimePanel from "../components/AgentRuntimePanel";
 import JobHistory from "../components/JobHistory";
 import { selectPaths, type AnalysisJob } from "../research";
 import { useWorkspace } from "../workspace";
@@ -50,6 +51,7 @@ interface Report {
   sha256: string;
 }
 interface Session {
+  runtime_enabled?: boolean;
   plan: {
     id: string;
     preview: Preview;
@@ -193,7 +195,13 @@ export default function ResearchPage({
   useEffect(() => {
     if (
       !session ||
-      !["queued", "running", "cancelling"].includes(session.status)
+      ![
+        "queued",
+        "running",
+        "cancelling",
+        "pause_requested",
+        "paused",
+      ].includes(session.status)
     )
       return;
     let closed = false;
@@ -658,26 +666,44 @@ export default function ResearchPage({
                 </Button>
               </>
             )}
-            {["awaiting_approval", "queued", "running"].includes(
-              session.status,
-            ) && (
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() =>
-                  void act(async () => {
-                    await request("research_cancel", { id: sessionId });
-                    await refresh();
-                  })
-                }
-              >
-                Cancel research
-              </Button>
-            )}
+            {!session.runtime_enabled &&
+              ["awaiting_approval", "queued", "running"].includes(
+                session.status,
+              ) && (
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(async () => {
+                      await request("research_cancel", { id: sessionId });
+                      await refresh();
+                    })
+                  }
+                >
+                  Cancel research
+                </Button>
+              )}
             <p>
-              Pause/resume is unavailable in the current scheduler. Completed
-              jobs and results remain persistent.
+              {session.runtime_enabled
+                ? "Offline DAG pause finishes current jobs before stopping new claims."
+                : "Legacy batches do not pause; the reviewed offline DAG supports job-boundary pause/resume."}{" "}
+              Completed jobs and results remain persistent.
             </p>
+            <AgentRuntimePanel
+              session={session.plan.id}
+              status={session.status}
+              enabled={!!session.runtime_enabled}
+              readOnly={historicalOnly}
+              eligible={session.plan.proposal.steps.every((s) =>
+                [
+                  "local.scope_review",
+                  "local.metadata",
+                  "local.strings",
+                  "yara-x.signatures",
+                ].includes(s.capability_id),
+              )}
+              changed={refresh}
+            />
             <JobHistory jobs={session.jobs} />
           </section>
           <section className="panel records-panel">

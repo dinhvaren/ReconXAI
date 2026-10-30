@@ -12,6 +12,7 @@ universal tool runner.
 | User-configured MCP | Discovered schema and McpApproval | Trusted server, allowed tool, bounded parameters/result, one-shot review |
 | Owned loopback HTTP | Existing HTTP replay/local HEAD services | Exact destination/request review, isolated auth, timeout/cancellation |
 | Offline HTTP/schema review | Existing import/review handlers | Original evidence hash and bounded local parsing; no network replay |
+| Reviewed offline agents | Strict DAG review and existing Job Engine | Exact immutable steps/limits, dependency and current-attempt fencing, real evidence validation/report |
 
 Capability metadata/availability is resolved from actual installed dependencies
 and configuration. Missing tools are installed only after the Marketplace plan
@@ -23,7 +24,7 @@ state and actual result/evidence references. The durable queue bounds concurrenc
 honors cancellation and does not blindly replay work after restart. Managed tools
 are rehashed before execution; an external process is still not an OS sandbox.
 
-The schema019 provenance layer only reads these records. It is not another queue
+The schema019/020 provenance layer only reads these records. It is not another queue
 or an alternate execution path. Graph queries/exports cannot schedule a capability.
 The CLI and Tauri graph commands call the same Core service.
 

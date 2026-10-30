@@ -206,6 +206,29 @@ fn cancel_stream(active: tauri::State<'_, ActiveStreams>, request_id: String) ->
 #[derive(Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 enum Request {
+    AgentRegistry,
+    AgentRuntimePreview {
+        id: String,
+        #[serde(default)]
+        limits: reconx_core::AgentLimits,
+    },
+    AgentRuntimeStart {
+        review: reconx_core::AgentRuntimeReview,
+    },
+    AgentRuntimeShow {
+        id: String,
+        #[serde(default)]
+        after: i64,
+    },
+    AgentRuntimePause {
+        id: String,
+    },
+    AgentRuntimeResume {
+        id: String,
+    },
+    AgentRuntimeRetry {
+        id: String,
+    },
     WorkspaceSelection,
     WorkspaceSelect {
         project: Option<String>,
@@ -752,6 +775,15 @@ fn local(core: Core, request: Request) -> Result<Value> {
             revision,
         } => value(core.select_workspace(project.as_deref(), target.as_deref(), revision)?),
         Request::ResearchPreview { input } => value(core.research_preview(input)?),
+        Request::AgentRegistry => value(reconx_core::research_agents()),
+        Request::AgentRuntimePreview { id, limits } => {
+            value(core.agent_runtime_preview(&id, limits)?)
+        }
+        Request::AgentRuntimeStart { review } => value(core.agent_runtime_start(review)?),
+        Request::AgentRuntimeShow { id, after } => value(core.agent_runtime(&id, after)?),
+        Request::AgentRuntimePause { id } => value(core.agent_runtime_pause(&id)?),
+        Request::AgentRuntimeResume { id } => value(core.agent_runtime_resume(&id)?),
+        Request::AgentRuntimeRetry { id } => value(core.agent_runtime_retry(&id)?),
         Request::ResearchList { project } => value(core.research_list(&project)?),
         Request::ResearchShow { id } => value(core.research_session(&id)?),
         Request::ResearchApprove {

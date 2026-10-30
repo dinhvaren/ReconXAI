@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-pub const SCHEMA_VERSION: i64 = 19;
+pub const SCHEMA_VERSION: i64 = 20;
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -202,6 +202,12 @@ impl Database {
         if version < 19 {
             tx.execute_batch(include_str!("../migrations/019_research_graph.sql"))
                 .map_err(db_error)?;
+            tx.pragma_update(None, "user_version", 19)
+                .map_err(db_error)?;
+        }
+        if version < 20 {
+            tx.execute_batch(include_str!("../migrations/020_local_agent_runtime.sql"))
+                .map_err(db_error)?;
             tx.pragma_update(None, "user_version", SCHEMA_VERSION)
                 .map_err(db_error)?;
         }
@@ -237,12 +243,81 @@ fn require_supported_schema(version: i64) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn remove_runtime_fixture_schema(conn: &Connection) {
+        conn.execute_batch("DROP TABLE research_agent_messages; DROP TABLE research_task_transitions; DROP TABLE research_task_attempts; DROP TABLE research_task_dependencies; DROP TABLE research_agent_tasks; DROP TABLE research_agent_assignments; DROP TABLE research_runtimes;").unwrap();
+    }
+    #[test]
+    fn runtime_upgrade_preserves_schema19_selection_graph_data_and_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("schema19.db");
+        let db = Database::open(&path).unwrap();
+        let c = db.connect().unwrap();
+        c.execute("INSERT INTO projects(id,name,description,created_at,updated_at) VALUES('retained','Retained runtime upgrade','Original notes','stamp','stamp')",[]).unwrap();
+        c.execute(
+            "UPDATE workspace_selection SET project_id='retained',revision=17",
+            [],
+        )
+        .unwrap();
+        c.execute("INSERT INTO research_sessions(id,project_id,created_at,plan_json) VALUES('original-session','retained','stamp','{}')",[]).unwrap();
+        c.execute("INSERT INTO research_graph_snapshots VALUES('original-session',4,'original-sha','stamp',0,0)",[]).unwrap();
+        remove_runtime_fixture_schema(&c);
+        c.pragma_update(None, "user_version", 19).unwrap();
+        drop(c);
+        drop(db);
+        let upgraded = Database::open(&path).unwrap();
+        let c = upgraded.connect().unwrap();
+        assert_eq!(
+            c.query_row("SELECT revision FROM workspace_selection", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            17
+        );
+        assert_eq!(
+            c.query_row("SELECT revision FROM research_graph_snapshots", [], |r| r
+                .get::<_, i64>(
+                0
+            ))
+            .unwrap(),
+            4
+        );
+        assert_eq!(
+            c.query_row("SELECT count(*) FROM research_runtimes", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert!(
+            !c.prepare("PRAGMA foreign_key_check")
+                .unwrap()
+                .exists([])
+                .unwrap()
+        );
+        let backup = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .find(|p| p.path().extension().is_some_and(|s| s == "bak"))
+            .unwrap()
+            .path();
+        let b = Connection::open_with_flags(backup, OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        assert_eq!(
+            b.pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
+                .unwrap(),
+            19
+        );
+        assert_eq!(
+            b.query_row("SELECT description FROM projects", [], |r| r
+                .get::<_, String>(0))
+                .unwrap(),
+            "Original notes"
+        );
+    }
     #[test]
     fn graph_upgrade_preserves_schema18_selection_and_an_intact_backup() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("schema18.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_runtime_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE research_graph_edges; DROP TABLE research_graph_nodes; DROP TABLE research_graph_snapshots; PRAGMA user_version=18; INSERT INTO projects(id,name,description,created_at,updated_at,archived) VALUES('retained','Retained graph upgrade','Original private notes','before','before',0); UPDATE workspace_selection SET project_id='retained',revision=11;").unwrap();
         drop(conn);
         drop(db);
@@ -301,6 +376,7 @@ mod tests {
         let path = dir.path().join("schema17.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
+        remove_runtime_fixture_schema(&conn);
         conn.execute_batch("DROP TABLE research_graph_edges; DROP TABLE research_graph_nodes; DROP TABLE research_graph_snapshots; DROP TABLE recon_tool_approvals; PRAGMA user_version=17; INSERT INTO projects(id,name,description,created_at,updated_at,archived) VALUES('owned','Owned migration fixture','preserve','stamp','stamp',0); UPDATE workspace_selection SET project_id='owned',revision=7; INSERT INTO research_sessions(id,project_id,created_at,plan_json) VALUES('session','owned','stamp','{\"migration_fixture\":true}');").unwrap();
         drop(conn);
         drop(db);
@@ -354,6 +430,7 @@ mod tests {
         );
     }
     fn remove_research_fixture_schema(conn: &Connection) {
+        remove_runtime_fixture_schema(conn);
         // These fixtures downgrade a current isolated DB to a historical layout.
         // Remove the newer tables as well; production migrations remain strict.
         conn.execute_batch("DROP TABLE IF EXISTS research_graph_edges; DROP TABLE IF EXISTS research_graph_nodes; DROP TABLE IF EXISTS research_graph_snapshots; DROP TABLE IF EXISTS recon_tool_approvals; DROP TRIGGER workspace_target_removed; DROP TRIGGER workspace_project_removed; DROP TRIGGER workspace_project_archived; DROP TABLE research_session_records; DROP TABLE research_session_jobs; DROP TABLE research_sessions; DROP TABLE workspace_selection;").unwrap();
@@ -994,7 +1071,8 @@ mod tests {
         let path = dir.path().join("v16.db");
         let db = Database::open(&path).unwrap();
         let conn = db.connect().unwrap();
-        conn.execute_batch("DROP TABLE IF EXISTS research_graph_edges; DROP TABLE IF EXISTS research_graph_nodes; DROP TABLE IF EXISTS research_graph_snapshots; DROP TABLE IF EXISTS recon_tool_approvals; DROP TRIGGER workspace_target_removed; DROP TRIGGER workspace_project_removed; DROP TRIGGER workspace_project_archived; DROP TABLE research_session_records; DROP TABLE research_session_jobs; DROP TABLE research_sessions; DROP TABLE workspace_selection; PRAGMA user_version=16;").unwrap();
+        remove_research_fixture_schema(&conn);
+        conn.pragma_update(None, "user_version", 16).unwrap();
         conn.execute("INSERT INTO projects(id,name,description,created_at,updated_at,archived) VALUES('keep','Preserved project','prior data','stamp','stamp',0)", []).unwrap();
         drop(conn);
         let reopened = Database::open(&path).unwrap();
