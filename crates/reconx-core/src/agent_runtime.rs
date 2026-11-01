@@ -542,7 +542,7 @@ impl Core {
                 "Message cursor cannot be negative",
             ));
         }
-        self.reconcile_agent_runtimes()?;
+        self.reconcile_agent_runtimes_for(Some(id))?;
         let conn = self.db.connect()?;
         let (status,reason,revision,limits,invocations,deadline):(String,Option<String>,i64,String,i64,i64)=conn.query_row("SELECT status,stop_reason,revision,limits_json,invocations,deadline_ms FROM research_runtimes WHERE session_id=?1",[id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).optional().map_err(db_error)?.ok_or_else(||runtime_error("NOT_FOUND","This session has no offline agent runtime"))?;
         let mut tasks:Vec<AgentTask>=conn.prepare("SELECT id,agent_id,capability_id,state,job_id,attempt,error_code FROM research_agent_tasks WHERE session_id=?1 ORDER BY ordinal").map_err(db_error)?.query_map([id],|r|Ok(AgentTask{id:r.get(0)?,agent_id:r.get(1)?,capability_id:r.get(2)?,state:r.get(3)?,job_id:r.get(4)?,attempt:r.get(5)?,error_code:r.get(6)?,dependencies:vec![]})).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
@@ -602,7 +602,7 @@ impl Core {
         Ok(())
     }
     pub fn agent_runtime_resume(&self, id: &str) -> Result<AgentRuntime> {
-        self.reconcile_agent_runtimes()?;
+        self.reconcile_agent_runtimes_for(Some(id))?;
         let mut c = self.db.connect()?;
         let tx = c
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -738,11 +738,52 @@ impl Core {
 
     /// Reconcile metadata from real job states. No job/tool is executed here.
     pub(super) fn reconcile_agent_runtimes(&self) -> Result<()> {
+        self.reconcile_agent_runtimes_for(None)
+    }
+
+    fn reconcile_agent_runtimes_for(&self, session: Option<&str>) -> Result<()> {
         let mut c = self.db.connect()?;
         let tx = c
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_error)?;
-        let sessions:Vec<(String,String,String,i64,i64)>=tx.prepare("SELECT session_id,status,limits_json,deadline_ms,invocations FROM research_runtimes WHERE status<>'completed' ORDER BY created_at LIMIT 100").map_err(db_error)?.query_map([],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;
+        // Stable paused/terminal history must not consume every sweep slot.
+        // Current-attempt job changes take priority over otherwise idle running
+        // sessions. A user read/resume always reconciles that exact session,
+        // independent of the bounded background sweep.
+        let sessions: Vec<(String, String, String, i64, i64)> = tx
+            .prepare(
+                r#"WITH candidates AS (
+                  SELECT r.*,
+                    EXISTS(SELECT 1 FROM research_agent_tasks t
+                      JOIN analysis_jobs j ON j.id=t.job_id
+                      WHERE t.session_id=r.session_id AND t.state<>'BLOCKED'
+                      AND j.status IN ('completed','failed','cancelled')
+                      AND t.state<>upper(j.status)) AS dirty,
+                    EXISTS(SELECT 1 FROM research_agent_tasks t
+                      JOIN analysis_jobs j ON j.id=t.job_id
+                      WHERE t.session_id=r.session_id AND j.status IN ('queued','running')) AS outstanding
+                  FROM research_runtimes r WHERE r.status<>'completed'
+                    AND (?1 IS NULL OR r.session_id=?1)
+                )
+                SELECT session_id,status,limits_json,deadline_ms,invocations FROM candidates
+                WHERE ?1 IS NOT NULL OR status IN ('running','pause_requested') OR dirty
+                  OR (status='paused' AND deadline_ms<=?2)
+                  OR (status IN ('failed','cancelled') AND outstanding)
+                ORDER BY CASE
+                    WHEN dirty OR (status IN ('failed','cancelled') AND outstanding) THEN 0
+                    WHEN status='pause_requested' THEN 1
+                    WHEN deadline_ms<=?2 OR (status='running'
+                      AND invocations>=json_extract(limits_json,'$.max_invocations')) THEN 2
+                    ELSE 3 END,created_at,session_id
+                LIMIT 100"#,
+            )
+            .map_err(db_error)?
+            .query_map(params![session, Utc::now().timestamp_millis()], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+            })
+            .map_err(db_error)?
+            .collect::<std::result::Result<_, _>>()
+            .map_err(db_error)?;
         for (sid, mut status, limits, deadline, invocations) in sessions {
             let limits: AgentLimits = serde_json::from_str(&limits).map_err(json_error)?;
             let rows:Vec<(String,String,String,String,String,Option<String>)>=tx.prepare("SELECT t.id,t.agent_id,t.job_id,t.state,j.status,j.error_code FROM research_agent_tasks t JOIN analysis_jobs j ON j.id=t.job_id WHERE t.session_id=?1 ORDER BY t.ordinal").map_err(db_error)?.query_map([&sid],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?,r.get(4)?,r.get(5)?))).map_err(db_error)?.collect::<std::result::Result<_,_>>().map_err(db_error)?;

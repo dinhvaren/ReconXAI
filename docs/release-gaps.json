@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-30",
+  "date": "2026-11-01",
   "version": "0.1.0",
   "release_ready": false,
-  "source_base_revision": "0b8e0f8acc77db9b8e73249d35c11be26075e6d2",
+  "source_base_revision": "a50fb7dcc8df1fb937d27ca277dea62654d18e2b",
   "evidence_is_local_not_bundled": true,
   "modules": [
     {
@@ -361,7 +361,7 @@
         "docs/MULTI_AGENT_ARCHITECTURE.md"
       ],
       "runtime_evidence": [
-        "docs/verification/offline-agents-20261030.json"
+        "docs/verification/agent-reconciliation-20261101.json"
       ],
       "limitations": "Reviewed offline typed roles and fixed DAG are verified; no distributed LLM bus, Web/API worker, general conditional DAG, automatic replanning or cloud token/cost budgets"
     },
@@ -387,7 +387,8 @@
     "Live cloud providers and security integration profiles unverified",
     "glib RUSTSEC-2024-0429 unresolved; new dependency gate correctly fails",
     "Six RustSec unmaintained dependencies require upstream/path review",
-    "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
+    "Windows NSIS built but clean install/upgrade/uninstall and signing unverified",
+    "Investigate observed first-install HTTPX owned-loopback health failure (2026-11-01); Doctor and fresh native rerun pass, cause unresolved"
   ],
   "github_dependency_alerts": {
     "fixed_high": 8,
@@ -438,14 +439,21 @@
   "current_product_recovery_verification": "artifacts/product-recovery-current-verification.json",
   "current_recon_tools_verification": "docs/module-status.json#current_recon_tools_verification",
   "current_research_graph_verification": "docs/verification/research-provenance-20261029.json",
-  "latest_followup_verification": "docs/verification/offline-agents-20261030.json",
+  "latest_followup_verification": "docs/verification/agent-reconciliation-20261101.json",
   "previous_source_base_revision": "c920130bab108a55f228b69789d47caeb8e8850f",
   "current_offline_agent_verification": {
-    "proof": "docs/verification/offline-agents-20261030.json",
+    "proof": "docs/verification/agent-reconciliation-20261101.json",
     "schema": 20,
     "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
     "broader_module": "PARTIAL",
     "linux_desktop": "UNVERIFIED",
-    "release_ready": false
+    "release_ready": false,
+    "followup": "105-history/101-idle fairness, budget cleanup and running pause/cancel verified"
+  },
+  "observed_httpx_health_failure": {
+    "date": "2026-11-01",
+    "status": "UNRESOLVED_INTERMITTENT",
+    "proof": "docs/verification/agent-reconciliation-20261101.json",
+    "recovery": "Real Doctor and fresh complete native installation/recon pass; no bypass"
   }
 }

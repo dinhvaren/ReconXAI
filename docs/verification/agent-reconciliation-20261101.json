@@ -1,0 +1,341 @@
+{
+  "timestamp": "2026-11-01T12:18:09.977133+00:00",
+  "version": "0.1.0",
+  "database_schema": 20,
+  "release_ready": false,
+  "source_base_revision": "a50fb7dcc8df1fb937d27ca277dea62654d18e2b",
+  "previous_proof": "docs/verification/offline-agents-20261030.json",
+  "scope": "Offline runtime reconciliation fairness and cancellation robustness only; no added network/model/agent capabilities",
+  "windows_rust": {
+    "passed": 218,
+    "failed": 0,
+    "ignored": 2
+  },
+  "linux_core_cli_rust": {
+    "passed": 218,
+    "failed": 0,
+    "ignored": 2
+  },
+  "frontend_tests": 50,
+  "frontend_build": "TypeScript/Vite passed",
+  "source_hashes": {
+    "apps/cli/src/main.rs": "8388c73b5d315ada9a6521080edd113bc71e28d9a0ff97f163810c2e972a1194",
+    "apps/cli/tests/cli.rs": "1b968e1afa5b7131772ae608d9ca1e459b2a82477ac34af4e25a0908644f4d35",
+    "apps/desktop/src-tauri/build.rs": "487059eaf8a947b80f20a9aacac038a5047b2ad69d2401b827376c67d6fe847f",
+    "apps/desktop/src-tauri/src/lib.rs": "6cff8482f5179d9103b1cd14d93516a2574bae6f51bfd5eab27693e1d56852e8",
+    "apps/desktop/src-tauri/src/main.rs": "5742af6a0d240d229408d03edfee20dd8cbf2cee044947e2cbd68532ff715bea",
+    "crates/reconx-ai/src/catalog.rs": "71780a35989336736ba443cf90b54e4ad5034f37800459eb2886743d8f5723e0",
+    "crates/reconx-ai/src/lib.rs": "6aa67b4aaa629a76cdc3ea372ae9a947e84d49f3d9edec588f1d945c548c7c98",
+    "crates/reconx-ai/src/options.rs": "1c0acbc3e1a95a27de1d7e85dec249628dcd7779acac70eb5a90adc67efd2f6a",
+    "crates/reconx-ai/src/streaming.rs": "6c285a1c47230fb01ee792fd672cb9b17d5cb0867ddcf7213416ab487d6158c3",
+    "crates/reconx-ai/tests/gateway.rs": "48e57dcb9ece1591b48446b86325dea0fed390fe9d42537cf16731c17868dbc7",
+    "crates/reconx-ai/tests/streaming.rs": "34af635c18b86034bb8de19d5b50f3eef3868b1400ac6a0000a19902f6f1d429",
+    "crates/reconx-analysis/src/lib.rs": "d623c3f7d292c846b535beba611f403a8a81cfd2dfe6b711ca088a37e8e438f6",
+    "crates/reconx-core/src/agent_runtime.rs": "f7e8b4898c4dfd2168c72019e37b680c1113a28deeca07e5f0d56ddfffbc3610",
+    "crates/reconx-core/src/ai_manager.rs": "a750020b9ed27fe3d98c9809f0fbced231eeff85ac85bcef6a9f20b23009d11e",
+    "crates/reconx-core/src/capabilities.rs": "72892a30f7897ff2b7a1814af0a65ad7c7371cd7c6847ea709d731991ca801b5",
+    "crates/reconx-core/src/evidence.rs": "dda59f28aa2764f0929e1df5008dc86ace8d05e52c13983639a5a81116a40835",
+    "crates/reconx-core/src/extensions.rs": "b64b478b0027ad5da932036d066048d0eee9ab0bdd781b134ac87a120f0ad6cf",
+    "crates/reconx-core/src/file_ingest.rs": "66631551e5e1ae5f925e0623abc7ccbe7c339ea501773bd8aae54ffe1708004b",
+    "crates/reconx-core/src/findings.rs": "802252703f1dac6ee36d7943383962f661999743fb15422241c0ec13218a6f2d",
+    "crates/reconx-core/src/http.rs": "95efeb7d181c7509620279159ff2f568052a7eb93a09239943113d5b67b4e340",
+    "crates/reconx-core/src/http/auth.rs": "b41fca0e1a71f8177ec9d638a11035dc3842995af6fdeddbe68b96263a63380e",
+    "crates/reconx-core/src/http/replay.rs": "a6d52dcbf03760282f15c43b46f94fc64a4d2493137c97b1f672548e53151617",
+    "crates/reconx-core/src/http/schema.rs": "1fc1399169484ad34f2db36ed669bfff81be3a0bef7d8e8eb792b6438faf6af2",
+    "crates/reconx-core/src/jobs.rs": "ec8746e1a61707d46964cadbe4e15c65c2a22efb356dc492021d6b2b99bd1cc7",
+    "crates/reconx-core/src/lib.rs": "234f3f3fb97f4a98af37d2577183082f732e9037e97409d3ba89de8c949ce3ac",
+    "crates/reconx-core/src/managed_mcp.rs": "8e2d69271799553035510a2cea4583677dfa7174d6cf6aa08a56be08742ffa25",
+    "crates/reconx-core/src/mcp.rs": "7d90e7195f99e03c20ff6d4421b702d64ad2437b35ffd46aa6184966f2ea0a2d",
+    "crates/reconx-core/src/mcp_http.rs": "bf962b2cead516dad853e00783e051f74d285cd903bf5f9ea9e5ff551d0bdec2",
+    "crates/reconx-core/src/recon.rs": "578b171b32bc3bc72500eec3e7ac641b3ca0abfee4a1986bcc12a4b053c5fb60",
+    "crates/reconx-core/src/recon_tools.rs": "9078b5afbb3e744262a6c2ed984c6599232ebe7951253bcd6f2c229b8851110b",
+    "crates/reconx-core/src/registry.rs": "5300c73bcbc68e0f271282d6c93ce8e8f7c7df65ac2ec1e777cdfaca149e098a",
+    "crates/reconx-core/src/reporting.rs": "5678fb1fc8ff90d6c00a3ecb80e6ed6be8c7325b11313dc5005cf1ee0e95fe6c",
+    "crates/reconx-core/src/research_graph.rs": "5a7c63a47d239e88d755440b79ca2e9fe463bf63956312e774a09394d2f313e9",
+    "crates/reconx-core/src/research_sessions.rs": "c422b3790b009eb65f8ae79c5800d2b064e5e325ff790ff952426b4265ffcd9e",
+    "crates/reconx-core/src/reverse.rs": "c320c0cb264076e69717bf421ab23a1f49d679ae1266f532e24d5c4523986ceb",
+    "crates/reconx-core/src/targets.rs": "6faaa2224fb44bd406f256d12d52eaf68cabf9ab4cc793728939bccbdecab5c1",
+    "crates/reconx-core/src/tooling.rs": "d67c0589dedf00a494a2b7afd42a1e7a5bcc903391f29b3977dcd74369a020eb",
+    "crates/reconx-core/tests/agent_runtime.rs": "16d9f73e077668316f3471e2d935f02ab4ce9e5e967b508bf0242c0f16db3598",
+    "crates/reconx-core/tests/ai_manager.rs": "be9d87b98d3326a7ddba68b8f9582543fc553f5730f2749e5ceb1dc5888e00ff",
+    "crates/reconx-core/tests/extensions.rs": "90796322e4eedb18bce506cbabb417fb65db7a8e41f8441e7ee77e5ec908ad30",
+    "crates/reconx-core/tests/fallback.rs": "31fd1ff834bc05049fe6e8c7c77f522a2b90e11e8a52c0c34c9153440b5f6dbf",
+    "crates/reconx-core/tests/http_replay.rs": "0ec62ce40b03da2a69bd623bb5937b06532ec6bd4ba91dd894f7e5d6f12042d9",
+    "crates/reconx-core/tests/http_schema.rs": "bb9b259f03027777e0a4c09b574d96407439171eddec667b3bc036078a9fd01b",
+    "crates/reconx-core/tests/http_workspace.rs": "19335549ea957d7f9b2d2328b034f51066a03ad0bb1648ce889c222cea1db347",
+    "crates/reconx-core/tests/integrations.rs": "927b94a6be344db677fcee5775025ed25877eb3ccd1edc32aa130a10964312f1",
+    "crates/reconx-core/tests/jobs.rs": "df0cdb81b1feea0d00b8e82d08cccae2ed3323511f87c2f18c3c7d564152adea",
+    "crates/reconx-core/tests/large_import.rs": "11271044acbb7f184f6275553decd1b53de978de78cb7f723cc0cee9bb38196e",
+    "crates/reconx-core/tests/local_inventory.rs": "874c47cb3582d1a232093f7e31d8bb4ee67dc02ce1ad462d617d2c518daace65",
+    "crates/reconx-core/tests/managed_mcp.rs": "95c68dd39535a5c731ff13ae2a6b3bf8dd18ca525690e8ca2c87666b425d1cba",
+    "crates/reconx-core/tests/outputs.rs": "6c795d3102daee5fe1dfe061f0ad8d1a7e320e6b0bd74e827242b9021370f7cc",
+    "crates/reconx-core/tests/recon_tools.rs": "aa2503dcd240890140940e271c1d0150059a1ac6ec1092e5eb7d68bfff1e0d5d",
+    "crates/reconx-core/tests/release_workflows.rs": "01ed3622cfa6f70d387e8e9925a1629c46c8469021753319f4aff7dbc1fc6857",
+    "crates/reconx-core/tests/research_graph.rs": "594a58d3ab67fc7048d4754ce7f4a25af5c6958bedc3e12fc16abbe8a6c2f93c",
+    "crates/reconx-core/tests/research_inputs.rs": "c35e993a453d3383ac28a65e8c40b53d7f075bc97662f6857ed82ea3a2e54b8c",
+    "crates/reconx-core/tests/research_sessions.rs": "bccbd57948c8d9ab5a4b47e08cbc40d2658e84a6569d58a83b1f4a6e36d770e0",
+    "crates/reconx-core/tests/workspace.rs": "76334a7fbdbb007931c2306da526283f67fc9bfe320b940985859423c4d06201",
+    "crates/reconx-security/src/lib.rs": "be713662fd85638a26e3a2b77cbf1db85638eb1e30eebc5a5599b85cc34d9eb7",
+    "crates/reconx-storage/migrations/001_foundation.sql": "d5a719198f1bbfa3d57d34b00d6b904798da873c1b287f4e9d06bb44d422eedf",
+    "crates/reconx-storage/migrations/002_research_inputs.sql": "619bb837d55792f672e7cf218de2046399953136e74fad4e9179b65fdfc54632",
+    "crates/reconx-storage/migrations/003_job_engine.sql": "88501ef87cb83ec2a6234814bbba5e8c59433686955c084af95427c2f130151e",
+    "crates/reconx-storage/migrations/004_capabilities.sql": "f7103ea795c0a6d37112e23f2706a31e5cc0d506b5a541f017178bda1bc08592",
+    "crates/reconx-storage/migrations/005_research_outputs.sql": "576f47e5789ee5a7a4d1b0bc0e9c654539dc5cacb5f8b838f4145764d0eb325e",
+    "crates/reconx-storage/migrations/006_local_inventory.sql": "bedb4719a6db029f57a360f1fe6e485ee236aa5b72e55dc122d94d1c863d5759",
+    "crates/reconx-storage/migrations/009_ai_provider_manager.sql": "2ddcb38ec1c641958994b5418995d43c6b075fa097b4d2552063fe357d4e4484",
+    "crates/reconx-storage/migrations/010_http_workspace.sql": "05b01e4dbd9fc6a41589a6f6cc9ed784b773288a9b5dbeb929175d5a9f6bf7a4",
+    "crates/reconx-storage/migrations/011_offline_schema_review.sql": "ded8ec118a3e5bf878b68e7d2db25861b369ed6ef1b8d5332808d3fedc1878eb",
+    "crates/reconx-storage/migrations/012_manual_http_replay.sql": "5374bb2cec777f2f9ba4ccc1d31763c5d26f6e28db0c5c4fcb9b398a4cb380b9",
+    "crates/reconx-storage/migrations/013_schema_review_options.sql": "33110862a9eba8e8dcb175aa19b587b7511ca41404c0b0d56d384e56195fd3a4",
+    "crates/reconx-storage/migrations/014_extensions.sql": "fa42bfc4dce8e7cb2f340a6ef61a54ca899dee56c96280a15a9d463e44e91dd3",
+    "crates/reconx-storage/migrations/015_mcp_registry.sql": "b767cb5b761e4bd795304845c24131044fe554813922c5f84c344030cc09aee8",
+    "crates/reconx-storage/migrations/016_managed_mcp.sql": "b120712a3fed5abc6187b7e7f66f412f47d4e111fcdd82304cf8f28fe8083a77",
+    "crates/reconx-storage/migrations/017_research_sessions.sql": "4135e07c3ad6eae3393d751c9c8e458da510e5ee87ea15a4c9e83a9246909f07",
+    "crates/reconx-storage/migrations/018_recon_tools.sql": "7a38102bfe2a42faf76eb3867e4d4645642637c8f031d2764cc0b701474f87dd",
+    "crates/reconx-storage/migrations/019_research_graph.sql": "078b1dcd3bbd23ae2d6441b3d97d6a3d4851b379114f4f6438f11991ac19e10e",
+    "crates/reconx-storage/migrations/020_local_agent_runtime.sql": "85e25244a0a52c1c265d06ace99a7e62d360dc73b4714183c55fe28c9a4db446",
+    "crates/reconx-storage/src/lib.rs": "a797b0cdefce392fe45656790d0ba08d68854bdc8fc9ddf0128ba3cfa711b49e",
+    "crates/reconx-tools/src/lib.rs": "7e525a846e4f5f109a5098ff4a556e26499254e574048d58ed745e278a5847c5",
+    "crates/reconx-tools/src/local.rs": "a956c7df8d81f02185de0aa91ecbd4b2a729d4cf24d0f76dda9e81042e441c0e",
+    "crates/reconx-tools/src/packages.rs": "3d876deb8bd9590354ea851d3c398c8f0fc4ec038aa438aeb0246d69dd7a5e13",
+    "crates/reconx-tools/src/recon.rs": "3a933aa0fd250035414aaa880e5fd318d316f94dd822a42fa301a8d0b6a1af83",
+    "tests/e2e/native-sample.rs": "98c99f0128965be12c4c50ebe33c34a95676f566a19bf6b9ef6d7227617f6536"
+  },
+  "linux_matching_rust_sql_files": 81,
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --workspace --all-targets -j2 -- -D warnings",
+    "cargo test --locked --workspace -j2 -- --test-threads=2",
+    "npm --prefix apps/desktop test",
+    "npm --prefix apps/desktop run build",
+    "cargo build --locked --release -p reconx -p reconx-desktop --features reconx-desktop/custom-protocol -j2"
+  ],
+  "linux_commands_script": "artifacts/run-agents-reconcile-final-linux.sh",
+  "new_regressions": [
+    {
+      "test": "stable_history_does_not_starve_new_jobs_or_targeted_reads_beyond_a_sweep",
+      "inputs": "105 actual prior paused/cancelled DAGs; real five-job DAG runs in background without getter-driven reconciliation",
+      "assertions": "Old window excludes new session; new work completes; old status/revision/invocations unchanged"
+    },
+    {
+      "test": "completed_attempts_are_prioritized_ahead_of_idle_running_sessions",
+      "inputs": "101 older idle running DAGs; actual new scope job; test-only exhausted quota counter",
+      "assertions": "Actual completion mirrors outside old window; dependencies become READY; budget stops and queue cleanup complete without targeted reads; other queued jobs never execute"
+    },
+    {
+      "test": "cancellation_during_a_pause_request_stops_the_real_running_job",
+      "inputs": "Actual running scope job; pause request then explicit cancellation",
+      "assertions": "Cancelled after reopen; one invocation; no partial evidence; resume/retry rejected"
+    }
+  ],
+  "native": {
+    "candidate": "D:\\ReconXAI\\artifacts\\windows-agent-reconcile-final-20261030",
+    "started_at": "2026-11-01T12:14:05.758081+00:00",
+    "hashes": {
+      "reconx.exe": "cf82ce90ebcf483f820805384e8376fde33c8bc155bcb81ee438ad59f81b65d6",
+      "reconx-desktop.exe": "b93867b51f633680aa98e11d292faf74dca4aba400ddecd2005b3a7d20814179"
+    },
+    "suites": [
+      {
+        "suite": "agents",
+        "command": [
+          "node",
+          "tests/e2e/agents.mjs"
+        ],
+        "started_at": "2026-11-01T12:14:06.082749+00:00",
+        "finished_at": "2026-11-01T12:14:19.736086+00:00",
+        "exit_code": 0,
+        "log": "artifacts\\agents-reconcile-native-agents.log",
+        "results": [
+          "artifacts\\offline-agents-native-1793535246438\\results.json"
+        ],
+        "acceptance_groups": 6
+      },
+      {
+        "suite": "recon-tools",
+        "command": [
+          "node",
+          "tests/e2e/recon-tools.mjs"
+        ],
+        "started_at": "2026-11-01T12:15:56.311677+00:00",
+        "finished_at": "2026-11-01T12:16:35.038481+00:00",
+        "exit_code": 0,
+        "log": "artifacts\\agents-reconcile-native-recon-tools.log",
+        "results": [
+          "artifacts\\recon-tools-native-1793535356627\\results.json"
+        ],
+        "acceptance_groups": 13
+      },
+      {
+        "suite": "http-replay",
+        "command": [
+          "node",
+          "tests/e2e/http-replay.mjs"
+        ],
+        "started_at": "2026-11-01T12:16:35.067540+00:00",
+        "finished_at": "2026-11-01T12:16:48.538395+00:00",
+        "exit_code": 0,
+        "log": "artifacts\\agents-reconcile-native-http-replay.log",
+        "results": [
+          "artifacts\\http-replay-1793535395424\\results.json"
+        ],
+        "acceptance_groups": 11
+      },
+      {
+        "suite": "outputs",
+        "command": [
+          "node",
+          "tests/e2e/outputs.mjs"
+        ],
+        "started_at": "2026-11-01T12:16:48.566398+00:00",
+        "finished_at": "2026-11-01T12:17:03.933991+00:00",
+        "exit_code": 0,
+        "log": "artifacts\\agents-reconcile-native-outputs.log",
+        "results": [
+          "artifacts\\outputs-1793535408905\\results.json"
+        ],
+        "acceptance_groups": 6
+      },
+      {
+        "suite": "recon-local",
+        "command": [
+          "node",
+          "tests/e2e/recon-local.mjs"
+        ],
+        "started_at": "2026-11-01T12:17:03.976801+00:00",
+        "finished_at": "2026-11-01T12:17:20.258488+00:00",
+        "exit_code": 0,
+        "log": "artifacts\\agents-reconcile-native-recon-local.log",
+        "results": [
+          "artifacts\\recon-local-1793535424779\\results.json"
+        ],
+        "acceptance_groups": 7
+      }
+    ],
+    "status": "passed",
+    "retained_first_failure": "artifacts/agents-reconcile-native-first-failure.json"
+  },
+  "cli": [
+    {
+      "status": "passed",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "timestamp": "2026-10-30T11:42:05.300299+00:00",
+      "checks": [
+        "Explicit MOCK planning consent and immutable DAG approval; five real dependent jobs, integrity validation and snapshot",
+        "Pause persists across CLI restarts; jobs run returns while paused; resume preserves jobs and executes each once",
+        "Real Report Engine output independently opens as JSON/PDF and exports all four formats",
+        "Persistent real graph provenance, task dependencies, assignments and transitions; duplicate execution rejected"
+      ],
+      "commands": 37,
+      "binary_sha256": "cf82ce90ebcf483f820805384e8376fde33c8bc155bcb81ee438ad59f81b65d6",
+      "model": "MOCK_VERIFIED owned loopback, one planning request; no cloud verification",
+      "session_id": "2cc6b449-f00a-4394-b7ec-54c67e2b943d",
+      "schema": 20,
+      "runtime_network_requests": 0
+    },
+    {
+      "status": "passed",
+      "platform": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "timestamp": "2026-11-01T12:14:38.995089+00:00",
+      "checks": [
+        "Explicit MOCK planning consent and immutable DAG approval; five real dependent jobs, integrity validation and snapshot",
+        "Pause persists across CLI restarts; jobs run returns while paused; resume preserves jobs and executes each once",
+        "Real Report Engine output independently opens as JSON/PDF and exports all four formats",
+        "Persistent real graph provenance, task dependencies, assignments and transitions; duplicate execution rejected"
+      ],
+      "commands": 37,
+      "binary_sha256": "a7693a3dfa6cf81729bbe797e4d4e9dce4723872ae06acede611bb11c41fd95f",
+      "model": "MOCK_VERIFIED owned loopback, one planning request; no cloud verification",
+      "session_id": "b79ba6e2-6780-40aa-a973-3c6cb7030d79",
+      "schema": 20,
+      "runtime_network_requests": 0
+    }
+  ],
+  "retained_failure": {
+    "log": "artifacts/agents-reconcile-final-windows.log",
+    "exit_code": 101,
+    "reason": "LNK1104 caused by overlapping old test execution and recompilation of a Windows test executable; serial final source rerun passed. Product policy/timeouts unchanged."
+  },
+  "limitations": [
+    "Still at most100 eligible sessions/sweep; tested105 historical and101 idle sessions, not a scalability benchmark",
+    "No new migration; schema020 retained",
+    "No autonomous replanning, runtime cloud/model calls, new traffic recorder or general conditional DAG",
+    "Linux Desktop, live provider accounts, installers/signing and existing dependency gates remain open",
+    "Intermittent first HTTPX health-check failure observed2026-11-01; later Doctor/fresh acceptance pass, cause unresolved, not certified stable"
+  ],
+  "advisories_refreshed": false,
+  "logs": {
+    "artifacts/agents-reconcile-accepted-windows.log": "45bbdd3391685fca80239dcd010227496ffe20767f95e43bff8d3beebcf0e7cd",
+    "artifacts/agents-reconcile-final-linux.log": "444dffdae44df799832b4b9fdd9db0557c62c08500e8e47db837ce75f5c49c9b",
+    "artifacts/agents-reconcile-final-clippy.log": "307d9a638f48523b5e107f0147ade85f037aff7399834e3776c27a8a4b4568c1",
+    "artifacts/agents-reconcile-final-fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/agents-reconcile-frontend.log": "c3e11961bb56ad3e83e5b403c3c1d3ca4b21337487ca74232e578a79dd0a4627",
+    "artifacts/agents-reconcile-frontend-build.log": "f301d76f0fb814525bb443cd20a4141cf42ec4cfc7730603af6597c86e5dca0e",
+    "artifacts/agents-reconcile-final-windows.log": "2726bd316a40ea098606a453387502bc27fc431c5fccfa3e4f4796ae501b2e92"
+  },
+  "retained_native_health_failure": {
+    "record": "artifacts/agents-reconcile-native-first-failure.json",
+    "log": "artifacts/agents-reconcile-native-recon-tools-first-failure.log",
+    "observed": "First HTTPX real owned-loopback health check failed after hash-verified installation. Same fixture Doctor and a fresh complete native installation/recon run passed. Cause not established; no readiness or timeout bypass was applied.",
+    "doctor": "artifacts/agents-reconcile-httpx-doctor.json"
+  },
+  "signatures": [
+    {
+      "status": "NotSigned",
+      "path": "D:\\ReconXAI\\artifacts\\windows-agent-reconcile-final-20261030\\reconx.exe"
+    },
+    {
+      "status": "NotSigned",
+      "path": "D:\\ReconXAI\\artifacts\\windows-agent-reconcile-final-20261030\\reconx-desktop.exe"
+    }
+  ],
+  "pdf_independent_inspection": {
+    "status": "passed",
+    "parser": "PyMuPDF 1.28.0",
+    "file": "artifacts\\agents-reconcile-final-linux-acceptance\\agent-report.pdf",
+    "pages": 31,
+    "sha256": "a27c55ef31d21ce4f149736c272b794ac83f252bbc2c35eb4107922e7533d33d",
+    "unicode_display_note": true
+  },
+  "visual_review": [
+    "artifacts/offline-agents-native-1793535246438/agents-light-1366.png",
+    "artifacts/offline-agents-native-1793535246438/agents-dark-1440.png",
+    "artifacts/offline-agents-native-1793535246438/agents-reconx-1920.png"
+  ],
+  "verification_dates": {
+    "source_tests_and_builds": "2026-10-30",
+    "continued_native_and_linux_cli_acceptance": "2026-11-01"
+  },
+  "build_tool_versions": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "node": "v24.15.0"
+  },
+  "artifacts": {
+    "artifacts/windows-agent-reconcile-final-20261030": {
+      "version": "0.1.0",
+      "schema": 20,
+      "release_ready": false,
+      "timestamp": "2026-11-01T12:18:09.977133+00:00",
+      "source_base_revision": "a50fb7dcc8df1fb937d27ca277dea62654d18e2b",
+      "source_proof": "docs/verification/agent-reconciliation-20261101.json",
+      "status": "UNSIGNED_DEVELOPMENT_CANDIDATE",
+      "artifacts": {
+        "reconx.exe": "cf82ce90ebcf483f820805384e8376fde33c8bc155bcb81ee438ad59f81b65d6",
+        "reconx-desktop.exe": "b93867b51f633680aa98e11d292faf74dca4aba400ddecd2005b3a7d20814179"
+      }
+    },
+    "artifacts/linux-agent-reconcile-final-20261030": {
+      "version": "0.1.0",
+      "schema": 20,
+      "release_ready": false,
+      "timestamp": "2026-11-01T12:18:09.977133+00:00",
+      "source_base_revision": "a50fb7dcc8df1fb937d27ca277dea62654d18e2b",
+      "source_proof": "docs/verification/agent-reconciliation-20261101.json",
+      "status": "UNSIGNED_DEVELOPMENT_CANDIDATE",
+      "artifacts": {
+        "reconx": "a7693a3dfa6cf81729bbe797e4d4e9dce4723872ae06acede611bb11c41fd95f"
+      }
+    }
+  }
+}

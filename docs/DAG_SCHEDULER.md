@@ -84,8 +84,15 @@ Review JSON contains `session_id`, exact preview `fingerprint`, `limits` and
 rows for resume. Ordinary jobs are unchanged. No generic `research start` alias
 or new traffic CLI is implemented in this slice.
 
-Reconciliation processes at most 100 noncompleted sessions/sweep; this is not a
-certified large-workspace scheduler. Graph projections have source budgets.
+Reconciliation processes at most 100 eligible sessions/sweep. Stable paused and
+terminal history is excluded unless a deadline, outstanding job or actual job-state
+change requires reconciliation. Current-attempt terminal changes, terminal queue
+cleanup and exhausted budgets are prioritized over idle running sessions;
+reading/resuming a session reconciles that exact ID independently of the sweep
+window. This prevents old history from starving new work without executing or
+altering that history. Tests cover 105 older paused/cancelled sessions and 101
+older idle running sessions; these are not a large-workspace performance benchmark.
+Graph projections retain their documented source budgets.
 Cloud token/cost limits, general DAG editing, autonomous continuation, complete
 approval history, cross-session graph clustering, recording policies, Linux GUI
 and signed installer/update acceptance remain separate open requirements.

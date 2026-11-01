@@ -1,3 +1,64 @@
+## 2026-11-01 - reconciliation fairness follow-up accepted
+
+Version **0.1.0**, schema **020**, **v1.0 NOT READY**. Source base `a50fb7dcc8df1fb937d27ca277dea62654d18e2b`.
+This follow-up supersedes the historical starvation limitation described below;
+no new migration or network/model capability is introduced.
+Proof: [agent-reconciliation-20261101.json](verification/agent-reconciliation-20261101.json).
+
+Changed Core reconciliation so stable paused/terminal history does not consume
+all 100 sweep slots. Actual current-attempt terminal changes, pending terminal
+cleanup and exhausted budgets are prioritized. Session reads/resume reconcile
+that exact ID independently of the global sweep. The existing queue, approval,
+concurrency and policy gates remain authoritative.
+
+Actual regressions create 105 prior paused/cancelled DAGs and 101 idle running
+DAGs. New real jobs advance without UI/getter polling; old records neither execute
+nor change revision. A completed scope task beyond the old window advances its
+real dependencies. A test-only exhausted quota counter stops further work and
+cleans the current queue without a targeted read. Cancellation during a real
+pause request survives reopen without partial evidence or implicit retry.
+
+Source tests/builds completed 2026-10-30; native and Linux CLI acceptance resumed
+2026-11-01 on those exact source hashes and copied executables.
+
+Final verification: **218 passed,0 failed,2 opt-in ignored on each Windows and
+Linux Core/CLI**; **50 frontend tests**, TypeScript/Vite, fmt and warning-denied
+Clippy pass. Native groups remain separate:
+agents: 6, recon-tools: 13, http-replay: 11, outputs: 6, recon-local: 7.
+Real PE/ELF CLI acceptance passes on each platform; 81 Rust/SQL source files match.
+Retained failure: `artifacts/agents-reconcile-final-windows.log` records LNK1104
+from recompilation while an older test executable remained open. Older execution
+was allowed to exit; the serial full final-source run passed. No timeout or
+security policy was weakened to pass tests.
+The first fresh native HTTPX health check also failed after verified installation.
+Actual Doctor and another complete native installation/recon fixture passed.
+Cause remains unconfirmed; see the retained failure record in the proof.
+This is not treated as certified production stability.
+
+New unsigned candidates, prior accepted candidates preserved:
+`artifacts/windows-agent-reconcile-final-20261030/{reconx-desktop.exe,reconx.exe}`;
+`artifacts/linux-agent-reconcile-final-20261030/reconx`. Manifests/checksums included.
+Final local Git delivery: `artifacts/agents-reconcile-git-delivery.json` when present.
+
+Source/test changes: `crates/reconx-core/src/agent_runtime.rs`,
+`crates/reconx-core/tests/agent_runtime.rs`; DAG guide and status/proof documents.
+Reproduce full checks with the commands in the proof. Use the candidate executable
+paths above for `scripts/agent_runtime_smoke.py` and existing native suites;
+`node tests/e2e/agents.mjs` also checks the currently embedded frontend asset.
+Use a fresh fixture output directory, never a real project database.
+
+Overall multi-agent/autonomous workflow remains PARTIAL: no automatic replanning,
+new recording-policy engine, worker cloud token/cost budget, general conditional
+DAG or new Web/API worker. Linux GUI, installers/signing/live cloud and existing
+dependency release gates remain open. A 100-session eligible sweep is still bounded;
+the 105/101 tests do not certify large-workspace latency or throughput.
+Next safe task: opt-in recording of ReconX-owned HTTP traffic through existing
+capture services, with per-project/session policy, redaction, bounded bodies,
+quota/retention and restart tests. No proxy interception or CA installation.
+No background work continues after the session ends.
+
+---
+
 ## 2026-10-30 — reviewed offline agent DAG accepted
 
 Version **0.1.0**, schema **020**, **v1.0 NOT READY**. This checkpoint supersedes

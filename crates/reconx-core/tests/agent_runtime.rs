@@ -37,6 +37,217 @@ async fn fixture() -> (tempfile::TempDir, Core, ResearchSession) {
         .unwrap();
     (dir, core, session)
 }
+
+async fn another_plan(core: &Core, original: &ResearchSession) -> ResearchSession {
+    let p = &original.plan.preview;
+    core.research_plan(ResearchReview {
+        request: p.request.clone(),
+        fingerprint: p.fingerprint.clone(),
+        context: p.context.clone(),
+        consent: false,
+    })
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+async fn stable_history_does_not_starve_new_jobs_or_targeted_reads_beyond_a_sweep() {
+    let (_dir, core, session) = fixture().await;
+    for i in 0..105 {
+        let old = another_plan(&core, &session).await;
+        start(&core, &old.plan.id, AgentLimits::default());
+        if i % 2 == 0 {
+            core.agent_runtime_pause(&old.plan.id).unwrap();
+        } else {
+            core.research_cancel(&old.plan.id).unwrap();
+        }
+    }
+    let conn = Database::open(core.database_path())
+        .unwrap()
+        .connect()
+        .unwrap();
+    let history: Vec<(String, String, i64)> = conn
+        .prepare("SELECT session_id,status,revision FROM research_runtimes ORDER BY session_id")
+        .unwrap()
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+        .unwrap()
+        .collect::<std::result::Result<_, _>>()
+        .unwrap();
+    let active = start(&core, &session.plan.id, AgentLimits::default());
+    assert!(active.tasks.iter().any(|t| t.state == "READY"));
+    let selected_by_old_order: i64 = conn.query_row(
+        "SELECT count(*) FROM (SELECT session_id FROM research_runtimes WHERE status<>'completed' ORDER BY created_at LIMIT 100) WHERE session_id=?1",
+        [&session.plan.id], |r| r.get(0)
+    ).unwrap();
+    assert_eq!(
+        selected_by_old_order, 0,
+        "Fixture places the new session beyond the former sweep window"
+    );
+    let engine = JobEngine::start(core.clone(), 2, |_| {}).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(25);
+    loop {
+        // Do not call agent_runtime: background reconciliation itself must
+        // advance dependencies, without a UI/CLI read driving the scheduler.
+        let status: String = conn
+            .query_row(
+                "SELECT status FROM research_runtimes WHERE session_id=?1",
+                [&session.plan.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        if status == "completed" {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "Background work was starved: {status}"
+        );
+        thread::sleep(Duration::from_millis(20));
+    }
+    drop(engine);
+    let done = core.agent_runtime(&session.plan.id, 0).unwrap();
+    assert_eq!(done.invocations, 5);
+    assert!(done.tasks.iter().all(|t| t.state == "COMPLETED"));
+    for (id, status, revision) in history {
+        let actual: (String, i64, i64) = conn
+            .query_row(
+                "SELECT status,revision,invocations FROM research_runtimes WHERE session_id=?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(
+            actual,
+            (status, revision, 0),
+            "Stable history must not execute or change: {id}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn completed_attempts_are_prioritized_ahead_of_idle_running_sessions() {
+    let (_dir, core, session) = fixture().await;
+    for _ in 0..101 {
+        let old = another_plan(&core, &session).await;
+        start(&core, &old.plan.id, AgentLimits::default());
+    }
+    let active = start(&core, &session.plan.id, AgentLimits::default());
+    let root = active.tasks.iter().find(|t| t.agent_id == "recon").unwrap();
+    assert_eq!(core.execute_job(&root.job_id).unwrap().status, "completed");
+    let conn = Database::open(core.database_path())
+        .unwrap()
+        .connect()
+        .unwrap();
+    // Read raw SQL before any targeted getter can mask background starvation.
+    let state: String = conn
+        .query_row(
+            "SELECT state FROM research_agent_tasks WHERE id=?1",
+            [&root.id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(state, "COMPLETED");
+    let ready: i64 = conn
+        .query_row(
+            "SELECT count(*) FROM research_agent_tasks WHERE session_id=?1 AND state='READY'",
+            [&session.plan.id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(ready, 2);
+    let invocations: i64 = conn
+        .query_row("SELECT sum(invocations) FROM research_runtimes", [], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    assert_eq!(
+        invocations, 1,
+        "Reconciliation must not execute other queued jobs"
+    );
+    // A session outside the old window must also stop and drain its queue when
+    // an invocation reservation exhausts the quota, even without a targeted read.
+    conn.execute(
+        "UPDATE research_runtimes SET invocations=24 WHERE session_id=?1",
+        [&session.plan.id],
+    )
+    .unwrap();
+    core.jobs_pending_work().unwrap();
+    core.jobs_pending_work().unwrap();
+    let stopped: (String, String) = conn
+        .query_row(
+            "SELECT status,stop_reason FROM research_runtimes WHERE session_id=?1",
+            [&session.plan.id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(
+        stopped,
+        ("failed".into(), "invocation_budget_exhausted".into())
+    );
+    let pending: i64 = conn
+        .query_row(
+            "SELECT count(*) FROM research_agent_tasks t JOIN analysis_jobs j ON j.id=t.job_id
+         WHERE t.session_id=?1 AND j.status IN ('queued','running')",
+            [&session.plan.id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        pending, 0,
+        "Budget cleanup must not be starved by idle sessions"
+    );
+}
+
+#[tokio::test]
+async fn cancellation_during_a_pause_request_stops_the_real_running_job() {
+    let (_dir, core, session) = fixture().await;
+    start(&core, &session.plan.id, AgentLimits::default());
+    let once = Arc::new(AtomicBool::new(false));
+    let requested = once.clone();
+    let observer = core.clone();
+    let id = session.plan.id.clone();
+    let engine = JobEngine::start(core.clone(), 2, move |job| {
+        if job.kind == "target_registration_review"
+            && job.progress == 1
+            && !requested.swap(true, Ordering::AcqRel)
+        {
+            assert_eq!(
+                observer.agent_runtime_pause(&id).unwrap().status,
+                "pause_requested"
+            );
+            observer.research_cancel(&id).unwrap();
+        }
+    })
+    .unwrap();
+    assert_eq!(finished(&core, &session.plan.id).status, "cancelled");
+    drop(engine);
+    let reopened = Core::open(Some(core.database_path().to_path_buf())).unwrap();
+    let stopped = reopened.agent_runtime(&session.plan.id, 0).unwrap();
+    assert_eq!(stopped.status, "cancelled");
+    assert_eq!(stopped.invocations, 1);
+    assert!(stopped.tasks.iter().all(|t| t.state == "CANCELLED"));
+    assert!(
+        reopened
+            .research_session(&session.plan.id)
+            .unwrap()
+            .evidence
+            .is_empty()
+    );
+    assert!(
+        stopped
+            .messages
+            .iter()
+            .any(|m| m.message_type == "PAUSE_REQUESTED")
+    );
+    assert!(
+        stopped
+            .messages
+            .iter()
+            .any(|m| m.message_type == "SESSION_CANCELLED")
+    );
+    assert!(reopened.agent_runtime_resume(&session.plan.id).is_err());
+    assert!(reopened.agent_runtime_retry(&session.plan.id).is_err());
+}
 fn start(core: &Core, id: &str, limits: AgentLimits) -> AgentRuntime {
     let p = core.agent_runtime_preview(id, limits).unwrap();
     core.agent_runtime_start(AgentRuntimeReview {

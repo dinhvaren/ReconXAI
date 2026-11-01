@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-30",
+  "updated": "2026-11-01",
   "verified_platforms": [
     "windows-x86_64"
   ],
@@ -509,7 +509,7 @@
     {
       "id": "multi_agent_runtime",
       "status": "PARTIAL",
-      "verification": "docs/verification/offline-agents-20261030.json",
+      "verification": "docs/verification/agent-reconciliation-20261101.json",
       "implemented_scope": "RUNTIME_VERIFIED reviewed offline role coordination, fixed DAG, bounded explicit retry and job-boundary pause/resume; not complete requested runtime"
     },
     {
@@ -519,12 +519,12 @@
     }
   ],
   "verification": {
-    "rust_passed": 215,
+    "rust_passed": 218,
     "rust_failed": 0,
     "rust_ignored_default": 2,
     "frontend_passed": 50,
     "frontend_failed": 0,
-    "record": "docs/verification/offline-agents-20261030.json",
+    "record": "docs/verification/agent-reconciliation-20261101.json",
     "native_checks_current": {
       "agents": 6,
       "recon-tools": 13,
@@ -532,7 +532,7 @@
       "outputs": 6,
       "recon-local": 7
     },
-    "scope": "Reviewed offline typed coordination only; no autonomous offensive loop, new recorder or cloud verification"
+    "scope": "Offline runtime reconciliation fairness and cancellation robustness only; no added network/model/agent capabilities"
   },
   "v1_release": {
     "ready": false,
@@ -545,7 +545,8 @@
       "Live cloud providers and security integration profiles unverified",
       "glib RUSTSEC-2024-0429 unresolved; new dependency gate correctly fails",
       "Six RustSec unmaintained dependencies require upstream/path review",
-      "Windows NSIS built but clean install/upgrade/uninstall and signing unverified"
+      "Windows NSIS built but clean install/upgrade/uninstall and signing unverified",
+      "Investigate observed first-install HTTPX owned-loopback health failure (2026-11-01); Doctor and fresh native rerun pass, cause unresolved"
     ]
   },
   "database_schema_version": 20,
@@ -565,10 +566,10 @@
       "distribution": "Parrot on WSL2",
       "desktop_blocker": "GLib/GTK/WebKit SDK absent; glib RUSTSEC-2024-0429 unresolved; GUI/Secret Service not tested",
       "current_core_cli_tests": {
-        "passed": 215,
+        "passed": 218,
         "failed": 0,
         "ignored": 2,
-        "record": "artifacts/agents-linux-post-pdf.log"
+        "record": "artifacts/agents-reconcile-final-linux.log"
       },
       "optimized_cli_record": "artifacts/linux-research-history-20261029/build-manifest.json"
     }
@@ -996,11 +997,28 @@
     "scope": "Current history follow-up: research/recon/graph plus HTTP/output/manual HEAD native regressions; no sum across repeated suites"
   },
   "current_offline_agent_verification": {
-    "proof": "docs/verification/offline-agents-20261030.json",
+    "proof": "docs/verification/agent-reconciliation-20261101.json",
     "schema": 20,
     "status": "RUNTIME_VERIFIED_BOUNDED_SLICE",
     "broader_module": "PARTIAL",
     "linux_desktop": "UNVERIFIED",
-    "release_ready": false
+    "release_ready": false,
+    "followup": "105-history/101-idle fairness, budget cleanup and running pause/cancel verified"
+  },
+  "verification_history_before_agent_reconciliation_20261101": {
+    "rust_passed": 215,
+    "rust_failed": 0,
+    "rust_ignored_default": 2,
+    "frontend_passed": 50,
+    "frontend_failed": 0,
+    "record": "docs/verification/offline-agents-20261030.json",
+    "native_checks_current": {
+      "agents": 6,
+      "recon-tools": 13,
+      "http-replay": 11,
+      "outputs": 6,
+      "recon-local": 7
+    },
+    "scope": "Reviewed offline typed coordination only; no autonomous offensive loop, new recorder or cloud verification"
   }
 }
